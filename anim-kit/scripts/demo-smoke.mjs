@@ -242,6 +242,28 @@ for (const cat of payload.categories) {
     assert.ok(readme.includes(`| ${sub.name} |`), `README must list subcategory "${sub.name}"`);
   }
 }
+// The developer docs page (demo/docs.html) renders from this payload — ship
+// the fields it needs, and keep every CDN pin on the release version (a
+// drifted pin 404s for every reader who copies it).
+assert.ok(payload.version, "payload must ship the CDN version");
+assert.equal(
+  payload.version,
+  JSON.parse(readFileSync(path.join(root, "package.json"), "utf8")).version,
+  "CDN_VERSION must match package.json (bump both together on release)",
+);
+for (const p of payload.prompts) {
+  assert.ok(Array.isArray(p.imports) && p.imports.length, `payload "${p.id}" must ship imports`);
+  assert.ok(p.markup && p.usage, `payload "${p.id}" must ship markup + usage for the docs page`);
+  assert.ok(p.text.includes(`@${payload.version}`), `prompt "${p.id}" must pin @${payload.version}`);
+}
+assert.ok(readme.includes(`@${payload.version}`), `README must pin @${payload.version}`);
+const docsHtml = readFileSync(path.join(root, "demo", "docs.html"), "utf8");
+const docsJs = readFileSync(path.join(root, "demo", "docs.js"), "utf8");
+assert.ok(docsHtml.includes('id="d-content"'), "docs.html must keep the catalogue mount point");
+assert.ok(docsHtml.includes("/demo/docs.js"), "docs.html must load docs.js");
+assert.ok(docsJs.includes("/api/prompts"), "docs.js must render from /api/prompts");
+assert.ok(docsJs.includes("#cat-") && docsJs.includes("#fx-"), "docs.js must build category + effect sections");
+console.log(`ok  docs page ships from the payload, all pins @${payload.version}`);
 // chips were injected next to each labelled section.
 assert.ok(doc.querySelectorAll("[data-copy-prompt]").length >= pageEffects.length,
   "copy-prompt chips should be injected for every data-effect");

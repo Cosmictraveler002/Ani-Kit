@@ -32,7 +32,7 @@
 │   │   ├── effects/          24 files / 28 effect functions — one concern per file
 │   │   ├── styles/           anim-kit.css (ships untouched as plain CSS)
 │   │   └── index.ts          public barrel — the 45-export contract
-│   ├── demo/                 visual demo page (import map, no bundler)
+│   ├── demo/                 demo page + developer docs page (import map, no bundler)
 │   ├── scripts/              prompts + taxonomy, demo server, build helper, smoke tests
 │   ├── dist/                 build output (gitignored)
 │   ├── tsup.config.ts        standalone CDN bundle config
@@ -64,6 +64,7 @@ npm run demo          # server on :4321 — demo page + /api/prompts (build firs
 | GSAP setup, custom eases, internal `killTweens()` | `anim-kit/src/core/gsap.ts`                                                                                                                                                                              |
 | Effect taxonomy (categories → subcategories)      | `TAXONOMY` in `anim-kit/scripts/prompts.mjs`                                                                                                                                                             |
 | Copy-prompt text served by the demo               | `renderPrompt()` in `anim-kit/scripts/prompts.mjs`                                                                                                                                                       |
+| CDN version pin (prompts, docs page, README pins) | `CDN_VERSION` in `anim-kit/scripts/prompts.mjs` — must equal `package.json` `version`; `demo-smoke.mjs` enforces both                                                                                    |
 | Styles (`.ak-*` classes, keyframes)               | `anim-kit/src/styles/anim-kit.css` — copied byte-for-byte to `dist/styles/`; never import CSS from JS                                                                                                    |
 | npm exports map, version, dependencies            | `anim-kit/package.json`                                                                                                                                                                                  |
 | Standalone CDN bundle behaviour                   | `anim-kit/tsup.config.ts`                                                                                                                                                                                |
@@ -96,6 +97,75 @@ npm run demo          # server on :4321 — demo page + /api/prompts (build firs
    minified bundles must keep plugin class names (`keepNames` in
    `tsup.config.ts`) or `gsap.core.globals()` gets corrupted.
 10. **Never commit** `node_modules/`, `dist/` or `*.tgz` — see `.gitignore`.
+
+## Recent structural fixes — bug classes and how to fix the next one
+
+Two "doesn't work" reports from browser verification of the demo, plus the
+check that stopped a third class before it shipped. All three are paid for
+with regression tests; treat them as the template for similar reports.
+
+### A. Position math must match the positioning mode (`cursorFollower`)
+
+**What happened.** The effect pinned the follower tag `position: absolute`
+but computed coordinates relative to the hover zone. Those two spaces only
+line up when the tag is a child of the zone — the demo and the prompt markup
+put it at body level, so it rendered near the document origin: above the
+viewport, invisible on hover.
+
+**Rule.** Any effect that writes `x` / `y` / `left` / `top` must compute
+coordinates in the space its positioning mode resolves in: `fixed` → viewport
+space (`clientX/Y`), `absolute` → its containing block, `transform` → the
+parent box. If the element may live anywhere in the DOM, `position: fixed` +
+`clientX/Y` is the only space that always holds.
+
+**The fix.** Switch to viewport space, and snap on the first pointer move so
+the spring does not fly the tag in from a corner. Two follow-on gotchas came
+with it: `mix-blend-mode: exclusion` needs a light source colour
+(`color: #fff`) or the element blends down into the backdrop and "vanishes";
+and teardown must restore the inline styles it overwrote.
+
+**How to verify.** Unit: `scripts/smoke.mjs` dispatches a synthetic
+`pointermove` and asserts the snap lands at `clientX/Y + offset`. Visual:
+headless Edge + puppeteer — hover, assert
+`follower.getBoundingClientRect() ≈ pointer + offset`, move again, leave,
+assert opacity returns to 0.
+
+### B. One-shot triggers read as dead effects (enter reveals)
+
+**What happened.** `unfoldReveal` / `clipWipe` / `mediaSettle` animated
+correctly on a slow first pass but used `toggleActions: "play none none
+none"` / `once: true` — any second pass (scroll back up and re-enter, or a
+reload with restored scroll) played nothing, which reads as "the animation
+doesn't work".
+
+**Rule.** Entrance effects a visitor can re-approach need a `replay: true`
+variant (`toggleActions: "play reverse play reverse"`), and the demo should
+wire it so every pass animates.
+
+**The fix.** Add a `replay` option with default `false` (existing behaviour
+unchanged), document it in the prompt + README, wire the demo with
+`replay: true`.
+
+**How to verify.** Script a slow down → up → down scroll and sample computed
+styles at each stop: initial (hidden) → revealed → initial again → revealed
+again. Fast, one-pass checks hide exactly this bug.
+
+### C. "Looks the same" needs evidence before changing code
+
+`stackedCards` and `stackedCardsPinned` render the same card choreography
+**on purpose** (one timeline, two DOM structures); only the pinning differs —
+CSS `position: sticky` vs a GSAP pin with `pinSpacing: false`. Check computed
+`position` mid-scrub (`sticky` vs `fixed`) before "fixing" them apart.
+
+### Process notes
+
+- `npm test` (build + unit smoke + demo smoke) gates every commit; visual
+  claims get a headless-Edge + puppeteer script that logs computed styles at
+  known scroll positions and screenshots each state. Prefer slow, stepped
+  scrolls over jumps.
+- Release pins are single-sourced: `CDN_VERSION` → `payload.version` → the
+  docs page interpolates its CDN blocks from it; `demo-smoke.mjs` fails if
+  `package.json` or the README drifts from that pin.
 
 ## Releasing
 
@@ -132,6 +202,11 @@ exist; there are two phases:
 | Every effect, options, return values         | [API](anim-kit/README.md#api)                             |
 | AI-assisted implementation prompts           | [Copy-prompt API](anim-kit/README.md#copy-prompt-api)     |
 | Package internals                            | [Project structure](anim-kit/README.md#project-structure) |
+
+Interactive developer docs site (install, initialisation process, every
+effect's markup/options/boilerplate, category navigation):
+[`anim-kit/demo/docs.html`](anim-kit/demo/docs.html) — served by `npm run demo`
+→ <http://localhost:4321/demo/docs.html>, linked as **Docs** in the demo nav.
 
 ---
 

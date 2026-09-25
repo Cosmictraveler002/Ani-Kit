@@ -5,6 +5,10 @@
  * whole thing fades/blurs in when the pointer enters the hot zone. The label
  * uses `mix-blend-mode: exclusion` so it inverts over any background.
  *
+ * The tag is pinned `position: fixed` and driven in VIEWPORT space
+ * (clientX/clientY + offset), so it can live anywhere in the DOM — it only
+ * reacts while the pointer is over the zone.
+ *
  *   cursorFollower(zone, { follower: ".ak-cursor" })
  */
 import { gsap, initGSAP, killTweens } from "../core/gsap.js";
@@ -51,7 +55,11 @@ export function cursorFollower(
     };
 
     el.style.mixBlendMode = blendMode as never;
-    el.style.position = "absolute";
+    // Viewport space: position:fixed + clientX/clientY keeps the tag at the
+    // pointer wherever it sits in the DOM. (The old position:absolute +
+    // zone-relative math only lined up when the tag was a child of the zone —
+    // a body-level tag landed near the document origin instead, off-screen.)
+    el.style.position = "fixed";
     el.style.left = "0";
     el.style.top = "0";
     el.style.pointerEvents = "none";
@@ -61,10 +69,19 @@ export function cursorFollower(
     const xTo = gsap.quickTo(el, "x", { ...spring, duration: 0.4, ease: "power3" });
     const yTo = gsap.quickTo(el, "y", { ...spring, duration: 0.4, ease: "power3" });
 
+    // First move lands on the pointer; later moves spring after it — starting
+    // from (0,0), the spring would otherwise carry the tag in from the corner.
+    let snapped = false;
     const onMove = (e: PointerEvent) => {
-      const r = area.getBoundingClientRect();
-      xTo(e.clientX - r.left + offset);
-      yTo(e.clientY - r.top + offset);
+      const x = e.clientX + offset;
+      const y = e.clientY + offset;
+      if (snapped) {
+        xTo(x);
+        yTo(y);
+      } else {
+        gsap.set(el, { x, y });
+        snapped = true;
+      }
       if (fade) gsap.to(el, { opacity: 1, duration: 0.25, overwrite: "auto" });
     };
 

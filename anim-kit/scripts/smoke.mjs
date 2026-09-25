@@ -253,6 +253,26 @@ assert.equal(scrEl.textContent, scrBefore, "scrambleText must restore the origin
 assert.equal(scrEl.dataset.akScramble, undefined, "scrambleText must clear its stamp");
 console.log("ok  scrambleText stamps + restores text on destroy");
 
+/* ---------------- cursorFollower tracks the pointer in viewport space ------ */
+// Regression guard: the tag used to be pinned position:absolute with
+// zone-relative coordinates — correct ONLY when the tag was a child of the
+// zone, so the demo's body-level tag sprang from the document origin
+// (above the viewport) and hovering the zone showed nothing.
+{
+  const cfZone = window.document.querySelector("[data-showreel]");
+  const cfTag = cfZone.querySelector("span");
+  const cfDestroy = lib.cursorFollower("[data-showreel]", { follower: "[data-showreel] span", offset: 14 });
+  cfZone.dispatchEvent(new window.MouseEvent("pointermove", { clientX: 500, clientY: 300 }));
+  const tf = cfTag.style.transform;
+  assert.ok(
+    tf.includes("translate") && tf.includes("514") && tf.includes("314"),
+    `first pointermove must snap the tag to clientX/Y + offset (saw "${tf}")`,
+  );
+  cfDestroy();
+  assert.equal(cfTag.style.transform, "", "cursorFollower must clear the transform on destroy");
+  console.log("ok  cursorFollower snaps to viewport coords and tears down");
+}
+
 /* ---------------- rollText builds its loop, unwraps on destroy ------------ */
 const rollEl = window.document.querySelector("[data-roll]");
 const rollDestroy = lib.rollText("[data-roll]");

@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en" class="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>anim-kit — docs</title>
+    <link rel="stylesheet" href="/src/styles/anim-kit.css" />
+    <style>
+      :root {
+        --bg: #f4f2ee;
+        --fg: #111;
+        --primary: #6c5ce7;
+        --line: color-mix(in srgb, var(--fg) 18%, transparent);
+        --dim: color-mix(in srgb, var(--fg) 55%, transparent);
+      }
+      html.dark {
+        --bg: #0d0d0f;
+        --fg: #f4f2ee;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        line-height: 1.55;
+        overflow-x: clip;
+      }
+      a { color: inherit; }
+      code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+      /* ---- top bar ---- */
+      .d-top {
+        position: fixed;
+        inset: 0 0 auto 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 16px 32px;
+        background: var(--bg);
+        border-bottom: 1px solid var(--line);
+        z-index: 100;
+      }
+      .d-brand { font-weight: 700; letter-spacing: -0.03em; text-decoration: none; }
+      .d-brand em { font-style: normal; font-weight: 400; color: var(--dim); }
+      .d-top__links { display: flex; gap: 20px; font-size: 14px; }
+      .d-top__links a {
+        text-decoration: none;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 2px;
+      }
+      .d-top__links a:hover { border-color: currentColor; }
+
+      /* ---- shell: sticky sidebar + content ---- */
+      .d-shell {
+        display: grid;
+        grid-template-columns: 264px minmax(0, 1fr);
+        gap: 48px;
+        max-width: 1440px;
+        margin: 0 auto;
+        padding: 88px 32px 120px;
+      }
+      .d-side {
+        position: sticky;
+        top: 88px;
+        align-self: start;
+        max-height: calc(100vh - 110px);
+        overflow-y: auto;
+        padding-right: 8px;
+        scrollbar-width: thin;
+      }
+      .d-nav__group { margin: 0 0 18px; }
+      .d-nav__cat {
+        display: block;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        text-decoration: none;
+        color: var(--dim);
+        padding: 6px 0;
+        font-weight: 600;
+      }
+      .d-nav__cat.is-active { color: var(--fg); }
+      .d-nav__fx {
+        display: block;
+        font-size: 13px;
+        text-decoration: none;
+        color: var(--dim);
+        padding: 3px 0 3px 14px;
+        border-left: 2px solid transparent;
+        margin-left: 2px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      .d-nav__fx:hover { color: var(--fg); }
+      .d-nav__fx.is-active { color: var(--fg); border-left-color: var(--primary); }
+
+      /* ---- content ---- */
+      .d-main { min-width: 0; }
+      .d-hero { padding: 40px 0 8px; scroll-margin-top: 72px; }
+      h1 {
+        font-size: clamp(44px, 6vw, 84px);
+        line-height: 0.95;
+        letter-spacing: -0.04em;
+        margin: 12px 0 20px;
+        font-weight: 600;
+      }
+      .label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        color: var(--dim);
+        margin: 0 0 16px;
+      }
+      .d-lede {
+        font-size: clamp(16px, 1.6vw, 20px);
+        line-height: 1.55;
+        max-width: 64ch;
+        margin: 0;
+        color: color-mix(in srgb, var(--fg) 82%, transparent);
+      }
+
+      .d-sec { padding-top: 72px; scroll-margin-top: 72px; }
+      .d-h2 {
+        font-size: clamp(30px, 3.4vw, 48px);
+        line-height: 1;
+        letter-spacing: -0.03em;
+        margin: 0 0 14px;
+        font-weight: 600;
+        padding-top: 24px;
+        border-top: 1px solid var(--line);
+      }
+      .d-h3 {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        color: var(--dim);
+        margin: 48px 0 8px;
+        font-weight: 600;
+      }
+
+      .d-steps { max-width: 72ch; padding-left: 22px; margin: 18px 0 0; }
+      .d-steps li { margin-bottom: 10px; }
+      .d-steps li::marker { color: var(--primary); font-weight: 700; }
+
+      /* code blocks */
+      .d-code { position: relative; margin: 10px 0 18px; }
+      .d-code pre {
+        margin: 0;
+        padding: 16px 64px 16px 18px;
+        overflow-x: auto;
+        background: color-mix(in srgb, var(--fg) 5%, transparent);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+      .d-code code { white-space: pre; }
+      .d-copy {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 5px 9px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: var(--bg);
+        color: var(--fg);
+        cursor: pointer;
+      }
+      .d-copy:hover { border-color: var(--fg); }
+
+      /* effect entries */
+      .d-fx {
+        padding: 34px 0 6px;
+        border-top: 1px dashed var(--line);
+        margin-top: 34px;
+        scroll-margin-top: 72px;
+      }
+      .d-fx:first-of-type { border-top: 0; margin-top: 12px; }
+      .d-fx__head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+      .d-fx__title { margin: 0; font-size: clamp(22px, 2.4vw, 30px); letter-spacing: -0.02em; }
+      .d-fx__title code {
+        font-size: 0.9em;
+        background: color-mix(in srgb, var(--fg) 6%, transparent);
+        padding: 2px 8px;
+        border-radius: 8px;
+      }
+      .d-fx__tag {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--dim);
+      }
+      .d-fx__sum { max-width: 72ch; margin: 12px 0 4px; }
+
+      .d-table {
+        border-collapse: collapse;
+        width: 100%;
+        max-width: 880px;
+        font-size: 14px;
+        margin: 6px 0 10px;
+      }
+      .d-table th, .d-table td {
+        text-align: left;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      .d-table th {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--dim);
+      }
+      .d-table code {
+        font-size: 12.5px;
+        background: color-mix(in srgb, var(--fg) 6%, transparent);
+        padding: 1px 6px;
+        border-radius: 6px;
+        white-space: nowrap;
+      }
+
+      .d-notes { max-width: 76ch; padding-left: 20px; font-size: 14.5px; margin: 8px 0 0; }
+      .d-notes li { margin-bottom: 8px; }
+      p code, li code, .d-lede code {
+        font-size: 0.92em;
+        background: color-mix(in srgb, var(--fg) 6%, transparent);
+        padding: 1px 5px;
+        border-radius: 6px;
+      }
+
+      .d-prompt-btn {
+        margin-top: 18px;
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: var(--fg);
+        cursor: pointer;
+      }
+      .d-prompt-btn:hover { border-color: var(--fg); }
+
+      .d-loading { color: var(--dim); padding-top: 40px; }
+      .d-warn { color: #b04343; padding-top: 40px; max-width: 72ch; }
+
+      @media (max-width: 960px) {
+        .d-shell { grid-template-columns: 1fr; gap: 0; padding: 76px 20px 80px; }
+        .d-side {
+          position: static;
+          max-height: none;
+          border-bottom: 1px solid var(--line);
+          padding-bottom: 16px;
+          margin-bottom: 8px;
+          overflow: visible;
+        }
+        .d-nav__group { display: inline-block; vertical-align: top; margin-right: 26px; }
+        .d-top { padding: 14px 20px; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="d-top">
+      <a class="d-brand" href="/demo/">ANIM·KIT <em>docs</em></a>
+      <div class="d-top__links">
+        <a href="/demo/">&larr; live demo</a>
+        <a href="https://github.com/Cosmictraveler002/Ani-Kit" target="_blank" rel="noreferrer">github</a>
+      </div>
+    </header>
+
+    <div class="d-shell">
+      <aside class="d-side">
+        <nav class="d-nav" id="d-nav" aria-label="Documentation sections">
+          <div class="d-nav__group">
+            <a class="d-nav__cat" href="#getting-started">Getting started</a>
+          </div>
+          <!-- category groups injected by docs.js -->
+        </nav>
+      </aside>
+
+      <main class="d-main">
+        <section class="d-hero" id="getting-started">
+          <p class="label">Developer documentation &middot; v<span id="d-version">&hellip;</span></p>
+          <h1>Build with anim-kit.</h1>
+          <p class="d-lede">
+            Every effect: the markup it expects, the options it takes, copy-paste
+            boilerplate, and the initialisation process that ties them together.
+            Sections follow the same taxonomy the demo dock ships &mdash; pick a
+            family in the sidebar.
+          </p>
+        </section>
+
+        <section class="d-sec">
+          <h2 class="d-h2">Install</h2>
+
+          <p class="label">npm &mdash; bundler projects (Vite, Next, Astro, Webpack)</p>
+          <div class="d-code" data-static>
+            <pre><code>npm install @cosmictraveler002/anim-kit</code></pre>
+          </div>
+          <div class="d-code" data-static>
+            <pre><code>import { smoothScroll, lineReveal } from "@cosmictraveler002/anim-kit";
+import "@cosmictraveler002/anim-kit/styles"; // companion stylesheet (optional)</code></pre>
+          </div>
+
+          <p class="label" style="margin-top: 28px">CDN &mdash; no build step (version-pinned)</p>
+          <div class="d-code" data-static>
+            <pre><code id="d-cdn-css"></code></pre>
+          </div>
+          <div class="d-code" data-static>
+            <pre><code id="d-cdn-map"></code></pre>
+          </div>
+          <p class="d-lede" style="font-size: 15px">
+            Import-map entries match specifiers literally, so GSAP subpaths are
+            listed one by one &mdash; one shared <code>gsap</code> then serves
+            anim-kit and the rest of your page. Other shapes (standalone bundle,
+            <code>+esm</code>) are spelled out in every copy prompt.
+          </p>
+        </section>
+
+        <section class="d-sec">
+          <h2 class="d-h2">Initialisation process</h2>
+          <ol class="d-steps">
+            <li>
+              <strong>Load the package</strong> &mdash; npm import or the pinned CDN
+              map above. The companion CSS ships resting states, mask classes and the
+              pure-CSS pieces; the motion itself is 100% JS.
+            </li>
+            <li>
+              <strong>Create smooth scroll first</strong> &mdash;
+              <code>smoothScroll()</code> installs the Lenis proxy before
+              ScrollTrigger measures anything; every scroll effect syncs through it.
+            </li>
+            <li>
+              <strong>Create effects after the markup exists</strong> &mdash; each
+              effect self-initialises GSAP (plugins and studio eases register once),
+              so calls only need their target elements in the DOM.
+            </li>
+            <li>
+              <strong>Keep every destroy function</strong> &mdash; each call returns
+              a teardown; collect them in an array.
+            </li>
+            <li>
+              <strong>Tear down on exit</strong> &mdash; on <code>pagehide</code>
+              (or before an SPA route swap) destroy the effects, then the scroller.
+            </li>
+            <li>
+              <strong>Reduced motion is automatic</strong> &mdash; every effect runs
+              through a guard that skips motion under
+              <code>prefers-reduced-motion</code>; opt back in per call with
+              <code>force: true</code>.
+            </li>
+          </ol>
+
+          <p class="label" style="margin-top: 28px">Boilerplate &mdash; the shape every page uses</p>
+          <div class="d-code" data-static>
+            <pre><code id="d-boiler"></code></pre>
+          </div>
+        </section>
+
+        <div id="d-content">
+          <p class="d-loading">Loading the effect catalogue&hellip;</p>
+        </div>
+      </main>
+    </div>
+
+    <script type="module" src="/demo/docs.js"></script>
+  </body>
+</html>

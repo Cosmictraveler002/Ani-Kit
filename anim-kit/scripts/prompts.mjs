@@ -44,7 +44,7 @@ needed (component unmount, route change, HMR reload):
 `;
 
 /** Version-pinned CDN release that every prompt's procedure points at. */
-const CDN_VERSION = "1.2.0";
+export const CDN_VERSION = "1.2.0";
 
 /** Indent every line of a snippet (for nesting it inside the example file). */
 const indent = (text, spaces) =>
@@ -1178,7 +1178,8 @@ liquidButton('[data-liquid][data-dir="down"]', { direction: "down" });`,
       ["force", "`false`", "Run even under `prefers-reduced-motion`."],
     ],
     notes: [
-      "Position the tag with CSS (`position: fixed; opacity: 0`) — the effect animates it.",
+      "Style the tag with `opacity: 0` — the effect pins it `position: fixed` and drives it in viewport space, so it can live anywhere in the DOM.",
+      "`mix-blend-mode: exclusion` needs light text to invert — give the tag `color: #fff`, otherwise it blends down into the backdrop and disappears.",
       "Pair it with `cursor: none` on the zone for the full effect.",
     ],
   },
@@ -1251,6 +1252,9 @@ export function promptsById() {
 export function promptsPayload() {
   return {
     count: PROMPT_ENTRIES.length,
+    // release pin — the docs page interpolates its CDN blocks from this, and
+    // demo-smoke fails the build if package.json/README drift from it.
+    version: CDN_VERSION,
     categories: TAXONOMY.map((c) => ({
       id: c.id,
       name: c.name,
@@ -1262,6 +1266,13 @@ export function promptsPayload() {
       title: e.title,
       summary: e.summary,
       ...classify(e.id),
+      // structured fields — the docs page (demo/docs.js) renders these as
+      // import/markup/usage/options/notes blocks alongside the rendered text.
+      imports: e.imports,
+      markup: e.markup,
+      usage: e.usage,
+      options: e.options ?? [],
+      notes: e.notes ?? [],
       text: renderPrompt(e),
     })),
   };

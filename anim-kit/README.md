@@ -927,7 +927,12 @@ Curtain uses `EASES.curtain` (`.76,0,.24,1`).
 
 #### `cursorFollower(zone, options?) => destroy`
 
-Spring-followed cursor tag, e.g. "▶ Play Showreel" over a video.
+Spring-followed cursor tag, e.g. "▶ Play Showreel" over a video. The tag is
+pinned `position: fixed` and driven in viewport space (`clientX/Y + offset`),
+so it can live anywhere in the DOM — it only reacts while the pointer is over
+the zone. Style it with `opacity: 0` and light text (`color: #fff`): the
+`exclusion` blend inverts the tag against whatever is behind it, which only
+reads with a light source colour.
 
 ```ts
 cursorFollower("[data-showreel]", {
