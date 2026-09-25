@@ -1,0 +1,25 @@
+# anim-kit demo & docs (v1.2.0)
+
+> Modular, framework-agnostic animation library (GSAP + ScrollTrigger +
+> Lenis): every effect as a composable ES module. This site is the live
+> demo and the full developer documentation.
+
+Token-efficient path: fetch https://anikit.vercel.app/prompts.json once — it carries the
+entire catalogue (version, categories, and every effect's markup, init
+procedure, options and teardown) as structured JSON. docs.html is a
+JS-rendered shell whose content comes from that same file.
+
+## Pages
+
+- [Demo](https://anikit.vercel.app/): every effect running live, with copy-prompt chips
+- [Docs](https://anikit.vercel.app/docs.html): install, initialisation process, per-effect reference
+
+## Data
+
+- [prompts.json](https://anikit.vercel.app/prompts.json): full machine-readable catalogue (29 prompts, 8 categories)
+
+## Library
+
+- [npm](https://www.npmjs.com/package/@cosmictraveler002/anim-kit): @cosmictraveler002/anim-kit
+- [Package README](https://github.com/Cosmictraveler002/Ani-Kit/blob/main/anim-kit/README.md): complete API reference, options tables, effect taxonomy
+- [GitHub](https://github.com/Cosmictraveler002/Ani-Kit): source repository

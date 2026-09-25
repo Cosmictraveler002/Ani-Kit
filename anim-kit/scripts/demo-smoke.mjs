@@ -14,7 +14,7 @@ import { readFileSync, writeFileSync, rmSync, readdirSync } from "node:fs";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import path from "node:path";
 import { setupDom } from "./env.mjs";
-import { buildFiles } from "./sync-demo-live.mjs";
+import { buildFiles, SITE_URL } from "./sync-demo-live.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
@@ -297,7 +297,25 @@ assert.ok(
 );
 assert.ok(liveFiles["demo.js"].includes("prompts.json"), "demo.js must fall back to static prompts.json");
 assert.ok(liveFiles["docs.js"].includes("prompts.json"), "docs.js must fall back to static prompts.json");
-console.log("ok  demo_live mirrors demo on the pinned CDN build (static-host ready)");
+// agent entry points: allow-all robots + sitemap/llms.txt with absolute URLs
+assert.ok(
+  liveFiles["robots.txt"].includes("User-agent: *") &&
+    liveFiles["robots.txt"].includes("Allow: /") &&
+    liveFiles["robots.txt"].includes(`Sitemap: ${SITE_URL}/sitemap.xml`),
+  "robots.txt must allow every agent and point at the sitemap on SITE_URL",
+);
+for (const p of ["/", "/docs.html", "/prompts.json"]) {
+  assert.ok(
+    liveFiles["sitemap.xml"].includes(`<loc>${SITE_URL}${p}</loc>`),
+    `sitemap must list ${SITE_URL}${p}`,
+  );
+}
+assert.ok(
+  liveFiles["llms.txt"].includes(`${SITE_URL}/prompts.json`) &&
+    liveFiles["llms.txt"].includes(`v${payload.version}`),
+  "llms.txt must point agents at prompts.json and carry the release version",
+);
+console.log(`ok  demo_live mirrors demo on the pinned CDN build (static-host ready, crawler files → ${SITE_URL})`);
 // chips were injected next to each labelled section.
 assert.ok(doc.querySelectorAll("[data-copy-prompt]").length >= pageEffects.length,
   "copy-prompt chips should be injected for every data-effect");

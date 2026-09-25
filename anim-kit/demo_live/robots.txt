@@ -1,0 +1,6 @@
+# anim-kit demo — fully open to every agent (human and AI).
+User-agent: *
+Allow: /
+
+# Machine-readable catalogue (one fetch, no HTML scraping): https://anikit.vercel.app/prompts.json
+Sitemap: https://anikit.vercel.app/sitemap.xml

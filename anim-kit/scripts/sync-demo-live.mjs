@@ -1,6 +1,6 @@
 /**
  * Generate demo_live/ from demo/ — a deployment-ready copy of the demo that
- * runs from any static host (GitHub Pages, Netlify, S3, …) with no build:
+ * runs from any static host (Vercel, GitHub Pages, Netlify, S3, …) with no build:
  *
  *   • import map + stylesheet → version-pinned jsdelivr CDN URLs (the same
  *     ones the copy prompts and docs teach); nothing under /node_modules,
@@ -10,6 +10,9 @@
  *   • prompts.json            → static snapshot of promptsPayload(), so the
  *     dock + docs work without the Node server (demo.js/docs.js try
  *     /api/prompts first and fall back to this file).
+ *   • robots.txt / sitemap.xml / llms.txt → crawler entry points with
+ *     absolute URLs from SITE_URL: agents find the demo, the docs and the
+ *     machine-readable prompts.json in one hop instead of scraping.
  *
  * demo.js and docs.js are copied byte-for-byte — the static fallback lives
  * in the source so both trees stay identical.
@@ -23,6 +26,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { CDN_VERSION, promptsPayload } from "./prompts.mjs";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
+
+/** Public origin of the deployed demo_live/ — sitemap & llms.txt need absolute URLs. */
+export const SITE_URL = "https://anikit.vercel.app"; // ← the one line to change if the demo moves
 
 /** Installed version of a dependency — keeps CDN pins truthful (gsap@…, lenis@…). */
 const depVersion = (name) =>
@@ -71,11 +77,59 @@ export function buildFiles() {
   for (const name of ["demo.js", "docs.js"]) {
     files[name] = readFileSync(join(root, "demo", name), "utf8");
   }
-  files["prompts.json"] = JSON.stringify(promptsPayload(), null, 2);
+  const payload = promptsPayload();
+  files["prompts.json"] = JSON.stringify(payload, null, 2);
   // Vercel hosts answer /api/prompts from the static file — other hosts use
   // the client-side prompts.json fallback in demo.js/docs.js.
   files["vercel.json"] =
     JSON.stringify({ rewrites: [{ source: "/api/prompts", destination: "/prompts.json" }] }, null, 2) + "\n";
+  // Crawler/agent entry points, absolute URLs from SITE_URL.
+  files["robots.txt"] = [
+    "# anim-kit demo — fully open to every agent (human and AI).",
+    "User-agent: *",
+    "Allow: /",
+    "",
+    `# Machine-readable catalogue (one fetch, no HTML scraping): ${SITE_URL}/prompts.json`,
+    `Sitemap: ${SITE_URL}/sitemap.xml`,
+    "",
+  ].join("\n");
+  files["sitemap.xml"] = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ...["/", "/docs.html", "/prompts.json"].map(
+      (p) => `  <url><loc>${SITE_URL}${p}</loc></url>`,
+    ),
+    "</urlset>",
+    "",
+  ].join("\n");
+  files["llms.txt"] = [
+    `# anim-kit demo & docs (v${payload.version})`,
+    "",
+    "> Modular, framework-agnostic animation library (GSAP + ScrollTrigger +",
+    "> Lenis): every effect as a composable ES module. This site is the live",
+    "> demo and the full developer documentation.",
+    "",
+    `Token-efficient path: fetch ${SITE_URL}/prompts.json once — it carries the`,
+    "entire catalogue (version, categories, and every effect's markup, init",
+    "procedure, options and teardown) as structured JSON. docs.html is a",
+    "JS-rendered shell whose content comes from that same file.",
+    "",
+    "## Pages",
+    "",
+    `- [Demo](${SITE_URL}/): every effect running live, with copy-prompt chips`,
+    `- [Docs](${SITE_URL}/docs.html): install, initialisation process, per-effect reference`,
+    "",
+    "## Data",
+    "",
+    `- [prompts.json](${SITE_URL}/prompts.json): full machine-readable catalogue (${payload.count} prompts, ${payload.categories.length} categories)`,
+    "",
+    "## Library",
+    "",
+    "- [npm](https://www.npmjs.com/package/@cosmictraveler002/anim-kit): @cosmictraveler002/anim-kit",
+    "- [Package README](https://github.com/Cosmictraveler002/Ani-Kit/blob/main/anim-kit/README.md): complete API reference, options tables, effect taxonomy",
+    "- [GitHub](https://github.com/Cosmictraveler002/Ani-Kit): source repository",
+    "",
+  ].join("\n");
   return files;
 }
 

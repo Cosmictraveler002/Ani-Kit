@@ -1175,11 +1175,14 @@ Two trees share that wiring:
 - **`demo_live/`** (`npm run sync:live` regenerates it from `demo/`) — a
   deploy-anywhere copy: the **version-pinned CDN** import map and stylesheet
   (jsdelivr `@<version>` for the package, `gsap@3.15.0`, `lenis@1.3.26` —
-  the exact URLs the prompts teach), relative internal links, and a generated
-  `prompts.json`, so the dock and docs run on any static host with no Node
-  server (`/api/prompts` first, `prompts.json` fallback). Upload the folder
-  as-is (GitHub Pages, Netlify, S3). `demo-smoke` re-runs the generator and
-  fails if the folder goes stale or a pin stops matching the release version.
+  the exact URLs the prompts teach), relative internal links, a generated
+  `prompts.json`, and agent crawler files (`robots.txt`, `sitemap.xml`,
+  `llms.txt` with absolute URLs from `SITE_URL`), so the dock and docs run on
+  any static host with no Node server (`/api/prompts` first, `prompts.json`
+  fallback) and agents reach the full catalogue in one fetch instead of
+  scraping HTML. Upload the folder as-is (Vercel, GitHub Pages, Netlify, S3).
+  `demo-smoke` re-runs the generator and fails if the folder goes stale or a
+  pin stops matching the release version.
 
 ### Copy-prompt API
 

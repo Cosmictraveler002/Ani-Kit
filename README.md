@@ -239,8 +239,9 @@ effect's markup/options/boilerplate, category navigation):
 [`anim-kit/demo/docs.html`](anim-kit/demo/docs.html) — served by `npm run demo`
 → <http://localhost:4321/demo/docs.html>, linked as **Docs** in the demo nav.
 A static-host-ready copy of both pages lives in
-[`anim-kit/demo_live/`](anim-kit/demo_live/) — fixed CDN pins plus a generated
-`prompts.json`, no server required (regenerate from `demo/` with
+[`anim-kit/demo_live/`](anim-kit/demo_live/) — fixed CDN pins, a generated
+`prompts.json`, and agent crawler files (`robots.txt` / `sitemap.xml` /
+`llms.txt`), no server required (regenerate from `demo/` with
 `npm run sync:live`).
 
 ---
