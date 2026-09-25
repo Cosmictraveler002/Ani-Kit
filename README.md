@@ -18,7 +18,7 @@
 | Runtime dependencies | exactly two: `gsap`, `lenis` — never add more without a deliberate decision                    |
 | Build                | `tsc` → per-file ESM + declarations; CSS copied verbatim; `tsup` → one standalone CDN bundle   |
 | Tests                | `npm test` in `anim-kit/` (build + unit smoke + demo wiring smoke)                             |
-| Demo                 | `npm run demo` → <http://localhost:4321/demo/>                                                 |
+| Demo                 | `npm run demo` → <http://localhost:4321/demo/> · CDN-wired twin: `/demo/anim_kit_live.html`     |
 | CI / Release         | [`.github/workflows/`](.github/workflows/) — build+test on push/PR; tag `v*` publishes to npm  |
 | License              | MIT — [`anim-kit/LICENSE`](anim-kit/LICENSE)                                                   |
 

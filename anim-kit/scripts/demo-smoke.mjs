@@ -264,6 +264,27 @@ assert.ok(docsHtml.includes("/demo/docs.js"), "docs.html must load docs.js");
 assert.ok(docsJs.includes("/api/prompts"), "docs.js must render from /api/prompts");
 assert.ok(docsJs.includes("#cat-") && docsJs.includes("#fx-"), "docs.js must build category + effect sections");
 console.log(`ok  docs page ships from the payload, all pins @${payload.version}`);
+
+// demo/anim_kit_live.html = demo/index.html rewired to the version-pinned CDN
+// build (the path visitors actually copy). The two must stay mechanically
+// identical apart from title/comment, stylesheet link and import map —
+// otherwise the live page silently stops exercising the CDN wiring.
+const liveHtml = readFileSync(path.join(root, "demo", "anim_kit_live.html"), "utf8");
+const cdnWire = (s) =>
+  s
+    .replace(/\r\n/g, "\n")
+    .replace(/<script type="importmap">[\s\S]*?<\/script>/, "<!--importmap-->")
+    .replace(/<link rel="stylesheet" href="[^"]*anim-kit\.css" \/>/, "<!--stylesheet-->")
+    .replace(/<title>[^<]*<\/title>/, "<title>…</title>")
+    .replace(/ *<!-- Live demo:.*?-->\n/s, "");
+assert.equal(cdnWire(liveHtml), cdnWire(html), "anim_kit_live.html must mirror index.html apart from CDN wiring");
+assert.ok(
+  liveHtml.includes(`anim-kit@${payload.version}/dist/index.js`) &&
+    liveHtml.includes(`anim-kit@${payload.version}/dist/styles/anim-kit.css`),
+  `live demo must pin the CDN build at @${payload.version}`,
+);
+assert.ok(!liveHtml.includes('"/dist/index.js"'), "live demo must not fall back to the local bundle");
+console.log("ok  anim_kit_live.html mirrors index.html on the pinned CDN build");
 // chips were injected next to each labelled section.
 assert.ok(doc.querySelectorAll("[data-copy-prompt]").length >= pageEffects.length,
   "copy-prompt chips should be injected for every data-effect");
