@@ -1,5 +1,5 @@
 /**
- * anim-kit — modular animation library extracted from dzinrstudio.com.
+ * anim-kit — modular animation library by kalakritico.in.
  *
  * Core:
  *   smoothScroll()   Lenis + ScrollTrigger bridge (lerp 0.08)

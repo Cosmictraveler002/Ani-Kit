@@ -1,7 +1,7 @@
 # anim-kit
 
-A modular, framework-agnostic animation library extracted from
-[dzinrstudio.com](https://dzinrstudio.com/) — GSAP + ScrollTrigger + Lenis
+A modular, framework-agnostic animation library by
+[kalakritico.in](https://kalakritico.in/) — GSAP + ScrollTrigger + Lenis
 effects packaged as independent ES modules.
 
 TypeScript source → compiled ESM + `.d.ts` output. No framework, no virtual DOM,
@@ -1126,6 +1126,7 @@ destroy on teardown. Route changes and HMR are why `destroy()` exists.
 ```bash
 npm run build     # tsc → dist/ (ESM + .d.ts) + CSS copy + tsup standalone bundle
 npm run demo      # static server on http://localhost:4321/demo/
+npm run sync:live # regenerate demo_live/ (static deploy) from demo/
 npm test          # build + unit smoke + demo integration smoke
 npm run smoke     # both smokes (expects dist/ to exist)
 npm run typecheck # tsc --noEmit (what CI runs)
@@ -1136,18 +1137,19 @@ The demo page wires the whole effect set against one document —
 an on-page *copy prompt* chip (the demo smoke enforces the two-way mapping).
 (`split()` is exercised by the unit smoke instead.)
 
-Two pages share that wiring:
+Two trees share that wiring:
 
-- **`demo/index.html`** (default — `npm run demo` → `/demo/`) — import map on
-  local files (`/node_modules/...`, `/dist/index.js`): fast iteration, works
-  offline, and the page `demo-smoke` drives.
-- **`demo/anim_kit_live.html`** (`/demo/anim_kit_live.html`) — byte-for-byte
-  the same page wired to the **version-pinned CDN** (jsdelivr `@<version>` for
-  the package, `gsap@3.15.0`, `lenis@1.3.26`): the exact path visitors copy
-  from the prompts and docs, so CDN wiring gets the same manual QA as the
-  local build. `demo-smoke` fails if the two files drift apart or the pin
-  stops matching the release version, and the page only loads once that
-  version is published to npm.
+- **`demo/`** (default — `npm run demo` → `/demo/`) — import map on local
+  files (`/node_modules/...`, `/dist/index.js`): fast iteration, works
+  offline, and the pages `demo-smoke` drives.
+- **`demo_live/`** (`npm run sync:live` regenerates it from `demo/`) — a
+  deploy-anywhere copy: the **version-pinned CDN** import map and stylesheet
+  (jsdelivr `@<version>` for the package, `gsap@3.15.0`, `lenis@1.3.26` —
+  the exact URLs the prompts teach), relative internal links, and a generated
+  `prompts.json`, so the dock and docs run on any static host with no Node
+  server (`/api/prompts` first, `prompts.json` fallback). Upload the folder
+  as-is (GitHub Pages, Netlify, S3). `demo-smoke` re-runs the generator and
+  fails if the folder goes stale or a pin stops matching the release version.
 
 ### Copy-prompt API
 
@@ -1250,8 +1252,7 @@ Each effect is an independent module — if you only need the marquee, import
 
 ## Credits
 
-Effects extracted and reimplemented from the animation patterns of
-[dzinrstudio.com](https://dzinrstudio.com/). Built on
+Effects by [kalakritico.in](https://kalakritico.in/). Built on
 [GSAP](https://gsap.com/) (free plugins only) and
 [Lenis](https://lenis.darkroom.engineering/).
 

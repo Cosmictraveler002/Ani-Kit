@@ -18,7 +18,7 @@
 | Runtime dependencies | exactly two: `gsap`, `lenis` — never add more without a deliberate decision                    |
 | Build                | `tsc` → per-file ESM + declarations; CSS copied verbatim; `tsup` → one standalone CDN bundle   |
 | Tests                | `npm test` in `anim-kit/` (build + unit smoke + demo wiring smoke)                             |
-| Demo                 | `npm run demo` → <http://localhost:4321/demo/> · CDN-wired twin: `/demo/anim_kit_live.html`     |
+| Demo                 | `npm run demo` → <http://localhost:4321/demo/> · deployable copy: `/demo_live/` (CDN, static)     |
 | CI / Release         | [`.github/workflows/`](.github/workflows/) — build+test on push/PR; tag `v*` publishes to npm  |
 | License              | MIT — [`anim-kit/LICENSE`](anim-kit/LICENSE)                                                   |
 
@@ -207,9 +207,13 @@ Interactive developer docs site (install, initialisation process, every
 effect's markup/options/boilerplate, category navigation):
 [`anim-kit/demo/docs.html`](anim-kit/demo/docs.html) — served by `npm run demo`
 → <http://localhost:4321/demo/docs.html>, linked as **Docs** in the demo nav.
+A static-host-ready copy of both pages lives in
+[`anim-kit/demo_live/`](anim-kit/demo_live/) — fixed CDN pins plus a generated
+`prompts.json`, no server required (regenerate from `demo/` with
+`npm run sync:live`).
 
 ---
 
-Effects re-implemented from the patterns of [dzinrstudio.com](https://dzinrstudio.com/).
+Effects by [kalakritico.in](https://kalakritico.in/).
 Built on [GSAP](https://gsap.com/) (free plugins only) and [Lenis](https://lenis.darkroom.engineering/).
 MIT © Kalakriti.

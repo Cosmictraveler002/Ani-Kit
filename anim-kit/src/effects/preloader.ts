@@ -1,5 +1,5 @@
 /**
- * Preloader — the full-screen intro from dzinrstudio.com.
+ * Preloader — the full-screen intro from kalakritico.in.
  *
  * What it does on the real site:
  *   1. A big number counts 0 → 100 in the bottom-left corner (steps of 5,

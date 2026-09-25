@@ -16,7 +16,7 @@ import type { TargetLike } from "./types.js";
 
 export { gsap, ScrollTrigger, SplitText, Draggable, CustomEase, ScrollSmoother, Flip };
 
-/** Named eases recovered from dzinrstudio.com's bundles. */
+/** Named eases from kalakritico.in's bundles. */
 export const EASES = {
   /** `.76,0,.2,1` — the studio's signature menu / nav curtain ease. */
   curtain: "ak-curtain",

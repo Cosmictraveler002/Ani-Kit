@@ -10,7 +10,7 @@
  * clocks on the same frame, which is what stops ScrollTrigger from stuttering.
  *
  * `useScrollerProxy: true` additionally proxies `document.documentElement`,
- * matching dzinrstudio.com's setup — only needed if you scroll a nested
+ * matching kalakritico.in's setup — only needed if you scroll a nested
  * element instead of the window.
  */
 import Lenis from "lenis";

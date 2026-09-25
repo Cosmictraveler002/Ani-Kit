@@ -42,6 +42,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",
     "demo": "node scripts/serve.mjs",
+    "sync:live": "node scripts/sync-demo-live.mjs",
     "test": "npm run build && node scripts/smoke.mjs && node scripts/demo-smoke.mjs",
     "smoke": "node scripts/smoke.mjs && node scripts/demo-smoke.mjs",
     "prepublishOnly": "npm run build && npm run smoke"
