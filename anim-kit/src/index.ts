@@ -28,11 +28,13 @@
  *
  * Text extras:
  *   scrambleText()   decode / cipher reveal per character
+ *   flipWords()      words that glide between two layouts (FLIP)
  *
  * Micro-interactions:
  *   liquidButton()   SVG wave flood on hover
  *   underlineLink()  underline wipe on hover
  *   cursorFollower() spring-follow cursor tag
+ *   magnetic()       elements that pull toward the pointer and spring back
  *   counter()        tabular number ticker (timed or scroll-progress)
  *   audioBars()      equaliser visualiser
  *   themeReveal()    View Transitions circular wipe
@@ -61,7 +63,7 @@ export { unfoldReveal } from "./effects/unfold-reveal.js";
 export type { UnfoldRevealOptions } from "./effects/unfold-reveal.js";
 
 export { clipWipe } from "./effects/clip-wipe.js";
-export type { ClipWipeOptions } from "./effects/clip-wipe.js";
+export type { ClipWipeOptions, ClipWipeFrom } from "./effects/clip-wipe.js";
 
 export { parallax } from "./effects/parallax.js";
 export type { ParallaxOptions } from "./effects/parallax.js";
@@ -101,12 +103,18 @@ export type { DragStripOptions } from "./effects/drag-strip.js";
 export { scrambleText } from "./effects/scramble-text.js";
 export type { ScrambleTextOptions } from "./effects/scramble-text.js";
 
+export { flipWords } from "./effects/flip-words.js";
+export type { FlipWordsOptions } from "./effects/flip-words.js";
+
 /* ---- micro-interactions ---- */
 export { liquidButton, underlineLink } from "./effects/liquid-button.js";
 export type { LiquidButtonOptions } from "./effects/liquid-button.js";
 
 export { cursorFollower } from "./effects/cursor-follower.js";
 export type { CursorFollowerOptions } from "./effects/cursor-follower.js";
+
+export { magnetic } from "./effects/magnetic.js";
+export type { MagneticOptions } from "./effects/magnetic.js";
 
 export { counter, audioBars } from "./effects/counter.js";
 export type { CounterOptions, AudioBarsOptions, AudioBarsHandle } from "./effects/counter.js";

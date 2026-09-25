@@ -10,10 +10,11 @@ import { SplitText } from "gsap/SplitText";
 import { Draggable } from "gsap/Draggable";
 import { CustomEase } from "gsap/CustomEase";
 import { ScrollSmoother } from "gsap/ScrollSmoother";
+import { Flip } from "gsap/Flip";
 import { toArray } from "./util.js";
 import type { TargetLike } from "./types.js";
 
-export { gsap, ScrollTrigger, SplitText, Draggable, CustomEase, ScrollSmoother };
+export { gsap, ScrollTrigger, SplitText, Draggable, CustomEase, ScrollSmoother, Flip };
 
 /** Named eases recovered from dzinrstudio.com's bundles. */
 export const EASES = {
@@ -34,7 +35,7 @@ export function initGSAP(): void {
   if (initted || typeof window === "undefined") return;
   initted = true;
 
-  gsap.registerPlugin(ScrollTrigger, SplitText, Draggable, CustomEase);
+  gsap.registerPlugin(ScrollTrigger, SplitText, Draggable, CustomEase, Flip);
 
   // ScrollSmoother is a bonus for people who prefer it over Lenis; it is only
   // registered so `ScrollSmoother.create()` works if you call it yourself.

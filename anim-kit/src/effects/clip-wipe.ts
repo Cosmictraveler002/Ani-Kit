@@ -1,14 +1,18 @@
 /**
  * Clip wipe — a `clip-path: inset()` reveal.
  *
- * The element is collapsed behind one edge (or inside a frame margin) and
- * the inset animates to zero, wiping it into view:
+ * The element is collapsed behind one edge, corner (or inside a frame margin)
+ * and the inset animates to zero, wiping it into view:
  *
- *   from: "left"   inset(0 100% 0 0)   → grows rightward from the left edge
- *   from: "right"  inset(0 0 0 100%)   → grows leftward from the right edge
- *   from: "top"    inset(0 0 100% 0)   → grows downward from the top edge
- *   from: "bottom" inset(100% 0 0 0)   → grows upward from the bottom edge
- *   from: "frame"  inset(15% 15% 15% 15%) → opens out of a centered frame
+ *   from: "left"         inset(0 100% 0 0)   → grows rightward from the left edge
+ *   from: "right"        inset(0 0 0 100%)   → grows leftward from the right edge
+ *   from: "top"          inset(0 0 100% 0)   → grows downward from the top edge
+ *   from: "bottom"       inset(100% 0 0 0)   → grows upward from the bottom edge
+ *   from: "top-left"     inset(0 100% 100% 0)   → opens toward the bottom-right corner
+ *   from: "top-right"    inset(0 0 100% 100%)   → opens toward the bottom-left corner
+ *   from: "bottom-left"  inset(100% 100% 0 0)   → opens toward the top-right corner
+ *   from: "bottom-right" inset(100% 0 0 100%)   → opens toward the top-left corner
+ *   from: "frame"        inset(15% 15% 15% 15%) → opens out of a centered frame
  *
  * The wipe can also be bound to scroll progress (`scrub`), so the inset
  * opens as the element travels through the viewport — the reveal then
@@ -22,9 +26,20 @@ import { guard } from "../core/guard.js";
 import { toArray } from "../core/util.js";
 import type { CommonOptions, Destroy, TargetLike } from "../core/types.js";
 
+export type ClipWipeFrom =
+  | "left"
+  | "right"
+  | "top"
+  | "bottom"
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right"
+  | "frame";
+
 export interface ClipWipeOptions extends CommonOptions {
-  /** Which edge the wipe starts from. @default "left" */
-  from?: "left" | "right" | "top" | "bottom" | "frame";
+  /** Which edge or corner the wipe starts from. @default "left" */
+  from?: ClipWipeFrom;
   /** Frame margin in % (only used when `from: "frame"`). @default 15 */
   inset?: number;
   /** Animation duration, seconds. @default 1 */
@@ -55,6 +70,10 @@ const FROM: Record<string, string> = {
   right: "inset(0% 0% 0% 100%)",
   top: "inset(0% 0% 100% 0%)",
   bottom: "inset(100% 0% 0% 0%)",
+  "top-left": "inset(0% 100% 100% 0%)",
+  "top-right": "inset(0% 0% 100% 100%)",
+  "bottom-left": "inset(100% 100% 0% 0%)",
+  "bottom-right": "inset(100% 0% 0% 100%)",
 };
 const TO = "inset(0% 0% 0% 0%)";
 

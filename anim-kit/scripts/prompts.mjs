@@ -14,7 +14,7 @@ const PREAMBLE = (title, summary) => `Implement the "${title}" effect in my proj
 
 ${summary}
 
-anim-kit is a framework-agnostic ESM animation library (TypeScript source, compiled to \`dist/\` JS + \`.d.ts\`) built on GSAP (ScrollTrigger, SplitText, Draggable, CustomEase) and Lenis. It works with plain HTML and with React/Vue/Next/Svelte — effects are DOM-selector based, no components involved. Every effect follows one contract:
+anim-kit is a framework-agnostic ESM animation library (TypeScript source, compiled to \`dist/\` JS + \`.d.ts\`) built on GSAP (ScrollTrigger, SplitText, Draggable, CustomEase, Flip) and Lenis. It works with plain HTML and with React/Vue/Next/Svelte — effects are DOM-selector based, no components involved. Every effect follows one contract:
 
     effect(target, options) => destroy
 
@@ -44,7 +44,7 @@ needed (component unmount, route change, HMR reload):
 `;
 
 /** Version-pinned CDN release that every prompt's procedure points at. */
-const CDN_VERSION = "1.1.0";
+const CDN_VERSION = "1.2.0";
 
 /** Indent every line of a snippet (for nesting it inside the example file). */
 const indent = (text, spaces) =>
@@ -133,6 +133,7 @@ pinned to \`@${CDN_VERSION}\`):
         "gsap/SplitText": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/SplitText.js",
         "gsap/Draggable": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/Draggable.js",
         "gsap/CustomEase": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/CustomEase.js",
+        "gsap/Flip": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/Flip.js",
         "gsap/ScrollSmoother": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollSmoother.js",
         "lenis": "https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.mjs"
       }
@@ -155,7 +156,8 @@ pinned to \`@${CDN_VERSION}\`):
 
 - \`gsap\` + \`ScrollTrigger\` drive every tween, scrub and trigger;
   \`SplitText\` powers the masked text splits; \`Draggable\` powers the drag
-  carousels; \`CustomEase\` registers the studio eases exported as \`EASES\`.
+  carousels; \`Flip\` powers the layout transfers; \`CustomEase\` registers
+  the studio eases exported as \`EASES\`.
 - \`lenis\` powers \`smoothScroll()\` — create it **first** so ScrollTrigger
   syncs with its scroller.
 - The stylesheet ships resting states, mask classes and the pure-CSS pieces
@@ -191,13 +193,14 @@ export const TAXONOMY = [
   {
     id: "text",
     name: "Text animations",
-    blurb: "Typography reveals — lines, characters, decoding, rolling words, numbers.",
+    blurb: "Typography reveals — lines, characters, decoding, rolling words, numbers, layout transfers.",
     subcategories: [
       { id: "reveals", name: "Line & mask reveals", effects: ["lineReveal", "maskReveal"] },
       { id: "scatter", name: "Per-character scatter", effects: ["scatterText"] },
       { id: "decode", name: "Decode & scramble", effects: ["scrambleText"] },
       { id: "rolls", name: "Rolling text", effects: ["rollText"] },
       { id: "counters", name: "Counters", effects: ["counter"] },
+      { id: "transfer", name: "Layout transfers", effects: ["flipWords"] },
     ],
   },
   {
@@ -224,10 +227,11 @@ export const TAXONOMY = [
   {
     id: "buttons",
     name: "Buttons & links",
-    blurb: "Interactive affordances — hover fills, underlines.",
+    blurb: "Interactive affordances — hover fills, underlines, magnetic pulls.",
     subcategories: [
       { id: "fills", name: "Liquid fills", effects: ["liquidButton"] },
       { id: "underlines", name: "Underlines", effects: ["underlineLink"] },
+      { id: "magnetic", name: "Magnetic hover", effects: ["magnetic"] },
     ],
   },
   {
@@ -586,11 +590,14 @@ const destroy = clipWipe("[data-clip]", { from: "left" });
 // Open out of a centered frame (inset 15%):
 clipWipe("[data-clip-frame]", { from: "frame", inset: 15, duration: 1.2 });
 
+// Out of a corner — diagonal growth toward the opposite corner:
+clipWipe("[data-clip-corner]", { from: "bottom-right", duration: 1.1 });
+
 // Scroll-bound: the inset opens as the element travels through the
 // viewport — and closes again when you scroll back up:
 clipWipe("[data-clip-scrub]", { from: "frame", inset: 8, scrub: 0.5, start: "top bottom", end: "top 20%" });`,
     options: [
-      ["from", "`'left'`", "`'left'` / `'right'` / `'top'` / `'bottom'` edge, or `'frame'`."],
+      ["from", "`'left'`", "`'left'` / `'right'` / `'top'` / `'bottom'` edge, a corner (`'top-left'` / `'top-right'` / `'bottom-left'` / `'bottom-right'`), or `'frame'`."],
       ["inset", "`15`", "Frame margin in % (`from: 'frame'` only)."],
       ["duration", "`1`", "Seconds."],
       ["ease", "`'power3.out'`", "GSAP ease name."],
@@ -605,7 +612,7 @@ clipWipe("[data-clip-scrub]", { from: "frame", inset: 8, scrub: 0.5, start: "top
     ],
     notes: [
       "Works on images, video, blocks and text — anything with a box.",
-      "`from: 'left'` starts at `inset(0 100% 0 0)` and animates to `inset(0 0% 0 0%)`; the other edges mirror it.",
+      "`from: 'left'` starts at `inset(0 100% 0 0)` and animates to `inset(0 0% 0 0%)`; the other edges mirror it, and corners start collapsed into their own corner (e.g. `from: 'bottom-right'` starts at `inset(100% 0 0 100%)` and opens toward the top-left).",
       "With `scrub` set, the wipe tracks scroll progress from `start` to `end` and reverses when you scroll back — `duration` no longer applies.",
       "`destroy()` kills the tween and removes the inline `clip-path`, restoring the authored (visible) state.",
     ],
@@ -977,6 +984,59 @@ rollText("[data-roll-rev]", { direction: "down" });`,
     ],
   },
   {
+    id: "flipWords",
+    title: "Flip word transfer (layout morph)",
+    summary:
+      "Words measured in one layout, moved into another and animated from where they stood — the FLIP technique: a column of words fans out into a row, driven by scroll progress or played once.",
+    imports: ["flipWords"],
+    markup: `<div class="flip-stage">
+  <div data-flip-from>
+    <span data-flip-word>Make</span>
+    <span data-flip-word>it</span>
+    <span data-flip-word>move.</span>
+  </div>
+  <div data-flip-to></div>
+</div>
+
+<style>
+  /* Both blocks share one grid cell — the stage never reflows mid-flight. */
+  .flip-stage { display: grid; }
+  .flip-stage > [data-flip-from],
+  .flip-stage > [data-flip-to] { grid-area: 1 / 1; min-height: 40vh; }
+  [data-flip-from] { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 0.06em; }
+  [data-flip-to]   { display: flex; justify-content: space-between; align-items: center; }
+  .flip-stage span { font-size: clamp(40px, 7vw, 110px); font-weight: 600; line-height: 1; }
+</style>`,
+    usage: `// Scroll drives the transfer — scrubbing back up reverses it:
+const destroy = flipWords("[data-flip-from]", {
+  to: "[data-flip-to]",  // destination block — every word lands here
+  scrub: 0.6,
+});
+
+// Or play once on enter (reverses on leave-back), or immediately:
+// flipWords("[data-flip-from]", { to: "[data-flip-to]", mode: "scroll" });
+// flipWords("[data-flip-from]", { to: "[data-flip-to]", mode: "immediate" });`,
+    options: [
+      ["to", "— (required)", "Destination block — every word is moved into it."],
+      ["words", "source children", "The word elements: `[data-flip-word]` matches, else the source's element children."],
+      ["duration", "`1.4`", "Seconds for one word's travel."],
+      ["ease", "`'power4.inOut'`", "GSAP ease."],
+      ["stagger", "`0.2`", "Seconds between word starts."],
+      ["scale", "`0.2`", "Mid-flight squash each word pops through (0 disables)."],
+      ["mode", "`'scroll'`", "`'scroll'` plays on enter (reverses on leave-back); `'immediate'` plays now."],
+      ["scrub", "unset", "number = scrub smoothing seconds, `true` = immediate: tie the transfer to scroll progress instead of playing on enter."],
+      ["start / end", "`'top 75%'` / `'bottom 45%'`", "ScrollTrigger positions (`end` applies to scrub mode)."],
+      ["force", "`false`", "Run even under `prefers-reduced-motion`."],
+    ],
+    notes: [
+      "Both blocks should share one grid cell (`grid-area: 1 / 1`) so reparenting never reflows the page — see the markup.",
+      "The words are moved into the destination up front but rendered at their source positions until the timeline runs, so a scrubbed transfer reverses perfectly with no layout jump.",
+      "The scale accents assume source and destination words are the same size (the usual layout morph); pass `scale: 0` if the sizes differ.",
+      "`destroy()` kills the timeline, puts every word back in its original parent (original order) and restores the inline transform.",
+      "Reduced motion never moves the words — they stay visible in the source block.",
+    ],
+  },
+  {
     id: "dragStrip",
     title: "Infinite drag strip",
     summary:
@@ -1055,6 +1115,38 @@ liquidButton('[data-liquid][data-dir="down"]', { direction: "down" });`,
     notes: [
       "Pure CSS under the hood — the helper just adds/removes the `.ak-underline` class whose `::after` does the sweep.",
       "`destroy()` removes the class again.",
+    ],
+  },
+  {
+    id: "magnetic",
+    title: "Magnetic hover buttons",
+    summary:
+      "Buttons and links that lean toward the pointer while hovered — following a fraction of the pull with a tilt — then spring back to rest with an elastic snap on leave.",
+    imports: ["magnetic"],
+    markup: `<button class="pill" data-magnet>Book a call</button>
+<button class="pill" data-magnet>Say hello</button>
+
+<style>
+  .pill { padding: 12px 24px; border: 0; border-radius: 999px; font: inherit; cursor: pointer; }
+</style>`,
+    usage: `const destroy = magnetic("[data-magnet]", {
+  strength: 0.5,   // follow half the pointer offset
+  rotation: 10,    // tilt up to 10° at full pull
+  scale: 1.04,     // grow slightly while pulled
+});`,
+    options: [
+      ["strength", "`0.4`", "How far the element follows the pointer — fraction of its own box."],
+      ["rotation", "`8`", "Max tilt in degrees at full pull (0 disables rotation)."],
+      ["scale", "`1`", "Scale held while the pointer is over the element (1 = none)."],
+      ["duration", "`1.2`", "Spring-back duration, seconds."],
+      ["ease", "`'elastic.out(1, 0.35)'`", "Spring-back ease."],
+      ["force", "`false`", "Run even under `prefers-reduced-motion`."],
+    ],
+    notes: [
+      "Pass a list (selector, array, NodeList) — each element gets its own listeners and its own pull.",
+      "Keep CSS transitions off `transform` for magnetic elements — GSAP animates transform directly and the two fight.",
+      "Pairs well with `cursor: none` zones and `underlineLink` for a fully pointer-driven feel.",
+      "`destroy()` removes the listeners, kills in-flight tweens and restores the inline transform.",
     ],
   },
   {

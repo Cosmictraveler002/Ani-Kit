@@ -78,7 +78,7 @@ inside the published tarball):
 
 | Specifier | Resolves to | Use for |
 |---|---|---|
-| `@cosmictraveler002/anim-kit` | `dist/index.js` + `dist/index.d.ts` | the full barrel — 43 exports |
+| `@cosmictraveler002/anim-kit` | `dist/index.js` + `dist/index.d.ts` | the full barrel — 45 exports |
 | `@cosmictraveler002/anim-kit/effects/<name>` | `dist/effects/<name>.js` + `.d.ts` | one effect in isolation (`marquee`, `lineReveal`, …) |
 | `@cosmictraveler002/anim-kit/standalone` | `dist/anim-kit.standalone.js` (types → `index.d.ts`) | the self-contained bundle — same API |
 | `@cosmictraveler002/anim-kit/styles` | `dist/styles/anim-kit.css` | untouched plain CSS |
@@ -97,7 +97,7 @@ resolves declarations through the same map — no `typesVersions` shim needed.
 
 No build step on the consumer's end: `dist/` is served as-is from the npm
 tarball by any npm CDN. Every URL is **version-pinned** — npm versions are
-immutable, so `@cosmictraveler002/anim-kit@1.1.0` always resolves to exactly that build, forever
+immutable, so `@cosmictraveler002/anim-kit@1.2.0` always resolves to exactly that build, forever
 (only a new version creates a new URL; nothing floats unless you ask for a
 range).
 
@@ -108,12 +108,12 @@ plugins anim-kit uses) and `lenis` **inlined** — no import map, one URL, works
 identically on jsDelivr and unpkg:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.1.0/dist/styles/anim-kit.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.2.0/dist/styles/anim-kit.css" />
 
 <script type="module">
   import {
     smoothScroll, lineReveal, marquee,
-  } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.1.0/dist/anim-kit.standalone.js";
+  } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.2.0/dist/anim-kit.standalone.js";
 
   smoothScroll();
   lineReveal("[data-lines]", { mode: "scroll" });
@@ -121,7 +121,7 @@ identically on jsDelivr and unpkg:
 </script>
 ```
 
-unpkg serves the same file: `https://unpkg.com/@cosmictraveler002/anim-kit@1.1.0/dist/anim-kit.standalone.js`
+unpkg serves the same file: `https://unpkg.com/@cosmictraveler002/anim-kit@1.2.0/dist/anim-kit.standalone.js`
 
 ### Option 2 — jsDelivr `+esm`
 
@@ -130,7 +130,7 @@ per version):
 
 ```html
 <script type="module">
-  import { lineReveal } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.1.0/+esm";
+  import { lineReveal } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.2.0/+esm";
 </script>
 ```
 
@@ -142,17 +142,18 @@ locally, with CDN URLs — and the way to share one GSAP between anim-kit and
 the rest of your page:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.1.0/dist/styles/anim-kit.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.2.0/dist/styles/anim-kit.css" />
 
 <script type="importmap">
   {
     "imports": {
-      "@cosmictraveler002/anim-kit": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.1.0/dist/index.js",
+      "@cosmictraveler002/anim-kit": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.2.0/dist/index.js",
       "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/index.js",
       "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollTrigger.js",
       "gsap/SplitText": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/SplitText.js",
       "gsap/Draggable": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/Draggable.js",
       "gsap/CustomEase": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/CustomEase.js",
+      "gsap/Flip": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/Flip.js",
       "gsap/ScrollSmoother": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollSmoother.js",
       "lenis": "https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.mjs"
     }
@@ -166,7 +167,7 @@ the rest of your page:
 </script>
 ```
 
-Swap the host for unpkg (`https://unpkg.com/@cosmictraveler002/anim-kit@1.1.0/dist/index.js`, …) —
+Swap the host for unpkg (`https://unpkg.com/@cosmictraveler002/anim-kit@1.2.0/dist/index.js`, …) —
 the file layout is identical. GSAP subpaths are listed one by one because
 import maps match specifiers literally: a trailing-slash prefix map would
 produce extension-less URLs, which CDNs don't serve. The `gsap`/`lenis` pins
@@ -281,6 +282,7 @@ prompt dock, and backs the `category` / `subcategory` fields on
 | Text animations | Decode & scramble | `scrambleText` |
 | Text animations | Rolling text | `rollText` |
 | Text animations | Counters | `counter` |
+| Text animations | Layout transfers | `flipWords` |
 | Scroll & media | Pinned galleries | `horizontalScroll`, `stackedCards`, `stackedCardsPinned` |
 | Scroll & media | Parallax & depth | `parallax` |
 | Scroll & media | Heroes & media | `heroShrink`, `mediaSettle` |
@@ -290,6 +292,7 @@ prompt dock, and backs the `category` / `subcategory` fields on
 | Loops & marquees | Equalizers | `audioBars` |
 | Buttons & links | Liquid fills | `liquidButton` |
 | Buttons & links | Underlines | `underlineLink` |
+| Buttons & links | Magnetic hover | `magnetic` |
 | Navigation & overlays | Menus & nav | `navHide`, `menuOverlay` |
 | Navigation & overlays | Cursors | `cursorFollower` |
 | Intros & transitions | Preloaders | `preloader` |
@@ -310,7 +313,7 @@ that does not exist.
 #### `initGSAP()`
 
 Registers the plugins anim-kit relies on (`ScrollTrigger`, `SplitText`,
-`Draggable`, `CustomEase`, `ScrollSmoother`) and the studio's custom eases.
+`Draggable`, `CustomEase`, `Flip`, `ScrollSmoother`) and the studio's custom eases.
 Idempotent; called for you by every effect.
 
 #### `EASES`
@@ -349,7 +352,7 @@ Central reduced-motion gate. If the user prefers reduced motion and
 ### Text animations
 
 Typography in motion — masked lines, rising masks, per-character scatter,
-decode reveals, rolling words, tickers.
+decode reveals, rolling words, tickers, layout transfers.
 
 #### `lineReveal(target, options?) => destroy`
 
@@ -478,6 +481,39 @@ rollText("[data-roll-rev]", { direction: "down" }); // walk rows in reverse
 blocks itself. `destroy()` unwraps the rows, removes the clone and restores
 every inline style — markup comes back byte-identical.
 
+#### `flipWords(target, { to }, options?) => destroy`
+
+Words measured in one layout, moved into another and animated from where
+they stood — the FLIP technique: a column of words fans out into a row,
+driven by scroll progress or played once.
+
+```ts
+// Both blocks share one grid cell so the stage never reflows mid-flight:
+flipWords("[data-flip-from]", { to: "[data-flip-to]", scrub: 0.6 });
+
+// One-shot on enter (reverses on leave-back), or immediately:
+flipWords("[data-flip-from]", { to: "[data-flip-to]", mode: "scroll" });
+```
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `to` | — (required) | destination block; every word is moved into it |
+| `words` | source children | `[data-flip-word]` matches, else the source's element children |
+| `duration` | `1.4` | seconds for one word's travel |
+| `ease` | `"power4.inOut"` | GSAP ease |
+| `stagger` | `0.2` | seconds between word starts |
+| `scale` | `0.2` | mid-flight squash each word pops through (`0` disables) |
+| `mode` | `"scroll"` | or `"immediate"` to play at once |
+| `scrub` | unset | number = scrub smoothing seconds, `true` = immediate |
+| `start / end` | `"top 75%"` / `"bottom 45%"` | ScrollTrigger positions |
+
+**DOM:** put the source and destination blocks in the same grid cell
+(`grid-area: 1 / 1`, a `min-height` on both keeps the stage stable). The words
+live in the destination from init but render at their source positions until
+the timeline runs, so scrubbing reverses perfectly. `destroy()` kills the
+timeline, puts every word back in its original parent and restores the
+inline transform.
+
 #### `counter(target, options?) => destroy`
 
 Tabular number ticker.
@@ -545,18 +581,20 @@ as authored.
 
 #### `clipWipe(target, options?) => destroy`
 
-A `clip-path: inset()` reveal: the element is collapsed behind one edge (or
-inside a frame margin) and the inset animates to zero so it wipes into view.
+A `clip-path: inset()` reveal: the element is collapsed behind one edge,
+corner (or inside a frame margin) and the inset animates to zero so it wipes
+into view.
 
 ```ts
 clipWipe("[data-clip]", { from: "left" });                    // inset(0 100% 0 0) → 0
 clipWipe("[data-frame]", { from: "frame", inset: 12 });       // opens out of a frame
+clipWipe("[data-corner]", { from: "bottom-right" });          // opens toward the opposite corner
 clipWipe("[data-scrub]", { from: "frame", scrub: 0.5 });      // bound to scroll progress
 ```
 
 | Option | Default | Notes |
 | --- | --- | --- |
-| `from` | `"left"` | `"left"` / `"right"` / `"top"` / `"bottom"` / `"frame"` |
+| `from` | `"left"` | `"left"` / `"right"` / `"top"` / `"bottom"`, a corner (`"top-left"` / `"top-right"` / `"bottom-left"` / `"bottom-right"`), or `"frame"` |
 | `inset` | `15` | frame margin in % (`from: "frame"`) |
 | `duration` | `1` | seconds |
 | `ease` | `"power3.out"` | GSAP ease |
@@ -777,7 +815,7 @@ would rewrite `height` *after* teardown) and clears the inline height.
 
 ### Buttons & links
 
-Hover affordances for CTAs and inline links.
+Hover affordances for CTAs and inline links — fills, underlines, magnetic pulls.
 
 #### `liquidButton(target, options?) => destroy`
 
@@ -820,6 +858,29 @@ underlineLink("a.ak-underline");   // or any link list
 Pure CSS under the hood — it just adds/removes the `.ak-underline` class whose
 `::after` sweep is styled by the companion stylesheet, and `destroy()` removes
 the class again.
+
+#### `magnetic(target, options?) => destroy`
+
+Buttons and links that lean toward the pointer while hovered — following a
+fraction of the pull with a tilt — then spring back to rest with an elastic
+snap on leave.
+
+```ts
+magnetic("[data-magnet]", { strength: 0.5, rotation: 10, scale: 1.04 });
+```
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `strength` | `0.4` | how far the element follows the pointer — fraction of its own box |
+| `rotation` | `8` | max tilt in degrees at full pull (`0` disables) |
+| `scale` | `1` | scale held while the pointer is over the element (`1` = none) |
+| `duration` | `1.2` | spring-back duration, seconds |
+| `ease` | `"elastic.out(1, 0.35)"` | spring-back ease |
+
+**DOM:** pass a list (selector, array, NodeList) — each element gets its own
+listeners and its own pull. Keep CSS transitions off `transform` for magnetic
+elements (GSAP animates transform directly). `destroy()` removes the
+listeners, kills in-flight tweens and restores the inline transform.
 
 ---
 
@@ -1082,7 +1143,7 @@ curl http://localhost:4321/api/prompts/marquee  # one prompt, text/plain
 ```
 
 On the page, every labelled section carries a **copy prompt** chip, and the
-floating **⧉ prompts (27)** button at the bottom right opens the full
+floating **⧉ prompts (29)** button at the bottom right opens the full
 catalogue grouped by [effect category](#effect-categories) — one click copies
 an effect's prompt (the prompt states its category), *copy all* puts the
 entire set on the clipboard. The catalogue lives in `scripts/prompts.mjs`:
@@ -1093,11 +1154,11 @@ and slotting the effect into a subcategory.
 **Unit smoke** (`scripts/smoke.mjs`) runs the built bundle in **jsdom** and
 asserts:
 
-1. all 43 exports are present;
+1. all 45 exports are present;
 2. plugins (`ScrollTrigger`, `SplitText`, `Draggable`, `CustomEase`,
-   `ScrollSmoother`) and the 4 custom eases are registered;
+   `Flip`, `ScrollSmoother`) and the 4 custom eases are registered;
 3. every effect no-ops safely on missing targets;
-4. 22 effects mount on real markup and unmount cleanly;
+4. 24 effects mount on real markup and unmount cleanly;
 5. `preloader` ticks in both the positional and options-object call forms;
 6. `lineReveal` actually splits into masked lines (and per-character masks
    with `split: "chars"`) and restores markup on destroy;
@@ -1136,9 +1197,9 @@ anim-kit/
 │  │  ├─ guard.ts          reduced-motion gate
 │  │  ├─ util.ts           toArray/one/onReady/compose/raf
 │  │  └─ types.ts          TargetLike / Destroy / CommonOptions
-│  ├─ effects/             one file per effect (22 files, 26 effect functions)
+│  ├─ effects/             one file per effect (24 files, 28 effect functions)
 │  ├─ styles/anim-kit.css  companion stylesheet
-│  └─ index.ts             barrel — 43 exports
+│  └─ index.ts             barrel — 45 exports
 ├─ demo/                   visual demo (import map, no bundler)
 ├─ scripts/
 │  ├─ serve.mjs            static server + /api/prompts (:4321)

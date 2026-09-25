@@ -37,6 +37,9 @@ const { dom, window } = setupDom(
        <div data-backdrop></div>
        <div data-preloader><svg data-glyph></svg></div>
        <div data-menu><div class="menu-link"><a href="#">Home</a></div></div>
+       <button data-magnet>magnet</button>
+       <div data-flip-from><span data-flip-word>alpha</span><span data-flip-word>beta</span></div>
+       <div data-flip-to></div>
        <nav data-nav><p>brand</p></nav>
      </div>
    </body></html>`,
@@ -57,9 +60,9 @@ const expected = [
   // loops
   "marquee", "rollText", "dragStrip",
   // text extras
-  "scrambleText",
+  "scrambleText", "flipWords",
   // micro
-  "liquidButton", "underlineLink", "cursorFollower", "counter", "audioBars",
+  "liquidButton", "underlineLink", "cursorFollower", "magnetic", "counter", "audioBars",
   "themeReveal", "menuOverlay", "preloader",
 ];
 
@@ -79,7 +82,7 @@ assert.deepEqual(
 // GSAP plugins register under constructor names — minification must not mangle
 // them (would silently corrupt gsap.core.globals() in the CDN bundle).
 const standaloneGlobals = Object.keys(standalone.gsap.core.globals());
-for (const plugin of ["ScrollTrigger", "_SplitText", "Draggable", "CustomEase", "ScrollSmoother"]) {
+for (const plugin of ["ScrollTrigger", "_SplitText", "Draggable", "CustomEase", "ScrollSmoother", "Flip"]) {
   assert.ok(
     standaloneGlobals.includes(plugin),
     `standalone gsap must register ${plugin} under its real name (got: ${standaloneGlobals.join(", ")})`,
@@ -96,6 +99,7 @@ assert.ok(
   "SplitText must be registered",
 );
 assert.ok(globals.includes("Draggable"), "Draggable must be registered");
+assert.ok(globals.includes("Flip"), "Flip must be registered");
 assert.ok(lib.ScrollTrigger.version, "ScrollTrigger should be usable");
 assert.equal(typeof lib.SplitText.create, "function", "SplitText.create missing");
 assert.equal(typeof lib.CustomEase.get(lib.EASES.curtain), "function", "ak-curtain ease missing");
@@ -113,7 +117,7 @@ const factories = [
   "horizontalScroll", "stackedCards", "scatterText", "heroShrink", "mediaSettle",
   "navHide", "logoReveal", "marquee", "rollText", "dragStrip", "scrambleText",
   "liquidButton", "underlineLink",
-  "cursorFollower", "counter", "audioBars",
+  "cursorFollower", "counter", "audioBars", "magnetic", "flipWords",
 ];
 for (const name of factories) {
   const destroy = asDestroy(lib[name]("[data-nope]"));
@@ -158,6 +162,8 @@ const createDestroy = [
   ["liquidButton", ["[data-liquid]", { direction: "down", duration: 300 }]],
   ["underlineLink", ["a.ak-underline"]],
   ["cursorFollower", ["[data-showreel]", { follower: "[data-showreel] span" }]],
+  ["magnetic", ["[data-magnet]"]],
+  ["flipWords", ["[data-flip-from]", { to: "[data-flip-to]" }]],
   ["navHide", ["[data-nav]"]],
   ["dragStrip", ["[data-drag]"]],
   ["audioBars", ["[data-eq]", { interval: 50 }]],
@@ -174,6 +180,17 @@ for (const [name, args] of createDestroy) {
 console.log(`ok  ${createDestroy.length} effects mount and unmount`);
 hsHost.remove();
 scatterHost.remove();
+
+/* ---------------- flipWords: reparents at init, homes on destroy --------- */
+const flipDestroy = lib.flipWords("[data-flip-from]", { to: "[data-flip-to]" });
+const flipFrom = window.document.querySelector("[data-flip-from]");
+const flipTo = window.document.querySelector("[data-flip-to]");
+assert.equal(flipFrom.children.length, 0, "flipWords should move the words into the destination at init");
+assert.equal(flipTo.children.length, 2, "flipWords should reparent both words");
+flipDestroy();
+assert.equal(flipFrom.children.length, 2, "flipWords must put the words back in the source on destroy");
+assert.equal(flipTo.children.length, 0, "flipWords must empty the destination on destroy");
+console.log("ok  flipWords reparents words into the destination and homes them on destroy");
 
 /* ---------------- preloader: both call forms must actually mount ---------------- */
 // Regression guard: the positional form used to drop the target, silently

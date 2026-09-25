@@ -24,9 +24,11 @@ import {
   stackedCardsPinned,
   scatterText,
   dragStrip,
+  flipWords,
   liquidButton,
   underlineLink,
   cursorFollower,
+  magnetic,
   navHide,
   logoReveal,
   menuOverlay,
@@ -114,6 +116,9 @@ cleanups.push(scrambleText("[data-scramble]", { mode: "scroll" }));
 cleanups.push(rollText("[data-roll]", { interval: 2.4, duration: 0.6 }));
 cleanups.push(lineReveal("[data-chars-head]", { mode: "scroll", split: "chars", stagger: 0.03 }));
 
+// The column→row FLIP: scroll progress drives the transfer both ways.
+cleanups.push(flipWords("[data-flip-from]", { to: "[data-flip-to]", scrub: 0.6 }));
+
 /* ---------------------------------------------------------------- */
 /* Loops                                                              */
 /* ---------------------------------------------------------------- */
@@ -138,6 +143,8 @@ cleanups.push(unfoldReveal("[data-unfold]", { axis: "y", origin: "top" }));
 cleanups.push(unfoldReveal("[data-unfold-x]", { axis: "x", origin: "left", duration: 1.1 }));
 cleanups.push(clipWipe("[data-clip-left]", { from: "left", duration: 1.1 }));
 cleanups.push(clipWipe("[data-clip-frame]", { from: "frame", inset: 12 }));
+// Corner origin — wipes open toward the opposite corner.
+cleanups.push(clipWipe("[data-clip-corner]", { from: "bottom-right", duration: 1.1 }));
 // Scroll-bound wipe: opens as the figure travels through the viewport.
 cleanups.push(
   clipWipe("[data-clip-scrub]", {
@@ -198,6 +205,9 @@ cleanups.push(
 );
 
 cleanups.push(dragStrip("[data-drag]", { maxRotation: 60, rotationScale: 120 }));
+
+/* Magnetic buttons — pull toward the pointer, elastic snap back. */
+cleanups.push(magnetic("[data-magnet]", { strength: 0.5, rotation: 10, scale: 1.04 }));
 
 /* Equaliser */
 const eq = audioBars("[data-eq]", { minHeight: 3, maxHeight: 16, interval: 100 });
