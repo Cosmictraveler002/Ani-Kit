@@ -7,6 +7,7 @@
  *
  *   mediaSettle("[data-settle]", { from: 1.3 });            // on enter
  *   mediaSettle("[data-settle]", { scrub: 0.5 });           // scroll-bound
+ *   mediaSettle("[data-settle]", { replay: true });         // reverse on leave-back, replay on re-enter
  *
  * destroy() kills the tween and restores the original scale.
  */
@@ -34,6 +35,8 @@ export interface MediaSettleOptions extends CommonOptions {
   start?: string;
   /** ScrollTrigger end position (scrub mode). @default "bottom top" */
   end?: string;
+  /** Re-settle when leaving / re-entering the viewport (enter mode). @default false */
+  replay?: boolean;
   /**
    * Bind the settle to scroll progress instead of playing it on enter —
    * number = scrub smoothing seconds, `true` = immediate. unset = one-shot.
@@ -54,6 +57,7 @@ export function mediaSettle(target: TargetLike, options: MediaSettleOptions = {}
     mode = "scroll",
     start = "top 75%",
     end = "bottom top",
+    replay = false,
     scrub,
   } = options;
 
@@ -79,7 +83,9 @@ export function mediaSettle(target: TargetLike, options: MediaSettleOptions = {}
       vars.duration = duration;
       vars.ease = ease;
       if (mode === "scroll") {
-        vars.scrollTrigger = { trigger: els[0], start, once: true };
+        vars.scrollTrigger = replay
+          ? { trigger: els[0], start, toggleActions: "play reverse play reverse" }
+          : { trigger: els[0], start, once: true };
       }
     }
 

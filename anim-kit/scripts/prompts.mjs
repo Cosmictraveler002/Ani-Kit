@@ -798,6 +798,9 @@ const destroy = marquee("[data-marquee-track]", { speed: 40, pauseOnHover: false
     usage: `// One-shot on enter (scale 1.15 → 1):
 const destroy = mediaSettle("[data-settle]", { from: 1.15, duration: 1.5 });
 
+// Reverse on leave-back, replay on re-enter — every scroll pass animates:
+mediaSettle("[data-settle]", { from: 1.15, replay: true });
+
 // Bound to scroll progress instead (0.5s scrub smoothing):
 mediaSettle("[data-settle-scrub]", { scrub: 0.5, start: "top bottom", end: "top 30%" });`,
     options: [
@@ -811,11 +814,13 @@ mediaSettle("[data-settle-scrub]", { scrub: 0.5, start: "top bottom", end: "top 
       ["start", "`'top 75%'`", "ScrollTrigger start."],
       ["end", "`'bottom top'`", "ScrollTrigger end (scrub mode only)."],
       ["scrub", "unset", "Number = scrub smoothing seconds, `true` = immediate — binds the settle to scroll progress."],
+      ["replay", "`false`", "Re-settle when leaving / re-entering the viewport (mode `'scroll'` only)."],
       ["force", "`false`", "Run even under `prefers-reduced-motion`."],
     ],
     notes: [
       "`destroy()` kills the tween and clears `transform` — media returns to its authored scale.",
       "Give media `object-fit: cover` inside a fixed box; the scale animates the element, not its intrinsic size.",
+      "By default the settle is one-shot (`once: true`) — it plays on the first enter and never again. Pass `replay: true` to reverse back to `from` on leave-back and replay on every re-enter.",
       "Complements `heroShrink()`: that scrubs media down as it *leaves*; `mediaSettle()` plays the entrance.",
     ],
   },

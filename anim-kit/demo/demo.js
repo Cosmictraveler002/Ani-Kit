@@ -138,13 +138,16 @@ cleanups.push(
 
 cleanups.push(parallax("[data-parallax]"));
 
-/* Enter reveals — grow open, wipe in, settle down. */
-cleanups.push(unfoldReveal("[data-unfold]", { axis: "y", origin: "top" }));
-cleanups.push(unfoldReveal("[data-unfold-x]", { axis: "x", origin: "left", duration: 1.1 }));
-cleanups.push(clipWipe("[data-clip-left]", { from: "left", duration: 1.1 }));
-cleanups.push(clipWipe("[data-clip-frame]", { from: "frame", inset: 12 }));
+/* Enter reveals — grow open, wipe in, settle down.
+   `replay: true` reverses on leave-back and replays on re-enter, so every
+   pass through the section animates (a one-shot would go static after the
+   first pass — reload mid-page and it would never play at all). */
+cleanups.push(unfoldReveal("[data-unfold]", { axis: "y", origin: "top", replay: true }));
+cleanups.push(unfoldReveal("[data-unfold-x]", { axis: "x", origin: "left", duration: 1.1, replay: true }));
+cleanups.push(clipWipe("[data-clip-left]", { from: "left", duration: 1.1, replay: true }));
+cleanups.push(clipWipe("[data-clip-frame]", { from: "frame", inset: 12, replay: true }));
 // Corner origin — wipes open toward the opposite corner.
-cleanups.push(clipWipe("[data-clip-corner]", { from: "bottom-right", duration: 1.1 }));
+cleanups.push(clipWipe("[data-clip-corner]", { from: "bottom-right", duration: 1.1, replay: true }));
 // Scroll-bound wipe: opens as the figure travels through the viewport.
 cleanups.push(
   clipWipe("[data-clip-scrub]", {
@@ -155,7 +158,7 @@ cleanups.push(
     end: "top 20%",
   }),
 );
-cleanups.push(mediaSettle("[data-settle]", { from: 1.15 }));
+cleanups.push(mediaSettle("[data-settle]", { from: 1.15, replay: true }));
 cleanups.push(mediaSettle("[data-settle-scrub]", { scrub: 0.6, from: 1.2 }));
 
 cleanups.push(heroShrink("[data-hero-media]", { offsetY: "49vh", scale: 0.23, scrub: 1 }));

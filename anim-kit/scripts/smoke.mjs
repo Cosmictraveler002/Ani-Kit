@@ -159,6 +159,7 @@ const createDestroy = [
   ["rollText", ["[data-roll]"]],
   ["scrambleText", ["[data-scramble]", { mode: "immediate" }]],
   ["mediaSettle", ["[data-settle]"]],
+  ["mediaSettle", ["[data-settle]", { replay: true }]],
   ["liquidButton", ["[data-liquid]", { direction: "down", duration: 300 }]],
   ["underlineLink", ["a.ak-underline"]],
   ["cursorFollower", ["[data-showreel]", { follower: "[data-showreel] span" }]],

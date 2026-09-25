@@ -701,7 +701,8 @@ heroShrink("[data-hero-media]", { offsetY: "49vh", scale: 0.23, scrub: 1 });
 
 Images and video that arrive slightly oversized and ease down to size as the
 section enters — content lands instead of popping in. Set `scrub` to bind the
-settle to scroll progress instead of playing it once.
+settle to scroll progress, or `replay: true` to reverse back to `from` on
+leave-back and replay on every re-enter.
 
 ```ts
 mediaSettle("[data-settle]", { from: 1.15, duration: 1.5 });  // on enter
@@ -718,6 +719,7 @@ mediaSettle("[data-settle-scrub]", { scrub: 0.5, from: 1.2 }); // scroll-bound
 | `mode` | `"scroll"` | or `"immediate"` to play at once |
 | `start` / `end` | `"top 75%"` / `"bottom top"` | ScrollTrigger positions |
 | `scrub` | unset | number = scrub smoothing seconds, `true` = immediate |
+| `replay` | `false` | re-settle when leaving / re-entering (enter mode) |
 
 `destroy()` clears `transform` — media returns to its authored scale. Unlike
 `heroShrink()` (which scrubs media down as it *leaves*), `mediaSettle()` plays
