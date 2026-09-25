@@ -3,13 +3,19 @@ name: Release
 # Publish to npm when a version tag is pushed (run from the repo root):
 #   git tag v1.0.0 && git push origin v1.0.0
 #
-# npm versions are immutable, so every pinned CDN URL
-# (cdn.jsdelivr.net/npm/anim-kit@1.0.0/…, unpkg.com/anim-kit@1.0.0/…)
-# resolves to exactly this build forever. jsDelivr/unpkg pick the new
-# version up automatically once npm accepts it — no manual CDN step.
+# Publish auth (classic "Automation" tokens no longer exist):
+#   1. Bootstrap (package not yet on npm): repo secret NPM_TOKEN holding an npm
+#      GRANULAR access token — Permissions: "Read and write (publish and stage)",
+#      Packages and scopes: "All packages", tick "Bypass two-factor authentication"
+#      if 2FA is enabled on the account.
+#   2. After the first publish: switch to tokenless Trusted Publishing (OIDC) —
+#      npmjs.com → package Settings → Trusted publishing → GitHub Actions →
+#      repo Cosmictraveler002/Ani-Kit, workflow file release.yml, and allow
+#      direct `npm publish` (configs created after Sep 2026 default to
+#      stage-only). Then delete the NPM_TOKEN secret.
 #
-# Repo setup required once: Settings → Secrets → Actions → NPM_TOKEN
-# (automation token with publish rights for the `anim-kit` package).
+# npm versions are immutable, so pinned CDN URLs
+# (cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@X.Y.Z/…) resolve to exactly this build forever.
 
 on:
   push:
@@ -17,7 +23,7 @@ on:
 
 permissions:
   contents: read
-  id-token: write # npm provenance (--provenance)
+  id-token: write # OIDC — provenance attestations, and trusted publishing once configured
 
 defaults:
   run:
@@ -31,10 +37,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org
-          cache: npm
-          cache-dependency-path: anim-kit/package-lock.json
+          package-manager-cache: false # never use caching in release builds
 
       - name: Install
         run: npm ci
@@ -48,7 +53,33 @@ jobs:
       - name: Test
         run: npm run smoke
 
+      # OIDC (trusted publishing) + provenance require npm >= 11.5.1; the npm
+      # bundled with Node can lag behind, so pin to current before publishing.
+      - name: Use current npm
+        run: |
+          npm --version
+          npm install -g npm@latest
+          npm --version
+
+      # Fail fast with an actionable message instead of npm's ENEEDAUTH.
+      - name: Check publish auth is available
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -n "$NODE_AUTH_TOKEN" ]; then
+            echo "Auth path: NPM_TOKEN secret (${#NODE_AUTH_TOKEN} chars)"
+          elif [ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+            echo "Auth path: OIDC trusted publishing"
+          else
+            echo "::error title=No publish auth::Neither the NPM_TOKEN secret nor the OIDC endpoint is available. Add NPM_TOKEN (npm granular access token, 'Read and write (publish and stage)', all packages) or configure a Trusted Publisher on npmjs.com for this workflow."
+            exit 1
+          fi
+
       - name: Publish to npm
         run: npm publish --access public --provenance
         env:
+          # Token fallback for the bootstrap phase; after Trusted Publishing is
+          # configured, npm prefers OIDC automatically and this becomes inert.
+          # An explicitly empty value is also the documented fix for OIDC auth
+          # with setup-node's generated .npmrc.
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

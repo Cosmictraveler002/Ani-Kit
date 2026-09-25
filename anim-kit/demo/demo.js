@@ -26,7 +26,7 @@ import {
   menuOverlay,
   themeReveal,
   compose,
-} from "anim-kit";
+} from "@cosmictraveler002/anim-kit";
 
 const cleanups = [];
 

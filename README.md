@@ -1,8 +1,7 @@
 # Ani-Kit
 
 > Repository for **anim-kit** — a modular, framework-agnostic animation library
-> (GSAP + ScrollTrigger + Lenis) re-implemented from the animation techniques used on
-> [dzinrstudio.com](https://dzinrstudio.com/).
+> (GSAP + ScrollTrigger + Lenis)
 >
 > **Everything actionable lives in [`anim-kit/`](anim-kit/).** Full package documentation:
 > **[`anim-kit/README.md`](anim-kit/README.md)**.
@@ -11,17 +10,17 @@
 
 ## At a glance
 
-| | |
-|---|---|
-| npm package | `anim-kit` v1.0.0 — ESM-only + `.d.ts`, **not yet published** (name verified available on npm) |
-| Package directory | [`anim-kit/`](anim-kit/) — source, tests, demo, package docs |
-| Full documentation | [`anim-kit/README.md`](anim-kit/README.md) — install, CDN, API reference, taxonomy |
-| Runtime dependencies | exactly two: `gsap`, `lenis` — never add more without a deliberate decision |
-| Build | `tsc` → per-file ESM + declarations; CSS copied verbatim; `tsup` → one standalone CDN bundle |
-| Tests | `npm test` in `anim-kit/` (build + unit smoke + demo wiring smoke) |
-| Demo | `npm run demo` → <http://localhost:4321/demo/> |
-| CI / Release | [`.github/workflows/`](.github/workflows/) — build+test on push/PR; tag `v*` publishes to npm |
-| License | MIT — [`anim-kit/LICENSE`](anim-kit/LICENSE) |
+|                      |                                                                                                |
+| -------------------- | ---------------------------------------------------------------------------------------------- |
+| npm package          | `anim-kit` v1.0.0 — ESM-only + `.d.ts`, **not yet published** (name verified available on npm) |
+| Package directory    | [`anim-kit/`](anim-kit/) — source, tests, demo, package docs                                   |
+| Full documentation   | [`anim-kit/README.md`](anim-kit/README.md) — install, CDN, API reference, taxonomy             |
+| Runtime dependencies | exactly two: `gsap`, `lenis` — never add more without a deliberate decision                    |
+| Build                | `tsc` → per-file ESM + declarations; CSS copied verbatim; `tsup` → one standalone CDN bundle   |
+| Tests                | `npm test` in `anim-kit/` (build + unit smoke + demo wiring smoke)                             |
+| Demo                 | `npm run demo` → <http://localhost:4321/demo/>                                                 |
+| CI / Release         | [`.github/workflows/`](.github/workflows/) — build+test on push/PR; tag `v*` publishes to npm  |
+| License              | MIT — [`anim-kit/LICENSE`](anim-kit/LICENSE)                                                   |
 
 ## Repository layout
 
@@ -58,17 +57,17 @@ npm run demo          # server on :4321 — demo page + /api/prompts (build firs
 
 ## Source of truth — edit THIS for THAT
 
-| Change | Where |
-|---|---|
-| Add or modify an effect | `anim-kit/src/effects/<name>.ts` → export from `anim-kit/src/index.ts` → add to `expected` in `anim-kit/scripts/smoke.mjs` → add a prompt in `anim-kit/scripts/prompts.mjs` → wire into `anim-kit/demo/` |
-| Public API surface (38 exports) | `anim-kit/src/index.ts` — must stay in sync with the `expected` list in `scripts/smoke.mjs` |
-| GSAP setup, custom eases, internal `killTweens()` | `anim-kit/src/core/gsap.ts` |
-| Effect taxonomy (categories → subcategories) | `TAXONOMY` in `anim-kit/scripts/prompts.mjs` |
-| Copy-prompt text served by the demo | `renderPrompt()` in `anim-kit/scripts/prompts.mjs` |
-| Styles (`.ak-*` classes, keyframes) | `anim-kit/src/styles/anim-kit.css` — copied byte-for-byte to `dist/styles/`; never import CSS from JS |
-| npm exports map, version, dependencies | `anim-kit/package.json` |
-| Standalone CDN bundle behaviour | `anim-kit/tsup.config.ts` |
-| CI and npm publishing | `.github/workflows/ci.yml`, `.github/workflows/release.yml` |
+| Change                                            | Where                                                                                                                                                                                                    |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Add or modify an effect                           | `anim-kit/src/effects/<name>.ts` → export from `anim-kit/src/index.ts` → add to `expected` in `anim-kit/scripts/smoke.mjs` → add a prompt in `anim-kit/scripts/prompts.mjs` → wire into `anim-kit/demo/` |
+| Public API surface (38 exports)                   | `anim-kit/src/index.ts` — must stay in sync with the `expected` list in `scripts/smoke.mjs`                                                                                                              |
+| GSAP setup, custom eases, internal `killTweens()` | `anim-kit/src/core/gsap.ts`                                                                                                                                                                              |
+| Effect taxonomy (categories → subcategories)      | `TAXONOMY` in `anim-kit/scripts/prompts.mjs`                                                                                                                                                             |
+| Copy-prompt text served by the demo               | `renderPrompt()` in `anim-kit/scripts/prompts.mjs`                                                                                                                                                       |
+| Styles (`.ak-*` classes, keyframes)               | `anim-kit/src/styles/anim-kit.css` — copied byte-for-byte to `dist/styles/`; never import CSS from JS                                                                                                    |
+| npm exports map, version, dependencies            | `anim-kit/package.json`                                                                                                                                                                                  |
+| Standalone CDN bundle behaviour                   | `anim-kit/tsup.config.ts`                                                                                                                                                                                |
+| CI and npm publishing                             | `.github/workflows/ci.yml`, `.github/workflows/release.yml`                                                                                                                                              |
 
 ## Invariants (read before changing anything)
 
@@ -103,20 +102,36 @@ npm run demo          # server on :4321 — demo page + /api/prompts (build firs
 1. Bump `version` in `anim-kit/package.json` (npm versions are immutable —
    CDN URLs pin to them forever).
 2. Push a tag: `git tag v1.0.1 && git push origin v1.0.1`.
-3. `release.yml` builds, tests and runs `npm publish --provenance`
-   (one-time setup: repo secret **`NPM_TOKEN`**).
+3. `release.yml` builds, tests and runs `npm publish --provenance`.
 4. jsDelivr/unpkg pick the new version up automatically — no manual CDN step.
+
+**Publish auth (one-time setup)** — classic npm "Automation" tokens no longer
+exist; there are two phases:
+
+- **Bootstrap (first publish):** create a _granular access token_ on npmjs.com
+  (Access Tokens → Generate New Token → **Granular access token** → Permissions:
+  **Read and write (publish and stage)** → Packages and scopes: **All packages**
+  → tick **Bypass two-factor authentication** if 2FA is enabled) and store it
+  as the repository secret **`NPM_TOKEN`** (Settings → Secrets and variables →
+  Actions → _Secrets_ tab, not Variables).
+- **After `anim-kit` exists on npm:** switch to tokenless _Trusted Publishing_ —
+  npmjs.com → package **Settings → Trusted publishing** → GitHub Actions →
+  repo `Cosmictraveler002/Ani-Kit`, workflow file `release.yml`, and **allow
+  direct `npm publish`** (configurations created after Sep 2026 default to
+  stage-only). Then delete the `NPM_TOKEN` secret. Direct-publish granular
+  tokens stop working in **January 2027**, so complete this migration before
+  then.
 
 ## Documentation map (`anim-kit/README.md`)
 
-| Topic | Section |
-|---|---|
-| npm install, subpath exports | [Install](anim-kit/README.md#install) |
-| CDN usage (standalone / `+esm` / import map) | [CDN usage](anim-kit/README.md#cdn-usage) |
-| Effect taxonomy and how to grow it | [Effect categories](anim-kit/README.md#effect-categories) |
-| Every effect, options, return values | [API](anim-kit/README.md#api) |
-| AI-assisted implementation prompts | [Copy-prompt API](anim-kit/README.md#copy-prompt-api) |
-| Package internals | [Project structure](anim-kit/README.md#project-structure) |
+| Topic                                        | Section                                                   |
+| -------------------------------------------- | --------------------------------------------------------- |
+| npm install, subpath exports                 | [Install](anim-kit/README.md#install)                     |
+| CDN usage (standalone / `+esm` / import map) | [CDN usage](anim-kit/README.md#cdn-usage)                 |
+| Effect taxonomy and how to grow it           | [Effect categories](anim-kit/README.md#effect-categories) |
+| Every effect, options, return values         | [API](anim-kit/README.md#api)                             |
+| AI-assisted implementation prompts           | [Copy-prompt API](anim-kit/README.md#copy-prompt-api)     |
+| Package internals                            | [Project structure](anim-kit/README.md#project-structure) |
 
 ---
 

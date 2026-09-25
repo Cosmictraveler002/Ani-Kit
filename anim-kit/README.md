@@ -9,7 +9,7 @@ no components: every effect resolves plain DOM selectors, so it works with
 **React, Vue, Next, Svelte, Astro or plain HTML**.
 
 ```ts
-import { lineReveal, marquee, menuOverlay } from "anim-kit";
+import { lineReveal, marquee, menuOverlay } from "@cosmictraveler002/anim-kit";
 
 const destroy = lineReveal("[data-lines]", { mode: "scroll" });
 // …later (route change, HMR, teardown):
@@ -48,12 +48,12 @@ destroy();
 ## Install
 
 ```bash
-npm install anim-kit
+npm install @cosmictraveler002/anim-kit
 ```
 
 ```ts
-import { smoothScroll, horizontalScroll } from "anim-kit";
-import "anim-kit/styles";   // companion stylesheet (plain .css, optional but recommended)
+import { smoothScroll, horizontalScroll } from "@cosmictraveler002/anim-kit";
+import "@cosmictraveler002/anim-kit/styles";   // companion stylesheet (plain .css, optional but recommended)
 ```
 
 `anim-kit` ships **ESM only** with generated `.d.ts` declarations — no CJS
@@ -78,14 +78,14 @@ inside the published tarball):
 
 | Specifier | Resolves to | Use for |
 |---|---|---|
-| `anim-kit` | `dist/index.js` + `dist/index.d.ts` | the full barrel — 38 exports |
-| `anim-kit/effects/<name>` | `dist/effects/<name>.js` + `.d.ts` | one effect in isolation (`marquee`, `lineReveal`, …) |
-| `anim-kit/standalone` | `dist/anim-kit.standalone.js` (types → `index.d.ts`) | the self-contained bundle — same API |
-| `anim-kit/styles` | `dist/styles/anim-kit.css` | untouched plain CSS |
+| `@cosmictraveler002/anim-kit` | `dist/index.js` + `dist/index.d.ts` | the full barrel — 38 exports |
+| `@cosmictraveler002/anim-kit/effects/<name>` | `dist/effects/<name>.js` + `.d.ts` | one effect in isolation (`marquee`, `lineReveal`, …) |
+| `@cosmictraveler002/anim-kit/standalone` | `dist/anim-kit.standalone.js` (types → `index.d.ts`) | the self-contained bundle — same API |
+| `@cosmictraveler002/anim-kit/styles` | `dist/styles/anim-kit.css` | untouched plain CSS |
 
 ```ts
-import { marquee } from "anim-kit/effects/marquee";  // deep import, no barrel
-import "anim-kit/styles";
+import { marquee } from "@cosmictraveler002/anim-kit/effects/marquee";  // deep import, no barrel
+import "@cosmictraveler002/anim-kit/styles";
 ```
 
 TypeScript ≥ 4.7 with `moduleResolution: "bundler"` or `"node16"`/`"nodenext"`
@@ -97,7 +97,7 @@ resolves declarations through the same map — no `typesVersions` shim needed.
 
 No build step on the consumer's end: `dist/` is served as-is from the npm
 tarball by any npm CDN. Every URL is **version-pinned** — npm versions are
-immutable, so `anim-kit@1.0.0` always resolves to exactly that build, forever
+immutable, so `@cosmictraveler002/anim-kit@1.0.0` always resolves to exactly that build, forever
 (only a new version creates a new URL; nothing floats unless you ask for a
 range).
 
@@ -108,12 +108,12 @@ plugins anim-kit uses) and `lenis` **inlined** — no import map, one URL, works
 identically on jsDelivr and unpkg:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/anim-kit@1.0.0/dist/styles/anim-kit.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.0.0/dist/styles/anim-kit.css" />
 
 <script type="module">
   import {
     smoothScroll, lineReveal, marquee,
-  } from "https://cdn.jsdelivr.net/npm/anim-kit@1.0.0/dist/anim-kit.standalone.js";
+  } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.0.0/dist/anim-kit.standalone.js";
 
   smoothScroll();
   lineReveal("[data-lines]", { mode: "scroll" });
@@ -121,7 +121,7 @@ identically on jsDelivr and unpkg:
 </script>
 ```
 
-unpkg serves the same file: `https://unpkg.com/anim-kit@1.0.0/dist/anim-kit.standalone.js`
+unpkg serves the same file: `https://unpkg.com/@cosmictraveler002/anim-kit@1.0.0/dist/anim-kit.standalone.js`
 
 ### Option 2 — jsDelivr `+esm`
 
@@ -130,7 +130,7 @@ per version):
 
 ```html
 <script type="module">
-  import { lineReveal } from "https://cdn.jsdelivr.net/npm/anim-kit@1.0.0/+esm";
+  import { lineReveal } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.0.0/+esm";
 </script>
 ```
 
@@ -142,12 +142,12 @@ locally, with CDN URLs — and the way to share one GSAP between anim-kit and
 the rest of your page:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/anim-kit@1.0.0/dist/styles/anim-kit.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.0.0/dist/styles/anim-kit.css" />
 
 <script type="importmap">
   {
     "imports": {
-      "anim-kit": "https://cdn.jsdelivr.net/npm/anim-kit@1.0.0/dist/index.js",
+      "@cosmictraveler002/anim-kit": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.0.0/dist/index.js",
       "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/index.js",
       "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollTrigger.js",
       "gsap/SplitText": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/SplitText.js",
@@ -160,13 +160,13 @@ the rest of your page:
 </script>
 
 <script type="module">
-  import { smoothScroll, lineReveal } from "anim-kit";
+  import { smoothScroll, lineReveal } from "@cosmictraveler002/anim-kit";
   // per-effect deep imports work here too:
-  // import { dragStrip } from "anim-kit/effects/dragStrip";
+  // import { dragStrip } from "@cosmictraveler002/anim-kit/effects/dragStrip";
 </script>
 ```
 
-Swap the host for unpkg (`https://unpkg.com/anim-kit@1.0.0/dist/index.js`, …) —
+Swap the host for unpkg (`https://unpkg.com/@cosmictraveler002/anim-kit@1.0.0/dist/index.js`, …) —
 the file layout is identical. GSAP subpaths are listed one by one because
 import maps match specifiers literally: a trailing-slash prefix map would
 produce extension-less URLs, which CDNs don't serve. The `gsap`/`lenis` pins
@@ -188,7 +188,7 @@ match `package-lock.json`.
 ```
 
 ```js
-import { smoothScroll, lineReveal, marquee, compose } from "anim-kit";
+import { smoothScroll, lineReveal, marquee, compose } from "@cosmictraveler002/anim-kit";
 
 const scroller = smoothScroll({ lerp: 0.08, smoothWheel: true });
 
@@ -827,7 +827,7 @@ Types: `TargetLike`, `Destroy`, `CommonOptions`.
 ## Styling
 
 ```ts
-import "anim-kit/styles";   // → dist/styles/anim-kit.css
+import "@cosmictraveler002/anim-kit/styles";   // → dist/styles/anim-kit.css
 ```
 
 The companion stylesheet supplies:
@@ -1007,7 +1007,7 @@ anim-kit/
 ├─ LICENSE                 MIT
 └─ dist/                   build output
    ├─ index.js / *.d.ts    per-file ESM + declarations (tsc)
-   ├─ effects/*.js         one module per effect → anim-kit/effects/* subpaths
+   ├─ effects/*.js         one module per effect → @cosmictraveler002/anim-kit/effects/* subpaths
    ├─ anim-kit.standalone.js  self-contained CDN bundle (gsap+lenis inlined)
    └─ styles/anim-kit.css  plain CSS, copied verbatim
 ```
@@ -1019,7 +1019,7 @@ push/PR) and `.github/workflows/release.yml` (tag `v*` → `npm publish
 
 Each effect is an independent module — if you only need the marquee, import
 `marquee` and the bundler drops the rest, or deep-import
-`anim-kit/effects/marquee` to skip the barrel entirely.
+`@cosmictraveler002/anim-kit/effects/marquee` to skip the barrel entirely.
 
 ---
 

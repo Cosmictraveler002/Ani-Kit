@@ -24,10 +24,10 @@ const { dom, window, errors } = setupDom(html, { verbose: false });
 const doc = window.document;
 
 /* ---------------- run the real demo wiring ---------------- */
-// demo.js imports the bare specifier "anim-kit"; Node has no import maps, so
-// rewrite it to the built bundle and execute it as a module.
+// demo.js imports the scoped specifier "@cosmictraveler002/anim-kit"; Node has
+// no import maps, so rewrite it to the built bundle and execute it as a module.
 const demoSrc = readFileSync(path.join(root, "demo", "demo.js"), "utf8").replace(
-  'from "anim-kit"',
+  'from "@cosmictraveler002/anim-kit"',
   'from "../dist/index.js"',
 );
 const tmp = path.join(here, ".tmp-demo-run.mjs");
@@ -170,7 +170,7 @@ for (const id of panelOnly) {
 for (const entry of PROMPT_ENTRIES) {
   const text = renderPrompt(entry);
   assert.ok(
-    text.includes(`import { ${entry.imports.join(", ")} } from "anim-kit"`),
+    text.includes(`import { ${entry.imports.join(", ")} } from "@cosmictraveler002/anim-kit"`),
     `prompt "${entry.id}" must show the import`,
   );
   assert.ok(text.includes("destroy()"), `prompt "${entry.id}" must show teardown`);

@@ -162,7 +162,7 @@ export function renderPrompt(entry) {
   out.push(`## 1. Markup\n\n\`\`\`html\n${markup.trim()}\n\`\`\`\n`);
 
   out.push(
-    `## 2. Import\n\n\`\`\`js\nimport { ${imports.join(", ")} } from "anim-kit";\nimport "anim-kit/styles"; // companion stylesheet (classes, masks, tokens)\n\`\`\`\n`,
+    `## 2. Import\n\n\`\`\`js\nimport { ${imports.join(", ")} } from "@cosmictraveler002/anim-kit";\nimport "@cosmictraveler002/anim-kit/styles"; // companion stylesheet (classes, masks, tokens)\n\`\`\`\n`,
   );
 
   out.push(`## 3. Initialise\n\nRun this after the DOM is ready (and after fonts/images if it measures layout):\n\n\`\`\`js\n${usage.trim()}\n\`\`\`\n`);
