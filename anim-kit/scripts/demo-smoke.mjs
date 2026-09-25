@@ -271,7 +271,9 @@ console.log(`ok  docs page ships from the payload, all pins @${payload.version}`
 // internal links, and a static prompts.json so the dock + docs work without
 // the Node server. Disk must equal a fresh transform — otherwise sync:live.
 const liveFiles = buildFiles();
-const liveOnDisk = readdirSync(path.join(root, "demo_live")).sort();
+const liveOnDisk = readdirSync(path.join(root, "demo_live"))
+  .filter((n) => !n.startsWith(".")) // host/CLI artifacts (.vercel/, .gitignore) aren't generated
+  .sort();
 assert.deepEqual(
   liveOnDisk,
   Object.keys(liveFiles).sort(),

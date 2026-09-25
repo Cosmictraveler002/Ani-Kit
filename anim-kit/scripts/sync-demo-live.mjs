@@ -141,6 +141,9 @@ function main() {
     writeFileSync(join(dir, name), body);
   }
   for (const name of readdirSync(dir)) {
+    // Dotfiles are host/CLI territory (user .gitignore, .vercel/ project
+    // link) — they live beside the generated set and are never swept.
+    if (name.startsWith(".")) continue;
     if (!(name in files)) rmSync(join(dir, name), { recursive: true, force: true });
   }
   console.log(`demo_live regenerated: ${Object.keys(files).join(", ")}`);
