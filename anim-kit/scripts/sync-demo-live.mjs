@@ -72,6 +72,10 @@ export function buildFiles() {
     files[name] = readFileSync(join(root, "demo", name), "utf8");
   }
   files["prompts.json"] = JSON.stringify(promptsPayload(), null, 2);
+  // Vercel hosts answer /api/prompts from the static file — other hosts use
+  // the client-side prompts.json fallback in demo.js/docs.js.
+  files["vercel.json"] =
+    JSON.stringify({ rewrites: [{ source: "/api/prompts", destination: "/prompts.json" }] }, null, 2) + "\n";
   return files;
 }
 

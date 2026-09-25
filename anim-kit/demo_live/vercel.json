@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/prompts",
+      "destination": "/prompts.json"
+    }
+  ]
+}
