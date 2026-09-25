@@ -185,6 +185,14 @@ for (const id of promptIds) {
     `effect "${id}" has a prompt but is not demonstrated on the demo page (missing data-effect chip)`,
   );
 }
+// every in-page hash link resolves — a dead anchor silently "loses" a whole
+// section from the nav (this once hid the entire Scroll & media cluster
+// behind an href="#scroll" that pointed at nothing).
+for (const a of [...doc.querySelectorAll('a[href^="#"]')]) {
+  const href = a.getAttribute("href");
+  if (href === "#") continue; // placeholder card links
+  assert.ok(doc.querySelector(href), `nav link "${href}" points at nothing`);
+}
 // each prompt is a self-contained implementation guide.
 for (const entry of PROMPT_ENTRIES) {
   const text = renderPrompt(entry);
