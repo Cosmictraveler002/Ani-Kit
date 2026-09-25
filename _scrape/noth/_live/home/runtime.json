@@ -1,0 +1,27 @@
+{
+ "globals": [
+  "ondevicemotion",
+  "gsapVersions",
+  "__THREE__",
+  "lenisVersion",
+  "_gsap",
+  "gsap"
+ ],
+ "ix2": null,
+ "webflowKeys": [
+  "_",
+  "tram",
+  "define",
+  "require",
+  "push",
+  "env",
+  "validClick",
+  "resize",
+  "scroll",
+  "redraw",
+  "location",
+  "ready",
+  "load",
+  "destroy"
+ ]
+}
