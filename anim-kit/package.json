@@ -1,5 +1,5 @@
 {
-  "name": "anim-kit",
+  "name": "@cosmictraveler002/anim-kit",
   "version": "1.0.0",
   "description": "Modular, framework-agnostic animation library inspired by dzinrstudio.com — GSAP + ScrollTrigger + Lenis effects packaged as composable ES modules.",
   "type": "module",
