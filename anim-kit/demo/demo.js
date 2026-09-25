@@ -9,12 +9,17 @@ import {
   lineReveal,
   maskReveal,
   revealRule,
+  unfoldReveal,
+  clipWipe,
   counter,
   audioBars,
   marquee,
+  rollText,
+  scrambleText,
   horizontalScroll,
   parallax,
   heroShrink,
+  mediaSettle,
   stackedCards,
   scatterText,
   dragStrip,
@@ -98,6 +103,15 @@ cleanups.push(
   counter("[data-count-scroll]", { to: 98, duration: 2, onScroll: true, ease: "power2.out" }),
 );
 cleanups.push(counter("[data-count-pad]", { to: 42, duration: 2.5, pad: 3 }));
+// Scroll-scrubbed readout — the number follows viewport progress.
+cleanups.push(counter("[data-count-progress]", { progress: true, to: 100, pad: 2, suffix: "%" }));
+
+/* ---------------------------------------------------------------- */
+/* Text extras                                                        */
+/* ---------------------------------------------------------------- */
+cleanups.push(scrambleText("[data-scramble]", { mode: "scroll" }));
+cleanups.push(rollText("[data-roll]", { interval: 2.4, duration: 0.6 }));
+cleanups.push(lineReveal("[data-chars-head]", { mode: "scroll", split: "chars", stagger: 0.03 }));
 
 /* ---------------------------------------------------------------- */
 /* Loops                                                              */
@@ -117,6 +131,14 @@ cleanups.push(
 );
 
 cleanups.push(parallax("[data-parallax]"));
+
+/* Enter reveals — grow open, wipe in, settle down. */
+cleanups.push(unfoldReveal("[data-unfold]", { axis: "y", origin: "top" }));
+cleanups.push(unfoldReveal("[data-unfold-x]", { axis: "x", origin: "left", duration: 1.1 }));
+cleanups.push(clipWipe("[data-clip-left]", { from: "left", duration: 1.1 }));
+cleanups.push(clipWipe("[data-clip-frame]", { from: "frame", inset: 12 }));
+cleanups.push(mediaSettle("[data-settle]", { from: 1.15 }));
+cleanups.push(mediaSettle("[data-settle-scrub]", { scrub: 0.6, from: 1.2 }));
 
 cleanups.push(heroShrink("[data-hero-media]", { offsetY: "49vh", scale: 0.23, scrub: 1 }));
 

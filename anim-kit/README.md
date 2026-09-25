@@ -78,7 +78,7 @@ inside the published tarball):
 
 | Specifier | Resolves to | Use for |
 |---|---|---|
-| `@cosmictraveler002/anim-kit` | `dist/index.js` + `dist/index.d.ts` | the full barrel — 38 exports |
+| `@cosmictraveler002/anim-kit` | `dist/index.js` + `dist/index.d.ts` | the full barrel — 43 exports |
 | `@cosmictraveler002/anim-kit/effects/<name>` | `dist/effects/<name>.js` + `.d.ts` | one effect in isolation (`marquee`, `lineReveal`, …) |
 | `@cosmictraveler002/anim-kit/standalone` | `dist/anim-kit.standalone.js` (types → `index.d.ts`) | the self-contained bundle — same API |
 | `@cosmictraveler002/anim-kit/styles` | `dist/styles/anim-kit.css` | untouched plain CSS |
@@ -97,7 +97,7 @@ resolves declarations through the same map — no `typesVersions` shim needed.
 
 No build step on the consumer's end: `dist/` is served as-is from the npm
 tarball by any npm CDN. Every URL is **version-pinned** — npm versions are
-immutable, so `@cosmictraveler002/anim-kit@1.0.0` always resolves to exactly that build, forever
+immutable, so `@cosmictraveler002/anim-kit@1.1.0` always resolves to exactly that build, forever
 (only a new version creates a new URL; nothing floats unless you ask for a
 range).
 
@@ -108,12 +108,12 @@ plugins anim-kit uses) and `lenis` **inlined** — no import map, one URL, works
 identically on jsDelivr and unpkg:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.0.0/dist/styles/anim-kit.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.1.0/dist/styles/anim-kit.css" />
 
 <script type="module">
   import {
     smoothScroll, lineReveal, marquee,
-  } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.0.0/dist/anim-kit.standalone.js";
+  } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.1.0/dist/anim-kit.standalone.js";
 
   smoothScroll();
   lineReveal("[data-lines]", { mode: "scroll" });
@@ -121,7 +121,7 @@ identically on jsDelivr and unpkg:
 </script>
 ```
 
-unpkg serves the same file: `https://unpkg.com/@cosmictraveler002/anim-kit@1.0.0/dist/anim-kit.standalone.js`
+unpkg serves the same file: `https://unpkg.com/@cosmictraveler002/anim-kit@1.1.0/dist/anim-kit.standalone.js`
 
 ### Option 2 — jsDelivr `+esm`
 
@@ -130,7 +130,7 @@ per version):
 
 ```html
 <script type="module">
-  import { lineReveal } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.0.0/+esm";
+  import { lineReveal } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.1.0/+esm";
 </script>
 ```
 
@@ -142,12 +142,12 @@ locally, with CDN URLs — and the way to share one GSAP between anim-kit and
 the rest of your page:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.0.0/dist/styles/anim-kit.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.1.0/dist/styles/anim-kit.css" />
 
 <script type="importmap">
   {
     "imports": {
-      "@cosmictraveler002/anim-kit": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.0.0/dist/index.js",
+      "@cosmictraveler002/anim-kit": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.1.0/dist/index.js",
       "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/index.js",
       "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollTrigger.js",
       "gsap/SplitText": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/SplitText.js",
@@ -166,7 +166,7 @@ the rest of your page:
 </script>
 ```
 
-Swap the host for unpkg (`https://unpkg.com/@cosmictraveler002/anim-kit@1.0.0/dist/index.js`, …) —
+Swap the host for unpkg (`https://unpkg.com/@cosmictraveler002/anim-kit@1.1.0/dist/index.js`, …) —
 the file layout is identical. GSAP subpaths are listed one by one because
 import maps match specifiers literally: a trailing-slash prefix map would
 produce extension-less URLs, which CDNs don't serve. The `gsap`/`lenis` pins
@@ -278,11 +278,13 @@ prompt dock, and backs the `category` / `subcategory` fields on
 | Core & setup | Smooth scrolling | `smoothScroll` |
 | Text animations | Line & mask reveals | `lineReveal`, `maskReveal` |
 | Text animations | Per-character scatter | `scatterText` |
+| Text animations | Decode & scramble | `scrambleText` |
+| Text animations | Rolling text | `rollText` |
 | Text animations | Counters | `counter` |
 | Scroll & media | Pinned galleries | `horizontalScroll`, `stackedCards`, `stackedCardsPinned` |
 | Scroll & media | Parallax & depth | `parallax` |
-| Scroll & media | Heroes & media | `heroShrink` |
-| Scroll & media | Enter reveals | `revealRule` |
+| Scroll & media | Heroes & media | `heroShrink`, `mediaSettle` |
+| Scroll & media | Enter reveals | `revealRule`, `unfoldReveal`, `clipWipe` |
 | Loops & marquees | Marquees | `marquee` |
 | Loops & marquees | Infinite draggables | `dragStrip` |
 | Loops & marquees | Equalizers | `audioBars` |
@@ -346,7 +348,8 @@ Central reduced-motion gate. If the user prefers reduced motion and
 
 ### Text animations
 
-Typography in motion — masked lines, rising masks, per-character scatter, tickers.
+Typography in motion — masked lines, rising masks, per-character scatter,
+decode reveals, rolling words, tickers.
 
 #### `lineReveal(target, options?) => destroy`
 
@@ -356,12 +359,14 @@ source site.
 ```ts
 lineReveal("[data-hero-text]", { mode: "immediate", delay: 0.35 }); // above the fold
 lineReveal("[data-lines]", { mode: "scroll" });                     // reverses on leave
+lineReveal("[data-headline]", { split: "chars", stagger: 0.03 });    // per-character rise
 ```
 
 | Option    | Default         | Notes                                   |
 | --------- | --------------- | --------------------------------------- |
 | `mode`    | `"scroll"`      | `"scroll"` or `"immediate"`             |
-| `stagger` | `0.1`           | seconds between lines                   |
+| `split`   | `"lines"`       | `"lines"` or `"chars"` (per-character masked rise) |
+| `stagger` | `0.1`           | seconds between lines (`0.03` for chars) |
 | `duration`| `1`             | seconds                                 |
 | `ease`    | `"power4.out"`  |                                         |
 | `delay`   | `0`             | seconds                                 |
@@ -369,7 +374,8 @@ lineReveal("[data-lines]", { mode: "scroll" });                     // reverses 
 | `end`     | `"bottom 10%"`  | ScrollTrigger end                       |
 
 **DOM:** any block of text — headings with `<br>` hard breaks work. Produces
-`.ak-line-mask > .ak-line` per line; `destroy()` restores the original HTML.
+`.ak-line-mask > .ak-line` per line (or `.ak-char-mask > .ak-char` with
+`split: "chars"`); `destroy()` restores the original HTML.
 
 #### `maskReveal(target, options?) => destroy`
 
@@ -420,6 +426,58 @@ scatterText("[data-scatter-pin]", {
 `destroy()`). Line measurement waits for `document.fonts.ready` so travel
 distance is correct with webfonts.
 
+#### `scrambleText(target, options?) => destroy`
+
+The decode / cipher reveal: each character churns through the charset and
+settles on its final glyph, left to right. Letters scramble; digits,
+punctuation and spaces stay put; case is preserved.
+
+```ts
+scrambleText("[data-scramble]");                                   // once, on enter
+scrambleText("[data-headline]", { mode: "immediate", delay: 0.2 }); // right away
+scrambleText(".nav-link", { mode: "hover", durationPerChar: 0.12 }); // on hover
+```
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `mode` | `"scroll"` | `"scroll"` (once on enter), `"immediate"`, or `"hover"` (re-scrambles on pointerenter) |
+| `charset` | `"abcdefghijklmnopqrstuvwxyz"` | glyphs letters churn through |
+| `durationPerChar` | `0.18` | seconds each character scrambles |
+| `stagger` | `0.04` | seconds between character starts |
+| `delay` | `0` | seconds before the timeline starts |
+| `start` | `"top 80%"` | ScrollTrigger start (`mode: "scroll"`) |
+
+**DOM:** plain-text elements only — the effect rewrites `textContent` while
+scrambling and restores the original exactly on `destroy()`.
+
+#### `rollText(target, options?) => destroy`
+
+The rolling word rotator: two or more rows stacked into a hidden overflow box
+one row tall, rolling to the next on an interval. The first row is cloned at
+the end so the wrap is seamless (same trick as `marquee()`).
+
+```html
+<span class="ak-roll" data-roll>
+  <span>Design</span><span>Build</span><span>Motion</span>
+</span>
+```
+
+```ts
+rollText("[data-roll]", { interval: 2.2, duration: 0.6 });
+rollText("[data-roll-rev]", { direction: "down" }); // walk rows in reverse
+```
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `interval` | `2.2` | seconds each row is shown (including the roll) |
+| `duration` | `0.6` | roll duration, seconds |
+| `ease` | `"power4.inOut"` | GSAP ease for the roll |
+| `direction` | `"up"` | `"up"` or `"down"` |
+
+**DOM:** rows are direct children of the target; the effect stacks them as
+blocks itself. `destroy()` unwraps the rows, removes the clone and restores
+every inline style — markup comes back byte-identical.
+
 #### `counter(target, options?) => destroy`
 
 Tabular number ticker.
@@ -428,6 +486,7 @@ Tabular number ticker.
 counter("[data-count]", { to: 240, duration: 3, suffix: "+" });
 counter("[data-count-scroll]", { to: 98, onScroll: true });          // waits for view
 counter("[data-count-pad]", { to: 42, pad: 3 });                     // 000 → 042
+counter("[data-progress]", { progress: true, pad: 2, suffix: "%" }); // scrubs 00% → 100%
 ```
 
 | Option       | Default        |
@@ -438,7 +497,8 @@ counter("[data-count-pad]", { to: 42, pad: 3 });                     // 000 → 
 | `pad`        | `0` (none)     |
 | `suffix`     | `""`           |
 | `onScroll`   | `false`        |
-| `start`      | ScrollTrigger start when `onScroll` |
+| `progress`   | `false` — scrub the value from scroll progress instead of a timed tween |
+| `start` / `end` | `"top 90%"` / `"bottom top"` — ScrollTrigger positions (`end` with `progress`) |
 | `onComplete` | `(value) => {}` |
 
 ---
@@ -456,6 +516,56 @@ revealRule("[data-rule]", { duration: 1, delay: 0.2 }); // default ease: EASES.r
 ```
 
 **DOM:** any element that should animate `width: 0 → 100%` when it enters.
+
+#### `unfoldReveal(target, options?) => destroy`
+
+Blocks that grow open from an edge: `scaleY: 0 → 1` from the top (or bottom)
+for a vertical unfold, `scaleX: 0 → 1` from the left for a horizontal one —
+targets stagger together off the first match's trigger.
+
+```ts
+unfoldReveal("[data-unfold]", { axis: "y", origin: "top" });
+unfoldReveal("[data-unfold-x]", { axis: "x", origin: "left", duration: 1.2 });
+```
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `axis` | `"y"` | `"y"` → `scaleY`, `"x"` → `scaleX` |
+| `origin` | `"top"` / `"left"` | `transformOrigin`, defaults per axis |
+| `duration` | `0.7` | seconds |
+| `ease` | `"power3.out"` | GSAP ease |
+| `stagger` | `0.08` | seconds between targets |
+| `delay` | `0` | seconds |
+| `mode` | `"scroll"` | or `"immediate"` to play at once |
+| `start` | `"top 85%"` | ScrollTrigger start |
+| `replay` | `false` | re-unfold when leaving / re-entering |
+
+`destroy()` clears `transform` + `transform-origin`, so elements rest exactly
+as authored.
+
+#### `clipWipe(target, options?) => destroy`
+
+A `clip-path: inset()` reveal: the element is collapsed behind one edge (or
+inside a frame margin) and the inset animates to zero so it wipes into view.
+
+```ts
+clipWipe("[data-clip]", { from: "left" });                    // inset(0 100% 0 0) → 0
+clipWipe("[data-frame]", { from: "frame", inset: 12 });       // opens out of a frame
+```
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `from` | `"left"` | `"left"` / `"right"` / `"top"` / `"bottom"` / `"frame"` |
+| `inset` | `15` | frame margin in % (`from: "frame"`) |
+| `duration` | `1` | seconds |
+| `ease` | `"power3.out"` | GSAP ease |
+| `stagger` | `0.08` | seconds between targets |
+| `mode` | `"scroll"` | or `"immediate"` to play at once |
+| `start` | `"top 85%"` | ScrollTrigger start |
+| `replay` | `false` | re-wipe when leaving / re-entering |
+
+Works on images, video, blocks and text. `destroy()` removes the inline
+`clip-path`, restoring the authored (visible) state.
 
 #### `parallax(target, options?) => destroy`
 
@@ -545,6 +655,32 @@ Hero media that scales down and drifts as it scrolls away.
 heroShrink("[data-hero-media]", { offsetY: "49vh", scale: 0.23, scrub: 1 });
 // options: offsetX "0px", start "top top", end "bottom top"
 ```
+
+#### `mediaSettle(target, options?) => destroy`
+
+Images and video that arrive slightly oversized and ease down to size as the
+section enters — content lands instead of popping in. Set `scrub` to bind the
+settle to scroll progress instead of playing it once.
+
+```ts
+mediaSettle("[data-settle]", { from: 1.15, duration: 1.5 });  // on enter
+mediaSettle("[data-settle-scrub]", { scrub: 0.5, from: 1.2 }); // scroll-bound
+```
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `from` | `1.15` | starting scale — settles down to 1 |
+| `duration` | `1.5` | seconds (enter mode) |
+| `ease` | `"power2.out"` | GSAP ease (enter mode) |
+| `origin` | `"center"` | `transformOrigin` |
+| `stagger` | `0.06` | seconds between targets |
+| `mode` | `"scroll"` | or `"immediate"` to play at once |
+| `start` / `end` | `"top 75%"` / `"bottom top"` | ScrollTrigger positions |
+| `scrub` | unset | number = scrub smoothing seconds, `true` = immediate |
+
+`destroy()` clears `transform` — media returns to its authored scale. Unlike
+`heroShrink()` (which scrubs media down as it *leaves*), `mediaSettle()` plays
+the entrance.
 
 ---
 
@@ -833,8 +969,9 @@ import "@cosmictraveler002/anim-kit/styles";   // → dist/styles/anim-kit.css
 The companion stylesheet supplies:
 
 - **Design tokens:** `--ak-primary`, `--ak-curtain`, `--ak-reveal`, `--ak-out`
-- **Text masks:** `.ak-line-mask`, `.ak-line`, `.ak-word`, `.ak-space`
+- **Text masks:** `.ak-line-mask`, `.ak-line`, `.ak-char-mask`, `.ak-char`, `.ak-word`, `.ak-space`
 - **Heading masks:** `.ak-mask`, `.ak-mask__inner`
+- **Rolling text:** `.ak-roll`, `.ak-roll__inner`
 - **Liquid button:** `.ak-liquid`, `.ak-liquid__wave`, `.ak-liquid__label`
 - **Underline:** `.ak-underline`
 - **Marquee:** `.ak-marquee`, `.ak-marquee__viewport`, `.ak-marquee__track`
@@ -931,8 +1068,9 @@ instead.)
 ### Copy-prompt API
 
 The demo server doubles as a **prompt server**: every effect has a ready-to-
-paste *"how to implement this with anim-kit"* prompt — markup, import,
-initialisation call, options table, teardown and gotchas:
+paste *"how to implement this with anim-kit"* prompt — markup, import, CDN
+usage (version-pinned, no build step), initialisation call, options table,
+teardown and gotchas:
 
 ```bash
 curl http://localhost:4321/api/prompts          # { count, categories, prompts: [{ id, title, summary, category, subcategory, text }] }
@@ -940,7 +1078,7 @@ curl http://localhost:4321/api/prompts/marquee  # one prompt, text/plain
 ```
 
 On the page, every labelled section carries a **copy prompt** chip, and the
-floating **⧉ prompts (22)** button at the bottom right opens the full
+floating **⧉ prompts (27)** button at the bottom right opens the full
 catalogue grouped by [effect category](#effect-categories) — one click copies
 an effect's prompt (the prompt states its category), *copy all* puts the
 entire set on the clipboard. The catalogue lives in `scripts/prompts.mjs`:
@@ -951,28 +1089,30 @@ and slotting the effect into a subcategory.
 **Unit smoke** (`scripts/smoke.mjs`) runs the built bundle in **jsdom** and
 asserts:
 
-1. all 38 exports are present;
+1. all 43 exports are present;
 2. plugins (`ScrollTrigger`, `SplitText`, `Draggable`, `CustomEase`,
    `ScrollSmoother`) and the 4 custom eases are registered;
 3. every effect no-ops safely on missing targets;
-4. 16 effects mount on real markup and unmount cleanly;
+4. 22 effects mount on real markup and unmount cleanly;
 5. `preloader` ticks in both the positional and options-object call forms;
-6. `lineReveal` actually splits into masked lines and restores markup on
-   destroy;
-7. `utils`, `compose` and `guard` behave per contract.
+6. `lineReveal` actually splits into masked lines (and per-character masks
+   with `split: "chars"`) and restores markup on destroy;
+7. `scrambleText` restores its text, `rollText` wraps/unwraps its rows, and
+   `counter({ progress: true })` renders a scrubbed readout;
+8. `utils`, `compose` and `guard` behave per contract.
 
 **Demo smoke** (`scripts/demo-smoke.mjs`) loads the real `demo/index.html` and
 executes the real `demo/demo.js` wiring against it, then asserts the effects
 actually *did* something (hero split, preloader counter ticking, marquee track
 duplicated, per-call liquid directions, menu/theme/smooth-scroll handles in
-their initial state), that ~40 ScrollTriggers + a Draggable were created, that
+their initial state), that ~50 ScrollTriggers + a Draggable were created, that
 no console errors were logged, that `dragStrip` tiled its content for the
 seamless loop, that every effect referenced on the page has a `/api/prompts`
 entry, that the taxonomy classifies every effect exactly once, that the
 prompt dock renders one group per category with every effect listed once,
 and that teardown leaves **zero** live ScrollTriggers, Draggables or
 page-element tweens behind while restoring the original markup (marquee and
-drag-strip clones removed).
+drag-strip clones removed, rolling rows unwrapped, scrambled text restored).
 
 > jsdom is used deliberately: GSAP's CSSPlugin/Draggable probe element
 > style/computed values during registration, which a hand-rolled DOM stub
@@ -992,9 +1132,9 @@ anim-kit/
 │  │  ├─ guard.ts          reduced-motion gate
 │  │  ├─ util.ts           toArray/one/onReady/compose/raf
 │  │  └─ types.ts          TargetLike / Destroy / CommonOptions
-│  ├─ effects/             one file per effect (17 files, 21 effect functions)
+│  ├─ effects/             one file per effect (22 files, 26 effect functions)
 │  ├─ styles/anim-kit.css  companion stylesheet
-│  └─ index.ts             barrel — 38 exports
+│  └─ index.ts             barrel — 43 exports
 ├─ demo/                   visual demo (import map, no bundler)
 ├─ scripts/
 │  ├─ serve.mjs            static server + /api/prompts (:4321)

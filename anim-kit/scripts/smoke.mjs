@@ -20,6 +20,13 @@ const { dom, window } = setupDom(
        <div class="rule" data-rule></div>
        <svg data-logo viewBox="0 0 100 40"><path class="svg-anim-path" d="M0 0h100v40H0z"/></svg>
        <div data-count>0</div>
+       <div data-progress>0</div>
+       <p data-scramble>Decode this line</p>
+       <p data-chars>char reveal</p>
+       <span class="ak-roll" data-roll><span>one</span><span>two</span><span>three</span></span>
+       <div data-unfold>unfold me</div>
+       <div data-clip>wipe me</div>
+       <div data-settle>settle me</div>
        <div class="ak-marquee"><div data-marquee-track><span>a</span><span>b</span></div></div>
        <div data-drag><i>x</i><i>y</i></div>
        <div data-eq><i></i><i></i><i></i></div>
@@ -44,11 +51,13 @@ const expected = [
   "initGSAP", "EASES", "smoothScroll", "split", "guard",
   "toArray", "one", "onReady", "compose", "raf", "prefersReducedMotion",
   // scroll effects
-  "lineReveal", "maskReveal", "revealRule", "parallax", "horizontalScroll",
-  "stackedCards", "stackedCardsPinned", "scatterText", "heroShrink", "navHide",
-  "logoReveal",
+  "lineReveal", "maskReveal", "revealRule", "unfoldReveal", "clipWipe", "parallax",
+  "horizontalScroll", "stackedCards", "stackedCardsPinned", "scatterText", "heroShrink",
+  "mediaSettle", "navHide", "logoReveal",
   // loops
-  "marquee", "dragStrip",
+  "marquee", "rollText", "dragStrip",
+  // text extras
+  "scrambleText",
   // micro
   "liquidButton", "underlineLink", "cursorFollower", "counter", "audioBars",
   "themeReveal", "menuOverlay", "preloader",
@@ -100,9 +109,10 @@ console.log(`ok  plugins registered [${globals.join(", ")}] + 4 custom eases`);
 const asDestroy = (ret) => (typeof ret === "function" ? ret : ret?.destroy);
 
 const factories = [
-  "lineReveal", "maskReveal", "revealRule", "parallax", "horizontalScroll",
-  "stackedCards", "scatterText", "heroShrink", "navHide", "logoReveal",
-  "marquee", "dragStrip", "liquidButton", "underlineLink",
+  "lineReveal", "maskReveal", "revealRule", "unfoldReveal", "clipWipe", "parallax",
+  "horizontalScroll", "stackedCards", "scatterText", "heroShrink", "mediaSettle",
+  "navHide", "logoReveal", "marquee", "rollText", "dragStrip", "scrambleText",
+  "liquidButton", "underlineLink",
   "cursorFollower", "counter", "audioBars",
 ];
 for (const name of factories) {
@@ -135,10 +145,16 @@ const scatterHost = mountHost("scatter-host", `<p>So, are you ready to Stand out
 const createDestroy = [
   ["maskReveal", ["[data-mask]"]],
   ["revealRule", ["[data-rule]"]],
+  ["unfoldReveal", ["[data-unfold]"]],
+  ["clipWipe", ["[data-clip]"]],
   ["logoReveal", ["[data-logo]"]],
   ["parallax", ["#fixture"]],
   ["counter", ["[data-count]", { to: 5, duration: 0.01 }]],
+  ["counter", ["[data-progress]", { progress: true, to: 100, pad: 2, suffix: "%" }]],
   ["marquee", ["[data-marquee-track]", { speed: 40 }]],
+  ["rollText", ["[data-roll]"]],
+  ["scrambleText", ["[data-scramble]", { mode: "immediate" }]],
+  ["mediaSettle", ["[data-settle]"]],
   ["liquidButton", ["[data-liquid]", { direction: "down", duration: 300 }]],
   ["underlineLink", ["a.ak-underline"]],
   ["cursorFollower", ["[data-showreel]", { follower: "[data-showreel] span" }]],
@@ -190,6 +206,46 @@ linesDestroy();
 const restored = window.document.querySelector("[data-lines]").textContent.trim();
 assert.ok(restored.includes("body copy"), "lineReveal must restore markup on destroy");
 console.log(`ok  lineReveal split into ${splitNodes.length} masked line(s) and reverted`);
+
+/* ---------------- lineReveal split:"chars" per-character masks ---------------- */
+const charsDestroy = lib.lineReveal("[data-chars]", { mode: "immediate", split: "chars" });
+const charNodes = window.document.querySelectorAll("[data-chars] .ak-char");
+assert.ok(charNodes.length > 0, "lineReveal(split:'chars') should produce .ak-char spans");
+charsDestroy();
+const charsRestored = window.document.querySelector("[data-chars]").textContent.trim();
+assert.ok(charsRestored.includes("char reveal"), "char split must restore markup on destroy");
+console.log(`ok  lineReveal split:"chars" masked ${charNodes.length} character(s) and reverted`);
+
+/* ---------------- counter progress mode (scroll-scrubbed readout) --------- */
+const progEl = window.document.querySelector("[data-progress]");
+const progDestroy = lib.counter("[data-progress]", { progress: true, to: 100, pad: 2, suffix: "%" });
+// jsdom has no layout, so ScrollTrigger clamps the scrub — assert the render
+// pipeline (pad + suffix + onUpdate) rather than a scroll-position value.
+assert.match(progEl.textContent, /^\d{2,3}%$/, "progress counter should render a padded % readout");
+progDestroy();
+console.log("ok  counter progress mode mounts (scrub) and tears down");
+
+/* ---------------- scrambleText stamps + restores its text ---------------- */
+const scrEl = window.document.querySelector("[data-scramble]");
+const scrBefore = scrEl.textContent;
+const scrDestroy = lib.scrambleText("[data-scramble]", { mode: "immediate" });
+assert.equal(scrEl.dataset.akScramble, "true", "scrambleText must stamp its target");
+scrDestroy();
+assert.equal(scrEl.textContent, scrBefore, "scrambleText must restore the original text");
+assert.equal(scrEl.dataset.akScramble, undefined, "scrambleText must clear its stamp");
+console.log("ok  scrambleText stamps + restores text on destroy");
+
+/* ---------------- rollText builds its loop, unwraps on destroy ------------ */
+const rollEl = window.document.querySelector("[data-roll]");
+const rollDestroy = lib.rollText("[data-roll]");
+assert.equal(rollEl.dataset.akRoll, "3", "rollText must stamp the row count");
+assert.equal(rollEl.children.length, 1, "rollText must wrap rows in an inner box");
+assert.ok(rollEl.querySelector("[data-ak-roll-clone]"), "rollText must clone the first row");
+rollDestroy();
+assert.equal(rollEl.dataset.akRoll, undefined, "rollText must clear its stamp");
+assert.equal(rollEl.children.length, 3, "rollText must restore the original rows");
+assert.equal(rollEl.querySelector("[data-ak-roll-clone]"), null, "rollText must remove the clone");
+console.log("ok  rollText wraps rows + clone, unwraps cleanly");
 
 /* ---------------- utils ---------------- */
 assert.deepEqual(lib.toArray("[data-xyz-nope]"), [], "toArray on missing selector");

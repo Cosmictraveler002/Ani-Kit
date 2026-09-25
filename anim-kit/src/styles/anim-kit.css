@@ -43,6 +43,13 @@
   will-change: transform;
 }
 
+/* Per-char masks produced by lineReveal({ split: "chars" }) / split(). */
+.ak-char-mask {
+  display: inline-block;
+  overflow: clip;
+  vertical-align: bottom;
+}
+
 .ak-space {
   display: inline-block;
   white-space: pre;
@@ -195,6 +202,21 @@
 .ak-marquee::after {
   right: 0;
   background: linear-gradient(to left, var(--ak-background, #fff) 0%, transparent 100%);
+}
+
+/* ------------------------------------------------------------------ */
+/* Rolling text (rollText)                                             */
+/* ------------------------------------------------------------------ */
+
+/* The effect measures a row, then sets the box height + overflow inline so
+   teardown can restore authored styles exactly. This is the authored base. */
+.ak-roll {
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+.ak-roll__inner {
+  will-change: transform;
 }
 
 /* ------------------------------------------------------------------ */

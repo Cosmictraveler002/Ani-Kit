@@ -582,7 +582,7 @@
           </h2>
           <div class="rule" data-rule></div>
 
-          <p class="label" data-effect="counter" style="margin-bottom: 16px">counter — 0→240, on-scroll, padded</p>
+          <p class="label" data-effect="counter" style="margin-bottom: 16px">counter — 0→240, on-scroll, padded, scroll progress</p>
           <div class="stats" style="margin-top: 0">
             <div>
               <div class="n" data-count>0</div>
@@ -595,6 +595,10 @@
             <div>
               <div class="n" data-count-pad>0</div>
               <div class="cap">counter() padded</div>
+            </div>
+            <div>
+              <div class="n" data-count-progress>0%</div>
+              <div class="cap">counter() scroll progress</div>
             </div>
           </div>
         </div>
@@ -610,6 +614,23 @@
             away and it reverses, exactly like the original. It works on long
             copy, short copy, and headings with <br />hard breaks in them.
           </p>
+        </div>
+      </section>
+
+      <!-- TEXT EXTRAS: scramble + rolling words + per-char reveal -->
+      <section>
+        <div class="block">
+          <p class="label" data-effect="scrambleText rollText">scrambleText — decode reveal · rollText — rolling words · lineReveal split:"chars"</p>
+          <p class="lede" data-scramble>
+            Characters churn through the alphabet before they land on the final line.
+          </p>
+          <p class="lede" style="margin-top: 20px; display: flex; gap: 0.35em; align-items: baseline; flex-wrap: wrap;">
+            We build
+            <span class="ak-roll" data-roll>
+              <span>brands</span><span>websites</span><span>motion</span>
+            </span>
+          </p>
+          <h3 data-chars-head style="margin-top: 28px">Per-character masked rise.</h3>
         </div>
       </section>
 
@@ -683,6 +704,31 @@
             <figure><img data-speed="-0.5" alt="" src="https://picsum.photos/seed/px1/800/600" /></figure>
             <figure><img data-speed="0.8" alt="" src="https://picsum.photos/seed/px2/800/600" /></figure>
             <figure><img data-speed="-0.3" alt="" src="https://picsum.photos/seed/px3/800/600" /></figure>
+          </div>
+        </div>
+      </section>
+
+      <!-- ENTER REVEALS: unfold + clip wipe + media settle -->
+      <section>
+        <div class="block">
+          <p class="label" data-effect="unfoldReveal clipWipe mediaSettle">unfoldReveal + clipWipe + mediaSettle — enter reveals</p>
+          <p class="lede" data-unfold style="background: rgba(255, 255, 255, 0.05); padding: 18px; margin-bottom: 12px">
+            Grows open from the top edge — scaleY from 0, staggered with its sibling below.
+          </p>
+          <p class="lede" data-unfold style="background: rgba(255, 255, 255, 0.05); padding: 18px; margin-bottom: 12px">
+            Second block unfolds too — one trigger, one staggered tween.
+          </p>
+          <h3 data-unfold-x style="margin-bottom: 24px">Unfolds horizontally from the left.</h3>
+          <div class="pgrid">
+            <figure data-clip-left>
+              <img data-settle alt="" src="https://picsum.photos/seed/settle1/800/600" />
+            </figure>
+            <figure data-clip-frame>
+              <img data-settle alt="" src="https://picsum.photos/seed/settle2/800/600" />
+            </figure>
+            <figure>
+              <img data-settle-scrub alt="" src="https://picsum.photos/seed/settle3/800/600" />
+            </figure>
           </div>
         </div>
       </section>

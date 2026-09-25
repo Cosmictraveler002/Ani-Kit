@@ -17,17 +17,19 @@ ${summary}
 anim-kit is a framework-agnostic ESM animation library (TypeScript source, compiled to \`dist/\` JS + \`.d.ts\`) built on GSAP (ScrollTrigger, SplitText, Draggable, CustomEase) and Lenis. It works with plain HTML and with React/Vue/Next/Svelte — effects are DOM-selector based, no components involved. Every effect follows one contract:
 
     effect(target, options) => destroy
+
+It is published on npm **and** loadable straight from a version-pinned CDN — step 3 shows how, with no build step.
 `;
 
-const EPILOGUE = `## 5. Teardown
+const EPILOGUE = `## 6. Teardown
 
 Always keep the destroy function and call it when the effect is no longer
 needed (component unmount, route change, HMR reload):
 
-    const destroy = /* result of step 3 */;
+    const destroy = /* result of step 4 */;
     destroy();
 
-## 6. Behaviour guarantees
+## 7. Behaviour guarantees
 
 - \`target\` accepts a selector string, an Element, an array or a NodeList.
   When nothing matches, the effect returns a no-op destroy — never throws.
@@ -37,6 +39,88 @@ needed (component unmount, route change, HMR reload):
   \`gsap\`/\`ScrollTrigger\` configured before first paint.
 - Custom eases live in the \`EASES\` map (\`EASES.curtain\`, \`EASES.cardStack\`,
   \`EASES.reveal\`, \`EASES.preloadOut\`).
+`;
+
+/** Version-pinned CDN release that step 3 of every prompt points at. */
+const CDN_VERSION = "1.1.0";
+
+/**
+ * Step 3 of every prompt: how to load anim-kit straight from a CDN with no
+ * build step, in the three verified strategies (mirrors README §CDN usage),
+ * plus what the loaded pieces actually are.
+ */
+const CDN_SECTION = (imports) => `## 3. Use it from a CDN (no build step)
+
+No bundler, no \`npm install\`: the CDN serves the same ESM files as the npm
+tarball. Every URL is **version-pinned** — npm versions are immutable, so
+\`@cosmictraveler002/anim-kit@${CDN_VERSION}\` always resolves to this exact
+build, forever. Pick ONE strategy:
+
+**Option 1 — standalone bundle (simplest):** one script tag, \`gsap\` + \`lenis\` inlined:
+
+\`\`\`html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/styles/anim-kit.css" />
+
+<script type="module">
+  import { ${imports.join(", ")} } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/anim-kit.standalone.js";
+</script>
+\`\`\`
+
+**Option 2 — jsDelivr \`+esm\`:** the CDN bundles the package with its dependencies:
+
+\`\`\`html
+<script type="module">
+  import { ${imports.join(", ")} } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/+esm";
+</script>
+\`\`\`
+
+**Option 3 — per-file ESM + import map:** unbundled files, \`gsap\`/\`lenis\` pinned
+individually (import maps match specifiers literally — list GSAP subpaths one
+by one; a trailing-slash map would produce extension-less URLs CDNs don't
+serve). Use this to share one GSAP between anim-kit and the rest of your page:
+
+\`\`\`html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/styles/anim-kit.css" />
+
+<script type="importmap">
+  {
+    "imports": {
+      "@cosmictraveler002/anim-kit": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/index.js",
+      "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/index.js",
+      "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollTrigger.js",
+      "gsap/SplitText": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/SplitText.js",
+      "gsap/Draggable": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/Draggable.js",
+      "gsap/CustomEase": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/CustomEase.js",
+      "gsap/ScrollSmoother": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollSmoother.js",
+      "lenis": "https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.mjs"
+    }
+  }
+</script>
+
+<script type="module">
+  import { ${imports.join(", ")} } from "@cosmictraveler002/anim-kit";
+</script>
+\`\`\`
+
+Swap the host for unpkg — the file layout is identical. The stylesheet link
+works in every strategy (same URL, different host).
+
+**The building blocks you just loaded:**
+
+- \`gsap\` + \`ScrollTrigger\` drive every tween, scrub and trigger;
+  \`SplitText\` powers the masked text splits; \`Draggable\` powers the drag
+  carousels; \`CustomEase\` registers the studio eases exported as \`EASES\`.
+- \`lenis\` powers \`smoothScroll()\` — create it **first** so ScrollTrigger
+  syncs with its scroller.
+- The stylesheet ships resting states, mask classes and the pure-CSS pieces
+  (\`.ak-liquid\`, \`.ak-underline\`, \`.ak-marquee\`, \`.ak-roll\`); the motion
+  itself is 100% JS.
+- It is plain ESM with \`.d.ts\` files — TypeScript consumers get types straight
+  from the same URLs.
+
+Deep imports work as CDN URLs too, e.g.
+\`https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/styles/anim-kit.css\`
+for \`@cosmictraveler002/anim-kit/styles\`.
 `;
 
 /**
@@ -63,10 +147,12 @@ export const TAXONOMY = [
   {
     id: "text",
     name: "Text animations",
-    blurb: "Typography reveals — lines, characters, numbers.",
+    blurb: "Typography reveals — lines, characters, decoding, rolling words, numbers.",
     subcategories: [
       { id: "reveals", name: "Line & mask reveals", effects: ["lineReveal", "maskReveal"] },
       { id: "scatter", name: "Per-character scatter", effects: ["scatterText"] },
+      { id: "decode", name: "Decode & scramble", effects: ["scrambleText"] },
+      { id: "rolls", name: "Rolling text", effects: ["rollText"] },
       { id: "counters", name: "Counters", effects: ["counter"] },
     ],
   },
@@ -77,8 +163,8 @@ export const TAXONOMY = [
     subcategories: [
       { id: "pinned", name: "Pinned galleries", effects: ["horizontalScroll", "stackedCards", "stackedCardsPinned"] },
       { id: "parallax", name: "Parallax & depth", effects: ["parallax"] },
-      { id: "heroes", name: "Heroes & media", effects: ["heroShrink"] },
-      { id: "enter", name: "Enter reveals", effects: ["revealRule"] },
+      { id: "heroes", name: "Heroes & media", effects: ["heroShrink", "mediaSettle"] },
+      { id: "enter", name: "Enter reveals", effects: ["revealRule", "unfoldReveal", "clipWipe"] },
     ],
   },
   {
@@ -165,10 +251,12 @@ export function renderPrompt(entry) {
     `## 2. Import\n\n\`\`\`js\nimport { ${imports.join(", ")} } from "@cosmictraveler002/anim-kit";\nimport "@cosmictraveler002/anim-kit/styles"; // companion stylesheet (classes, masks, tokens)\n\`\`\`\n`,
   );
 
-  out.push(`## 3. Initialise\n\nRun this after the DOM is ready (and after fonts/images if it measures layout):\n\n\`\`\`js\n${usage.trim()}\n\`\`\`\n`);
+  out.push(CDN_SECTION(imports));
+
+  out.push(`## 4. Initialise\n\nRun this after the DOM is ready (and after fonts/images if it measures layout):\n\n\`\`\`js\n${usage.trim()}\n\`\`\`\n`);
 
   if (options.length) {
-    out.push(`## 4. Options\n\n| Option | Default | Description |\n| --- | --- | --- |\n${options
+    out.push(`## 5. Options\n\n| Option | Default | Description |\n| --- | --- | --- |\n${options
       .map(([name, def, desc]) => `| \`${name}\` | ${def} | ${desc} |`)
       .join("\n")}\n`);
   }
@@ -343,10 +431,14 @@ console.log(menu.isOpen());`,
 lineReveal("[data-hero-text]", { mode: "immediate", delay: 0.35 });
 
 // Below the fold — plays on enter, reverses on leave:
-const destroy = lineReveal("[data-lines]", { mode: "scroll" });`,
+const destroy = lineReveal("[data-lines]", { mode: "scroll" });
+
+// Per-character masked rise (each char in its own overflow-hidden mask):
+const perChar = lineReveal("[data-headline]", { split: "chars", stagger: 0.03 });`,
     options: [
       ["mode", "`'scroll'`", "`'scroll'` plays on enter/reverses on leave; `'immediate'` plays at once."],
-      ["stagger", "`0.1`", "Seconds between lines."],
+      ["split", "`'lines'`", "`'lines'` masks per line; `'chars'` masks per character (tighter default stagger)."],
+      ["stagger", "`0.1`", "Seconds between lines (`0.03` when `split: 'chars'`)."],
       ["duration", "`1`", "Seconds."],
       ["ease", "`'power4.out'`", "GSAP ease name."],
       ["delay", "`0`", "Seconds before playing."],
@@ -354,7 +446,7 @@ const destroy = lineReveal("[data-lines]", { mode: "scroll" });`,
       ["force", "`false`", "Run even under `prefers-reduced-motion`."],
     ],
     notes: [
-      "Produces `.ak-line-mask > .ak-line` wrappers (via anim-kit's `split()` → GSAP SplitText, with a manual fallback).",
+      "Produces `.ak-line-mask > .ak-line` wrappers (via anim-kit's `split()` → GSAP SplitText, with a manual fallback); `split: 'chars'` produces `.ak-char-mask > .ak-char`.",
       "Headings with `<br>` hard breaks split correctly.",
       "`destroy()` restores the original markup byte-for-byte.",
       "Splitting measures line boxes, so run it after fonts are ready for pixel-perfect masks.",
@@ -405,6 +497,70 @@ const destroy = lineReveal("[data-lines]", { mode: "scroll" });`,
     ],
   },
   {
+    id: "unfoldReveal",
+    title: "Unfold reveal (scale from an edge)",
+    summary:
+      "Blocks that grow open from one edge — scaleY from the top/bottom or scaleX from the left — staggered as the section enters.",
+    imports: ["unfoldReveal"],
+    markup: `<p data-unfold>Unfolds from the top edge.</p>
+<p data-unfold>Its sibling staggers in with it.</p>
+
+<div class="rule" data-unfold-x></div>`,
+    usage: `// Vertical unfold from the top edge:
+const destroy = unfoldReveal("[data-unfold]", { axis: "y", origin: "top" });
+
+// Horizontal grow from the left:
+unfoldReveal("[data-unfold-x]", { axis: "x", origin: "left", duration: 1.2 });`,
+    options: [
+      ["axis", "`'y'`", "`'y'` animates `scaleY`; `'x'` animates `scaleX`."],
+      ["origin", "`'top'` / `'left'`", "`transformOrigin` — defaults per axis."],
+      ["duration", "`0.7`", "Seconds."],
+      ["ease", "`'power3.out'`", "GSAP ease name."],
+      ["stagger", "`0.08`", "Seconds between targets (all stagger off the first match's trigger)."],
+      ["delay", "`0`", "Seconds before playing."],
+      ["mode", "`'scroll'`", "`'scroll'` plays on enter; `'immediate'` plays at once."],
+      ["start", "`'top 85%'`", "ScrollTrigger start."],
+      ["replay", "`false`", "Re-unfold when leaving / re-entering the viewport."],
+      ["force", "`false`", "Run even under `prefers-reduced-motion`."],
+    ],
+    notes: [
+      "`destroy()` kills the tween and clears `transform` + `transform-origin` — elements rest exactly as authored.",
+      "Works on text and blocks; give plain divs a background so the grow-in reads as a block opening.",
+      "For per-character masked rises use `lineReveal({ split: 'chars' })`; for masked word lines use `lineReveal()`.",
+    ],
+  },
+  {
+    id: "clipWipe",
+    title: "Clip wipe (inset reveal)",
+    summary:
+      "A `clip-path: inset()` wipe: the element is collapsed behind one edge (or inside a frame margin) and the inset animates to zero so it wipes into view.",
+    imports: ["clipWipe"],
+    markup: `<figure data-clip><img src="…" alt="…" /></figure>
+<h2 data-clip-frame>Wipes out of a frame.</h2>`,
+    usage: `// Grow rightward from the left edge:
+const destroy = clipWipe("[data-clip]", { from: "left" });
+
+// Open out of a centered frame (inset 15%):
+clipWipe("[data-clip-frame]", { from: "frame", inset: 15, duration: 1.2 });`,
+    options: [
+      ["from", "`'left'`", "`'left'` / `'right'` / `'top'` / `'bottom'` edge, or `'frame'`."],
+      ["inset", "`15`", "Frame margin in % (`from: 'frame'` only)."],
+      ["duration", "`1`", "Seconds."],
+      ["ease", "`'power3.out'`", "GSAP ease name."],
+      ["stagger", "`0.08`", "Seconds between targets."],
+      ["delay", "`0`", "Seconds before playing."],
+      ["mode", "`'scroll'`", "`'scroll'` plays on enter; `'immediate'` plays at once."],
+      ["start", "`'top 85%'`", "ScrollTrigger start."],
+      ["replay", "`false`", "Re-wipe when leaving / re-entering the viewport."],
+      ["force", "`false`", "Run even under `prefers-reduced-motion`."],
+    ],
+    notes: [
+      "Works on images, video, blocks and text — anything with a box.",
+      "`from: 'left'` starts at `inset(0 100% 0 0)` and animates to `inset(0 0% 0 0%)`; the other edges mirror it.",
+      "`destroy()` kills the tween and removes the inline `clip-path`, restoring the authored (visible) state.",
+    ],
+  },
+  {
     id: "logoReveal",
     title: "SVG logo path reveal",
     summary: "A wordmark that assembles letter by letter: each path drops in and fades up with a stagger.",
@@ -437,7 +593,10 @@ const destroy = lineReveal("[data-lines]", { mode: "scroll" });`,
 </div>`,
     usage: `counter("[data-count]", { to: 240, duration: 3, suffix: "+" });
 counter("[data-count-scroll]", { to: 98, onScroll: true });
-const destroy = counter("[data-count-pad]", { to: 42, pad: 3 });`,
+counter("[data-count-pad]", { to: 42, pad: 3 });
+
+// Scroll-scrubbed readout — the number follows scroll progress (a hero %):
+counter("[data-progress]", { progress: true, to: 100, pad: 2, suffix: "%" });`,
     options: [
       ["from / to", "`0` / `100`", "Start and end values."],
       ["duration", "`4`", "Seconds."],
@@ -445,7 +604,8 @@ const destroy = counter("[data-count-pad]", { to: 42, pad: 3 });`,
       ["pad", "`0`", "Pad with leading zeros to this width (0 = off)."],
       ["suffix", "`''`", "Appended to the number, e.g. `'+'`."],
       ["onScroll", "`false`", "Animate when scrolled into view instead of immediately."],
-      ["start", "`'top 90%'`", "ScrollTrigger start (with `onScroll`)."],
+      ["progress", "`false`", "Scrub the value from scroll progress instead of a timed tween (ignores `onScroll`/`onComplete`)."],
+      ["start / end", "`'top 90%'` / `'bottom top'`", "ScrollTrigger positions (`end` only with `progress`)."],
       ["onComplete", "—", "`(value) => {}` callback."],
       ["force", "`false`", "Run even under `prefers-reduced-motion`."],
     ],
@@ -571,6 +731,38 @@ const destroy = marquee("[data-marquee-track]", { speed: 40, pauseOnHover: false
     ],
   },
   {
+    id: "mediaSettle",
+    title: "Media settle (entrance zoom)",
+    summary:
+      "Images and video that arrive slightly oversized and ease down to size as the section enters — or scrubbed to scroll progress. Content lands instead of popping in.",
+    imports: ["mediaSettle"],
+    markup: `<figure data-settle><img src="…" alt="…" /></figure>
+<figure data-settle><img src="…" alt="…" /></figure>`,
+    usage: `// One-shot on enter (scale 1.15 → 1):
+const destroy = mediaSettle("[data-settle]", { from: 1.15, duration: 1.5 });
+
+// Bound to scroll progress instead (0.5s scrub smoothing):
+mediaSettle("[data-settle-scrub]", { scrub: 0.5, start: "top bottom", end: "top 30%" });`,
+    options: [
+      ["from", "`1.15`", "Starting scale — settles down to 1."],
+      ["duration", "`1.5`", "Seconds (enter mode only)."],
+      ["ease", "`'power2.out'`", "GSAP ease (enter mode only)."],
+      ["origin", "`'center'`", "`transformOrigin`."],
+      ["stagger", "`0.06`", "Seconds between targets."],
+      ["delay", "`0`", "Seconds before playing."],
+      ["mode", "`'scroll'`", "`'scroll'` plays once on enter; `'immediate'` plays at once."],
+      ["start", "`'top 75%'`", "ScrollTrigger start."],
+      ["end", "`'bottom top'`", "ScrollTrigger end (scrub mode only)."],
+      ["scrub", "unset", "Number = scrub smoothing seconds, `true` = immediate — binds the settle to scroll progress."],
+      ["force", "`false`", "Run even under `prefers-reduced-motion`."],
+    ],
+    notes: [
+      "`destroy()` kills the tween and clears `transform` — media returns to its authored scale.",
+      "Give media `object-fit: cover` inside a fixed box; the scale animates the element, not its intrinsic size.",
+      "Complements `heroShrink()`: that scrubs media down as it *leaves*; `mediaSettle()` plays the entrance.",
+    ],
+  },
+  {
     id: "stackedCards",
     title: "Stacked card deck",
     summary:
@@ -670,6 +862,68 @@ const destroy = marquee("[data-marquee-track]", { speed: 40, pauseOnHover: false
       "Rewrites the line's `innerHTML` into `.ak-char` / `.ak-space` spans — `destroy()` restores the original text.",
       "Waits for `document.fonts.ready` before measuring, so webfonts travel the right distance.",
       "Give the line `white-space: nowrap` and let it overflow; the section should be `overflow: hidden`.",
+    ],
+  },
+  {
+    id: "scrambleText",
+    title: "Scramble text (decode reveal)",
+    summary:
+      "Each character churns through the alphabet and settles on its final glyph, left to right — the cipher/decode reveal for headlines, labels and links.",
+    imports: ["scrambleText"],
+    markup: `<p data-scramble>Characters decode before they land.</p>
+
+<a href="#" data-scramble-hover>hover me</a>`,
+    usage: `// Plays once when scrolled into view:
+const destroy = scrambleText("[data-scramble]");
+
+// Above the fold — play right away:
+scrambleText("[data-headline]", { mode: "immediate", delay: 0.2 });
+
+// Re-scramble on every hover:
+scrambleText("[data-scramble-hover]", { mode: "hover", durationPerChar: 0.12 });`,
+    options: [
+      ["mode", "`'scroll'`", "`'scroll'` plays once on enter; `'immediate'` plays now; `'hover'` re-scrambles on pointerenter."],
+      ["charset", "`'abcdefghijklmnopqrstuvwxyz'`", "Glyphs letters churn through."],
+      ["durationPerChar", "`0.18`", "Seconds each character scrambles (eased out)."],
+      ["stagger", "`0.04`", "Seconds between character starts."],
+      ["delay", "`0`", "Seconds before the timeline starts."],
+      ["start", "`'top 80%'`", "ScrollTrigger start (`mode: 'scroll'` only)."],
+      ["force", "`false`", "Run even under `prefers-reduced-motion`."],
+    ],
+    notes: [
+      "Targets must be **plain-text** elements — the effect rewrites `textContent` while scrambling.",
+      "Letters scramble; digits, punctuation and spaces stay put, and letter case is preserved.",
+      "`destroy()` kills the timelines, removes listeners and restores the original text exactly.",
+      "Reduced motion never touches the text — it is already at its final state.",
+    ],
+  },
+  {
+    id: "rollText",
+    title: "Rolling text (word rotator)",
+    summary:
+      "Stack two or more rows in a hidden overflow box and roll to the next one on an interval — the seamless vertical word rotator for taglines, badges and labels.",
+    imports: ["rollText"],
+    markup: `<span class="ak-roll" data-roll>
+  <span>Design</span>
+  <span>Build</span>
+  <span>Motion</span>
+</span>`,
+    usage: `const destroy = rollText("[data-roll]", { interval: 2.2, duration: 0.6 });
+
+// Walking the rows in reverse:
+rollText("[data-roll-rev]", { direction: "down" });`,
+    options: [
+      ["interval", "`2.2`", "Seconds each row is shown (including the roll)."],
+      ["duration", "`0.6`", "Roll duration, seconds."],
+      ["ease", "`'power4.inOut'`", "GSAP ease for the roll."],
+      ["direction", "`'up'`", "`'up'` rolls upward; `'down'` walks in reverse."],
+      ["force", "`false`", "Run even under `prefers-reduced-motion`."],
+    ],
+    notes: [
+      "Rows must be direct children of the target; the effect stacks them as blocks itself.",
+      "The first row is cloned at the end so the wrap is seamless (same trick as `marquee()`); `.ak-roll` in the stylesheet is the authored base.",
+      "`destroy()` unwraps the rows, removes the clone and restores every inline style — markup comes back byte-identical.",
+      "Reduced motion never touches the markup — rows stay exactly as authored.",
     ],
   },
   {

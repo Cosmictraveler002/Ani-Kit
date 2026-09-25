@@ -7,26 +7,33 @@
  *   split()          text splitting with mask support
  *
  * Scroll effects:
- *   lineReveal()     masked staggered text reveal
+ *   lineReveal()     masked staggered text reveal (lines or chars)
  *   maskReveal()     inline overflow-hidden heading reveal
  *   revealRule()     line that draws to full width
+ *   unfoldReveal()   blocks that scale open from an edge
+ *   clipWipe()       clip-path inset wipe reveal
  *   parallax()       data-speed parallax
  *   horizontalScroll()   pinned horizontal gallery
  *   stackedCards() / stackedCardsPinned()   pinned card deck
  *   scatterText()    pinned horizontal band with per-char settle
  *   heroShrink()     media that scales down as it scrolls away
+ *   mediaSettle()    media that settles from a larger entrance scale
  *   navHide()        header that hides on scroll-down
  *   logoReveal()     SVG wordmark assembling letter by letter
  *
  * Infinite / loops:
  *   marquee()        dual-row constant-speed marquee
  *   dragStrip()      infinite draggable carousel with rotation
+ *   rollText()       rolling word rotator (seamless row loop)
+ *
+ * Text extras:
+ *   scrambleText()   decode / cipher reveal per character
  *
  * Micro-interactions:
  *   liquidButton()   SVG wave flood on hover
  *   underlineLink()  underline wipe on hover
  *   cursorFollower() spring-follow cursor tag
- *   counter()        tabular number ticker
+ *   counter()        tabular number ticker (timed or scroll-progress)
  *   audioBars()      equaliser visualiser
  *   themeReveal()    View Transitions circular wipe
  *   menuOverlay()    clip-path curtain menu
@@ -50,6 +57,12 @@ export type { LineRevealOptions } from "./effects/line-reveal.js";
 export { maskReveal, revealRule } from "./effects/mask-reveal.js";
 export type { MaskRevealOptions } from "./effects/mask-reveal.js";
 
+export { unfoldReveal } from "./effects/unfold-reveal.js";
+export type { UnfoldRevealOptions } from "./effects/unfold-reveal.js";
+
+export { clipWipe } from "./effects/clip-wipe.js";
+export type { ClipWipeOptions } from "./effects/clip-wipe.js";
+
 export { parallax } from "./effects/parallax.js";
 export type { ParallaxOptions } from "./effects/parallax.js";
 
@@ -65,6 +78,9 @@ export type { ScatterTextOptions } from "./effects/scatter-text.js";
 export { heroShrink } from "./effects/hero-shrink.js";
 export type { HeroShrinkOptions } from "./effects/hero-shrink.js";
 
+export { mediaSettle } from "./effects/media-settle.js";
+export type { MediaSettleOptions } from "./effects/media-settle.js";
+
 export { navHide } from "./effects/nav-hide.js";
 export type { NavHideOptions } from "./effects/nav-hide.js";
 
@@ -75,8 +91,15 @@ export type { LogoRevealOptions } from "./effects/logo-reveal.js";
 export { marquee } from "./effects/marquee.js";
 export type { MarqueeOptions } from "./effects/marquee.js";
 
+export { rollText } from "./effects/roll-text.js";
+export type { RollTextOptions } from "./effects/roll-text.js";
+
 export { dragStrip } from "./effects/drag-strip.js";
 export type { DragStripOptions } from "./effects/drag-strip.js";
+
+/* ---- text extras ---- */
+export { scrambleText } from "./effects/scramble-text.js";
+export type { ScrambleTextOptions } from "./effects/scramble-text.js";
 
 /* ---- micro-interactions ---- */
 export { liquidButton, underlineLink } from "./effects/liquid-button.js";

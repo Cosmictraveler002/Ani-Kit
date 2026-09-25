@@ -148,6 +148,24 @@ const dragLiveTweens = lib.gsap.getTweensOf(Array.from(dragTrackEl.children));
 assert.ok(dragLiveTweens.length >= 1, "dragStrip rotation tweens should exist while mounted");
 console.log("ok  dragStrip tiled the strip for the infinite wrap");
 
+/* ---------------- rollText / scrambleText build their structure ------------ */
+const rollMounted = doc.querySelector("[data-roll]");
+assert.equal(
+  rollMounted?.dataset.akRoll,
+  "3",
+  "rollText should stamp the row count on the demo rotator",
+);
+assert.ok(
+  rollMounted?.querySelector("[data-ak-roll-clone]"),
+  "rollText should clone the first row for the seamless wrap",
+);
+assert.equal(
+  doc.querySelector("[data-scramble]")?.dataset.akScramble,
+  "true",
+  "scrambleText should stamp its target while mounted",
+);
+console.log("ok  rollText wrapped its rows + clone, scrambleText stamped");
+
 /* ---------------- copy-prompt catalogue ---------------- */
 // (entries, classify, payload — imported above so the dock could fetch them)
 
@@ -292,6 +310,31 @@ assert.equal(
   undefined,
   "marquee teardown must clear the data-marquee-cloned flag",
 );
+
+// Expansion effects: stamps cleared, text / rows / transforms restored.
+const scrAfter = doc.querySelector("[data-scramble]");
+assert.equal(scrAfter?.dataset.akScramble, undefined, "scrambleText teardown must clear its stamp");
+assert.ok(
+  scrAfter?.textContent.includes("churn through the alphabet"),
+  `scrambleText must restore the original text (saw "${scrAfter?.textContent}")`,
+);
+const rollAfter = doc.querySelector("[data-roll]");
+assert.equal(rollAfter?.dataset.akRoll, undefined, "rollText teardown must clear its stamp");
+assert.equal(
+  rollAfter?.children.length,
+  3,
+  "rollText must restore the original rows (no inner box, no clone)",
+);
+assert.equal(
+  rollAfter?.querySelector("[data-ak-roll-clone]"),
+  null,
+  "rollText teardown must remove the cloned row",
+);
+const unfoldAfter = doc.querySelector("[data-unfold]");
+assert.equal(unfoldAfter?.style.transform, "", "unfoldReveal teardown must clear transform");
+const clipAfter = doc.querySelector("[data-clip-left]");
+assert.equal(clipAfter?.style.clipPath, "", "clipWipe teardown must clear clip-path");
+console.log("ok  expansion effects restore text / rows / transforms on teardown");
 assert.equal(
   lib.gsap.getTweensOf(Array.from(dragTrackEl.children)).length,
   0,

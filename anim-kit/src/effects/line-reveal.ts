@@ -2,7 +2,9 @@
  * Line reveal — the masked, staggered text reveal used all over DZ!NR.
  *
  * Text is split into lines, each line gets an `overflow:hidden` mask, and the
- * inner line slides up from `y:100%` to `y:0%`.
+ * inner line slides up from `y:100%` to `y:0%`. `split: "chars"` runs the
+ * same masked rise per character (`.ak-char-mask > .ak-char`) with a tighter
+ * default stagger — the per-letter headline reveal.
  *
  * Two modes:
  *   mode: "scroll"   → plays when the element enters the viewport and reverses
@@ -20,7 +22,9 @@ import type { CommonOptions, Destroy, TargetLike } from "../core/types.js";
 export interface LineRevealOptions extends CommonOptions {
   /** "scroll" plays on enter/reverse on leave; "immediate" plays at once. */
   mode?: "scroll" | "immediate";
-  /** Stagger between lines, seconds. @default 0.1 */
+  /** Split granularity — masked lines, or masked per-character stagger. @default "lines" */
+  split?: "lines" | "chars";
+  /** Stagger between lines/chars, seconds. @default 0.1 (0.03 for chars) */
   stagger?: number;
   /** Animation duration, seconds. @default 1 */
   duration?: number;
@@ -39,13 +43,15 @@ export function lineReveal(target: TargetLike, options: LineRevealOptions = {}):
 
   const {
     mode = "scroll",
-    stagger = 0.1,
+    split: splitType = "lines",
+    stagger,
     duration = 1,
     ease = "power4.out",
     delay = 0,
     start = "top 90%",
     end = "bottom 10%",
   } = options;
+  const stag = stagger ?? (splitType === "chars" ? 0.03 : 0.1);
 
   const els = toArray<HTMLElement>(target);
   if (!els.length) return () => {};
@@ -58,9 +64,10 @@ export function lineReveal(target: TargetLike, options: LineRevealOptions = {}):
 
     els.forEach((el) => {
       const res = split(el, {
-        type: "lines",
+        type: splitType,
         mask: true,
         linesClass: "ak-line++",
+        charsClass: "ak-char++",
         lineThreshold: 0.05,
       });
       splits.push(res);
@@ -75,7 +82,7 @@ export function lineReveal(target: TargetLike, options: LineRevealOptions = {}):
       const vars: gsap.TweenVars = {
         y: "0%",
         duration,
-        stagger,
+        stagger: stag,
         ease,
         delay,
         overwrite: "auto",

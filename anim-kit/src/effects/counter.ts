@@ -4,8 +4,11 @@
  * Drives an element's `textContent` from `from` to `to` with an easing curve,
  * optionally triggered by ScrollTrigger. Uses integer stepping so there is no
  * fractional flicker, and pairs with `tabular-nums` for stable layout.
+ * `progress: true` swaps the timed tween for a scrubbed one — the number
+ * follows scroll progress (a hero percentage readout).
  *
  *   counter("[data-count]", { to: 100, duration: 4, ease: "power1.inOut" })
+ *   counter("[data-progress]", { progress: true, pad: 2, suffix: "%" })
  */
 import { gsap, ScrollTrigger, initGSAP, killTweens } from "../core/gsap.js";
 import { guard } from "../core/guard.js";
@@ -27,7 +30,16 @@ export interface CounterOptions extends CommonOptions {
   suffix?: string;
   /** Animate when scrolled into view instead of immediately. @default false */
   onScroll?: boolean;
+  /**
+   * Drive the number from scroll progress instead of a timed tween: the value
+   * scrubs from `from` to `to` across `start` → `end`. Ignores `onScroll`.
+   * @default false
+   */
+  progress?: boolean;
+  /** ScrollTrigger start position (`onScroll` or `progress`). @default "top 90%" */
   start?: string;
+  /** ScrollTrigger end position (only with `progress`). @default "bottom top" */
+  end?: string;
   onComplete?: (value: number) => void;
 }
 
@@ -45,7 +57,9 @@ export function counter(target: TargetLike, options: CounterOptions = {}): Destr
     pad = 0,
     suffix = "",
     onScroll = false,
+    progress = false,
     start = "top 90%",
+    end = "bottom top",
     onComplete,
   } = options;
 
@@ -67,20 +81,26 @@ export function counter(target: TargetLike, options: CounterOptions = {}): Destr
         duration,
         ease,
         onUpdate: render,
-        onComplete: () => {
-          render();
-          onComplete?.(Math.round(state.v));
-        },
+        onComplete: progress
+          ? undefined
+          : () => {
+              render();
+              onComplete?.(Math.round(state.v));
+            },
       };
 
-      if (onScroll) {
+      if (progress) {
+        // Scroll-bound: value follows viewport progress, no timed completion.
+        vars.ease = "none";
+        vars.scrollTrigger = { trigger: el, start, end, scrub: true };
+      } else if (onScroll) {
         vars.scrollTrigger = { trigger: el, start, once: true };
       }
 
       tweens.push(gsap.to(state, vars));
     });
 
-    if (onScroll) ScrollTrigger.refresh();
+    if (onScroll || progress) ScrollTrigger.refresh();
 
     return () => {
       tweens.forEach((t) => {

@@ -12,7 +12,7 @@
 
 |                      |                                                                                                |
 | -------------------- | ---------------------------------------------------------------------------------------------- |
-| npm package          | `anim-kit` v1.0.0 — ESM-only + `.d.ts`, **not yet published** (name verified available on npm) |
+| npm package          | `@cosmictraveler002/anim-kit` — ESM-only + `.d.ts`, published on npm                     |
 | Package directory    | [`anim-kit/`](anim-kit/) — source, tests, demo, package docs                                   |
 | Full documentation   | [`anim-kit/README.md`](anim-kit/README.md) — install, CDN, API reference, taxonomy             |
 | Runtime dependencies | exactly two: `gsap`, `lenis` — never add more without a deliberate decision                    |
@@ -29,15 +29,15 @@
 ├── anim-kit/                 the npm package — all source, tests, demo and docs
 │   ├── src/
 │   │   ├── core/             6 modules: gsap setup, split, smooth-scroll, guard, util, types
-│   │   ├── effects/          17 files / 21 effect functions — one concern per file
+│   │   ├── effects/          22 files / 26 effect functions — one concern per file
 │   │   ├── styles/           anim-kit.css (ships untouched as plain CSS)
-│   │   └── index.ts          public barrel — the 38-export contract
+│   │   └── index.ts          public barrel — the 43-export contract
 │   ├── demo/                 visual demo page (import map, no bundler)
 │   ├── scripts/              prompts + taxonomy, demo server, build helper, smoke tests
 │   ├── dist/                 build output (gitignored)
 │   ├── tsup.config.ts        standalone CDN bundle config
 │   └── README.md             full package documentation
-├── _scrape/                  READ-ONLY reference: raw CSS/JS scraped from dzinrstudio.com
+├── _scrape/                  READ-ONLY reference: raw CSS/JS scraped from the source sites
 ├── .github/workflows/        ci.yml (push/PR) + release.yml (tag → npm publish)
 ├── .gitignore                ignores node_modules/, dist/, *.tgz
 └── README.md                 this file
@@ -60,7 +60,7 @@ npm run demo          # server on :4321 — demo page + /api/prompts (build firs
 | Change                                            | Where                                                                                                                                                                                                    |
 | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Add or modify an effect                           | `anim-kit/src/effects/<name>.ts` → export from `anim-kit/src/index.ts` → add to `expected` in `anim-kit/scripts/smoke.mjs` → add a prompt in `anim-kit/scripts/prompts.mjs` → wire into `anim-kit/demo/` |
-| Public API surface (38 exports)                   | `anim-kit/src/index.ts` — must stay in sync with the `expected` list in `scripts/smoke.mjs`                                                                                                              |
+| Public API surface (43 exports)                   | `anim-kit/src/index.ts` — must stay in sync with the `expected` list in `scripts/smoke.mjs`                                                                                                              |
 | GSAP setup, custom eases, internal `killTweens()` | `anim-kit/src/core/gsap.ts`                                                                                                                                                                              |
 | Effect taxonomy (categories → subcategories)      | `TAXONOMY` in `anim-kit/scripts/prompts.mjs`                                                                                                                                                             |
 | Copy-prompt text served by the demo               | `renderPrompt()` in `anim-kit/scripts/prompts.mjs`                                                                                                                                                       |
@@ -79,7 +79,7 @@ npm run demo          # server on :4321 — demo page + /api/prompts (build firs
 3. **Two-level taxonomy only** — category → subcategory → effect, every effect
    in exactly one slot, no tags. The `TAXONOMY` tree is the single source of
    truth for the API payload, demo dock grouping, README tree and tests.
-4. **38-export contract** — `src/index.ts` and the `expected` list in
+4. **43-export contract** — `src/index.ts` and the `expected` list in
    `scripts/smoke.mjs` must match exactly.
 5. **CSS ships untouched** — plain `.css` on its own subpath
    (`anim-kit/styles`), never run through the JS compiler.

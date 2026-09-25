@@ -42,12 +42,16 @@ export function split(target: Element | string, options: SplitOptions): SplitRes
 
   if (!el) return { elements: [], revert: () => {} };
 
+  const primary = Array.isArray(options.type) ? options.type[0] : options.type;
+
   // Prefer SplitText: it handles nested markup, <br> and font metrics properly.
   if (typeof SplitText !== "undefined" && SplitText?.create) {
     try {
       const st = SplitText.create(el, {
         type: options.type,
-        mask: options.mask ? "lines" : undefined,
+        // Mask the primary split type — "lines" for text reveals, "chars" for
+        // per-character masked reveals (each fragment gets a -mask wrapper).
+        mask: options.mask ? primary : undefined,
         linesClass: options.linesClass ?? "ak-line++",
         wordsClass: options.wordsClass ?? "ak-word++",
         charsClass: options.charsClass ?? "ak-char++",
@@ -98,6 +102,16 @@ function manualSplit(el: HTMLElement, options: SplitOptions): SplitResult {
     span.className = cls.replace("++", String(i));
     span.textContent = text;
     generated.push(span);
+    if (options.mask && type === "chars") {
+      // Mirror SplitText: each char inside an overflow-hidden mask wrapper.
+      // Return the wrapper so the caller inserts mask > span intact.
+      const mask = document.createElement("span");
+      mask.className = `${span.className}-mask`;
+      mask.style.overflow = "hidden";
+      mask.style.display = "inline-block";
+      mask.appendChild(span);
+      return mask;
+    }
     return span;
   };
 
@@ -131,7 +145,7 @@ function manualSplit(el: HTMLElement, options: SplitOptions): SplitResult {
   el.innerHTML = "";
   el.appendChild(frag);
 
-  if (options.mask) {
+  if (options.mask && type !== "chars") {
     gsap.set(generated, { display: "inline-block" });
   }
 
