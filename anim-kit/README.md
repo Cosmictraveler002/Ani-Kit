@@ -1,0 +1,1033 @@
+# anim-kit
+
+A modular, framework-agnostic animation library extracted from
+[dzinrstudio.com](https://dzinrstudio.com/) — GSAP + ScrollTrigger + Lenis
+effects packaged as independent ES modules.
+
+TypeScript source → compiled ESM + `.d.ts` output. No framework, no virtual DOM,
+no components: every effect resolves plain DOM selectors, so it works with
+**React, Vue, Next, Svelte, Astro or plain HTML**.
+
+```ts
+import { lineReveal, marquee, menuOverlay } from "anim-kit";
+
+const destroy = lineReveal("[data-lines]", { mode: "scroll" });
+// …later (route change, HMR, teardown):
+destroy();
+```
+
+---
+
+## Contents
+
+- [Install](#install)
+- [CDN usage](#cdn-usage)
+- [Quick start](#quick-start)
+- [The contract](#the-contract)
+- [Smooth scroll](#smooth-scroll)
+- [Effect categories](#effect-categories)
+- [API](#api)
+  - [Core](#core)
+  - [Text animations](#text-animations)
+  - [Scroll & media](#scroll--media)
+  - [Loops & marquees](#loops--marquees)
+  - [Buttons & links](#buttons--links)
+  - [Navigation & overlays](#navigation--overlays)
+  - [Intros & transitions](#intros--transitions)
+  - [Logos & SVG](#logos--svg)
+  - [Utilities](#utilities)
+- [Styling](#styling)
+- [Reduced motion](#reduced-motion)
+- [Framework integration](#framework-integration)
+- [Demo & tests](#demo--tests)
+  - [Copy-prompt API](#copy-prompt-api)
+- [Project structure](#project-structure)
+
+---
+
+## Install
+
+```bash
+npm install anim-kit
+```
+
+```ts
+import { smoothScroll, horizontalScroll } from "anim-kit";
+import "anim-kit/styles";   // companion stylesheet (plain .css, optional but recommended)
+```
+
+`anim-kit` ships **ESM only** with generated `.d.ts` declarations — no CJS
+build, no runtime CSS-in-JS. `gsap` and `lenis` are regular `dependencies`,
+so any bundler (Vite / Next / webpack / Remix) resolves them for you.
+
+### From source (development)
+
+```bash
+git clone <this repo>
+cd anim-kit
+npm install
+npm run build      # tsc → dist/ (ESM + .d.ts) + CSS copy + tsup standalone bundle
+npm test           # build + unit smoke + demo wiring smoke
+npm run demo       # visual demo on http://localhost:4321/demo/
+```
+
+### Subpath exports
+
+Everything the `exports` map in `package.json` exposes (all paths resolve
+inside the published tarball):
+
+| Specifier | Resolves to | Use for |
+|---|---|---|
+| `anim-kit` | `dist/index.js` + `dist/index.d.ts` | the full barrel — 38 exports |
+| `anim-kit/effects/<name>` | `dist/effects/<name>.js` + `.d.ts` | one effect in isolation (`marquee`, `lineReveal`, …) |
+| `anim-kit/standalone` | `dist/anim-kit.standalone.js` (types → `index.d.ts`) | the self-contained bundle — same API |
+| `anim-kit/styles` | `dist/styles/anim-kit.css` | untouched plain CSS |
+
+```ts
+import { marquee } from "anim-kit/effects/marquee";  // deep import, no barrel
+import "anim-kit/styles";
+```
+
+TypeScript ≥ 4.7 with `moduleResolution: "bundler"` or `"node16"`/`"nodenext"`
+resolves declarations through the same map — no `typesVersions` shim needed.
+
+---
+
+## CDN usage
+
+No build step on the consumer's end: `dist/` is served as-is from the npm
+tarball by any npm CDN. Every URL is **version-pinned** — npm versions are
+immutable, so `anim-kit@1.0.0` always resolves to exactly that build, forever
+(only a new version creates a new URL; nothing floats unless you ask for a
+range).
+
+### Option 1 — standalone bundle (simplest)
+
+`dist/anim-kit.standalone.js` is a self-contained ESM bundle with `gsap` (+ the
+plugins anim-kit uses) and `lenis` **inlined** — no import map, one URL, works
+identically on jsDelivr and unpkg:
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/anim-kit@1.0.0/dist/styles/anim-kit.css" />
+
+<script type="module">
+  import {
+    smoothScroll, lineReveal, marquee,
+  } from "https://cdn.jsdelivr.net/npm/anim-kit@1.0.0/dist/anim-kit.standalone.js";
+
+  smoothScroll();
+  lineReveal("[data-lines]", { mode: "scroll" });
+  marquee("[data-marquee-track]", { speed: 40 });
+</script>
+```
+
+unpkg serves the same file: `https://unpkg.com/anim-kit@1.0.0/dist/anim-kit.standalone.js`
+
+### Option 2 — jsDelivr `+esm`
+
+jsDelivr bundles `anim-kit` with its dependencies on the fly (also immutable
+per version):
+
+```html
+<script type="module">
+  import { lineReveal } from "https://cdn.jsdelivr.net/npm/anim-kit@1.0.0/+esm";
+</script>
+```
+
+### Option 3 — per-file ESM + import map (jsDelivr *and* unpkg)
+
+The unbundled `dist/index.js` contains bare imports (`gsap`, `lenis`), so pin
+them in an import map. This is the exact shape the [demo](#demo--tests) runs
+locally, with CDN URLs — and the way to share one GSAP between anim-kit and
+the rest of your page:
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/anim-kit@1.0.0/dist/styles/anim-kit.css" />
+
+<script type="importmap">
+  {
+    "imports": {
+      "anim-kit": "https://cdn.jsdelivr.net/npm/anim-kit@1.0.0/dist/index.js",
+      "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/index.js",
+      "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollTrigger.js",
+      "gsap/SplitText": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/SplitText.js",
+      "gsap/Draggable": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/Draggable.js",
+      "gsap/CustomEase": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/CustomEase.js",
+      "gsap/ScrollSmoother": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollSmoother.js",
+      "lenis": "https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.mjs"
+    }
+  }
+</script>
+
+<script type="module">
+  import { smoothScroll, lineReveal } from "anim-kit";
+  // per-effect deep imports work here too:
+  // import { dragStrip } from "anim-kit/effects/dragStrip";
+</script>
+```
+
+Swap the host for unpkg (`https://unpkg.com/anim-kit@1.0.0/dist/index.js`, …) —
+the file layout is identical. GSAP subpaths are listed one by one because
+import maps match specifiers literally: a trailing-slash prefix map would
+produce extension-less URLs, which CDNs don't serve. The `gsap`/`lenis` pins
+match `package-lock.json`.
+
+---
+
+## Quick start
+
+```html
+<p data-lines>Every line of this paragraph is masked and slid up on scroll.</p>
+<div class="ak-marquee">
+  <div class="ak-marquee__viewport">
+    <div class="ak-marquee__track" data-marquee-track data-dir="left">
+      <span>Prink</span><span>Zerodha</span><span>Superyou</span>
+    </div>
+  </div>
+</div>
+```
+
+```js
+import { smoothScroll, lineReveal, marquee, compose } from "anim-kit";
+
+const scroller = smoothScroll({ lerp: 0.08, smoothWheel: true });
+
+const teardown = compose(
+  scroller.destroy,
+  lineReveal("[data-lines]", { mode: "scroll" }),
+  marquee("[data-marquee-track]", { speed: 40 }),
+);
+
+window.addEventListener("pagehide", () => teardown(), { once: true });
+```
+
+---
+
+## The contract
+
+Every effect follows one shape:
+
+```ts
+effect(target, options) => destroy
+```
+
+- **`target`** — anything assignable to `TargetLike`: a selector `string`, an
+  `Element`, an array of elements, a `NodeList`, or `null`/`undefined`.
+- **`options`** — a plain object of documented, defaulted fields. Every options
+  object also accepts `force?: boolean` (see [Reduced motion](#reduced-motion)).
+- **`destroy`** — a `() => void` that kills tweens/ScrollTriggers (paused
+  springs included), removes listeners and clones, restores the original
+  markup, and reverts the inline styles the effect overwrote. Always safe to
+  call once; call it on teardown.
+
+A handful of effects need more than a destroy function and return a **handle**
+instead — those handles still expose `.destroy()`:
+
+| Effect          | Handle                                       |
+| --------------- | -------------------------------------------- |
+| `smoothScroll`  | `{ lenis, scrollTo, active, destroy }`       |
+| `menuOverlay`   | `{ open, close, toggle, isOpen, destroy }`    |
+| `themeReveal`   | `{ set, toggle, current, destroy }`           |
+| `audioBars`     | `{ start, stop, destroy }`                    |
+
+**Missing targets never throw.** If nothing matches, the effect returns an
+immediate no-op destroy — safe to call during progressive enhancement.
+
+`initGSAP()` runs automatically inside every effect (registration is
+idempotent), but you can call it yourself if you want `gsap`/`ScrollTrigger`
+configured before first paint.
+
+---
+
+## Smooth scroll
+
+Lenis is wired to ScrollTrigger the canonical way: Lenis drives the scroll,
+`lenis.on("scroll", ScrollTrigger.update)` keeps triggers in sync, `lenis.raf`
+is ticked from `gsap.ticker`, and `lagSmoothing(0)` is disabled.
+
+```ts
+const scroller = smoothScroll({
+  lerp: 0.08,          // interpolation factor (default) — lower = floatier
+  smoothWheel: true,   // default
+  smoothTouch: false,  // default; true fights native touch scrolling
+  orientation: "vertical",
+  initialScroll: 0,
+  useScrollerProxy: false, // opt-in scrollerProxy for nested scrollers
+});
+
+scroller.scrollTo("#work", { duration: 1.2 }); // programmatic, smoothed
+scroller.active;   // false when Lenis was skipped (e.g. reduced motion)
+scroller.destroy();
+```
+
+Call it **before** creating scroll effects so the first refresh sees the right
+scroller. When motion is reduced, `smoothScroll` stays inert and native
+scrolling is left alone.
+
+---
+
+## Effect categories
+
+Every effect belongs to exactly one **category → subcategory** slot. The tree
+below is the library's map: it orders this API reference, groups the demo's
+prompt dock, and backs the `category` / `subcategory` fields on
+`GET /api/prompts`.
+
+| Category | Subcategory | Effects |
+| --- | --- | --- |
+| Core & setup | Smooth scrolling | `smoothScroll` |
+| Text animations | Line & mask reveals | `lineReveal`, `maskReveal` |
+| Text animations | Per-character scatter | `scatterText` |
+| Text animations | Counters | `counter` |
+| Scroll & media | Pinned galleries | `horizontalScroll`, `stackedCards`, `stackedCardsPinned` |
+| Scroll & media | Parallax & depth | `parallax` |
+| Scroll & media | Heroes & media | `heroShrink` |
+| Scroll & media | Enter reveals | `revealRule` |
+| Loops & marquees | Marquees | `marquee` |
+| Loops & marquees | Infinite draggables | `dragStrip` |
+| Loops & marquees | Equalizers | `audioBars` |
+| Buttons & links | Liquid fills | `liquidButton` |
+| Buttons & links | Underlines | `underlineLink` |
+| Navigation & overlays | Menus & nav | `navHide`, `menuOverlay` |
+| Navigation & overlays | Cursors | `cursorFollower` |
+| Intros & transitions | Preloaders | `preloader` |
+| Intros & transitions | Theme wipes | `themeReveal` |
+| Logos & SVG | Path reveals | `logoReveal` |
+
+**Growing the library:** a subcategory is the slot sibling effects land in —
+add the id to `TAXONOMY` in `scripts/prompts.mjs`, export the effect from
+`src/index.ts`, and give it a prompt entry. The demo smoke fails when an
+effect is unclassified, classified twice, or the tree references an effect
+that does not exist.
+
+---
+## API
+
+### Core
+
+#### `initGSAP()`
+
+Registers the plugins anim-kit relies on (`ScrollTrigger`, `SplitText`,
+`Draggable`, `CustomEase`, `ScrollSmoother`) and the studio's custom eases.
+Idempotent; called for you by every effect.
+
+#### `EASES`
+
+```ts
+EASES.curtain    // "ak-curtain"     .76,0,.24,1   — menu curtain, panel wipes
+EASES.cardStack  // "ak-card-stack"  SVG cubic bezier — cascading card deck
+EASES.reveal     // "ak-reveal"      .165,.84,.44,1 — mask/rule reveals
+EASES.preloadOut // "ak-preload-out" .895,.03,.685,.22 — preloader exit
+```
+
+Use them anywhere GSAP accepts an ease: `gsap.to(el, { ease: EASES.curtain })`.
+
+#### `split(target, options) => { elements, revert }`
+
+Text splitting with a dependency-free fallback if `SplitText` is unavailable.
+
+```ts
+const { elements, revert } = split("h1", {
+  type: "lines",          // "chars" | "words" | "lines" (or an array)
+  mask: true,             // wrap each line in an overflow-hidden mask
+  linesClass: "ak-line++",// "++" is replaced by the index
+  lineThreshold: 0.05,    // ignore lines shorter than 5% of the container
+});
+revert(); // restores the original markup exactly
+```
+
+#### `guard(options, run) => destroy`
+
+Central reduced-motion gate. If the user prefers reduced motion and
+`options.force` is not set, it returns a no-op destroy; otherwise it runs
+`run()`. Every effect goes through it.
+
+---
+
+### Text animations
+
+Typography in motion — masked lines, rising masks, per-character scatter, tickers.
+
+#### `lineReveal(target, options?) => destroy`
+
+Splits text into masked lines and staggers them up. The signature reveal of the
+source site.
+
+```ts
+lineReveal("[data-hero-text]", { mode: "immediate", delay: 0.35 }); // above the fold
+lineReveal("[data-lines]", { mode: "scroll" });                     // reverses on leave
+```
+
+| Option    | Default         | Notes                                   |
+| --------- | --------------- | --------------------------------------- |
+| `mode`    | `"scroll"`      | `"scroll"` or `"immediate"`             |
+| `stagger` | `0.1`           | seconds between lines                   |
+| `duration`| `1`             | seconds                                 |
+| `ease`    | `"power4.out"`  |                                         |
+| `delay`   | `0`             | seconds                                 |
+| `start`   | `"top 90%"`     | ScrollTrigger start                     |
+| `end`     | `"bottom 10%"`  | ScrollTrigger end                       |
+
+**DOM:** any block of text — headings with `<br>` hard breaks work. Produces
+`.ak-line-mask > .ak-line` per line; `destroy()` restores the original HTML.
+
+#### `maskReveal(target, options?) => destroy`
+
+Inline `overflow:hidden` heading reveal: the inner span rises from below the
+mask and settles.
+
+```html
+<h2>
+  <span class="ak-mask"><span class="ak-mask__inner" data-mask>Text that</span></span>
+  <span class="ak-mask"><span class="ak-mask__inner" data-mask>rises into view.</span></span>
+</h2>
+```
+
+```ts
+maskReveal("[data-mask]"); // siblings inside one parent stagger together
+```
+
+| Option    | Default          |
+| --------- | ---------------- |
+| `from` / `to` | `"100%"` / `"0%"` |
+| `duration`| `0.5`            |
+| `ease`    | `EASES.reveal`   |
+| `stagger` | `0.1`            |
+| `delay`   | `0`              |
+| `start` / `end` | `"top 90%"` / `"bottom 10%"` |
+| `mode`    | `"scroll"` — or `"immediate"` to play at once |
+
+#### `scatterText(wrap, options?) => destroy`
+
+The giant pinned band ("So, are you ready to Stand out?"): the line scrolls
+horizontally while each character starts at a random `yPercent`/rotation and
+settles as it crosses the viewport.
+
+```ts
+scatterText("[data-scatter-pin]", {
+  line: "[data-scatter]",
+  pinTarget: "[data-scatter-pin]",
+  granularity: "chars",   // or "words"
+  scatterY: 60,           // ±60% of line height
+  scatterRotation: 15,    // ±15°
+  scrub: 0.5,
+  settleStart: "left 100%",
+  settleEnd: "left 15%",
+});
+```
+
+**DOM:** `.ak-char` / `.ak-space` spans are generated for you (and removed on
+`destroy()`). Line measurement waits for `document.fonts.ready` so travel
+distance is correct with webfonts.
+
+#### `counter(target, options?) => destroy`
+
+Tabular number ticker.
+
+```ts
+counter("[data-count]", { to: 240, duration: 3, suffix: "+" });
+counter("[data-count-scroll]", { to: 98, onScroll: true });          // waits for view
+counter("[data-count-pad]", { to: 42, pad: 3 });                     // 000 → 042
+```
+
+| Option       | Default        |
+| ------------ | -------------- |
+| `from` / `to`| `0` / `100`    |
+| `duration`   | `4`            |
+| `ease`       | `"power1.inOut"` |
+| `pad`        | `0` (none)     |
+| `suffix`     | `""`           |
+| `onScroll`   | `false`        |
+| `start`      | ScrollTrigger start when `onScroll` |
+| `onComplete` | `(value) => {}` |
+
+---
+
+### Scroll & media
+
+Scroll-driven storytelling — enter reveals, depth, pinned galleries, hero media.
+
+#### `revealRule(target, options?) => destroy`
+
+The thin rule that draws itself to full width.
+
+```ts
+revealRule("[data-rule]", { duration: 1, delay: 0.2 }); // default ease: EASES.reveal
+```
+
+**DOM:** any element that should animate `width: 0 → 100%` when it enters.
+
+#### `parallax(target, options?) => destroy`
+
+`data-speed` parallax over everything inside `target`.
+
+```html
+<img data-speed="-0.5" src="…" />  <!-- slower than scroll -->
+<img data-speed="0.8"  src="…" />  <!-- faster than scroll -->
+```
+
+```ts
+parallax("[data-parallax]", {
+  attribute: "data-speed",
+  scale: 50,            // yPercent multiplier
+  start: "50% bottom",
+  end: "bottom top",
+});
+```
+
+Each element tweens `yPercent: value × scale` with `scrub: true` and
+`ease: "none"` — so `data-speed="0.8"` settles at `yPercent: 40`; negative
+speeds drift up against the scroll.
+
+#### `horizontalScroll(track, options?) => destroy`
+
+Pinned horizontal gallery; panel images get a secondary parallax driven by
+`containerAnimation`, so they settle as they cross the viewport *horizontally*.
+
+```ts
+horizontalScroll("[data-htrack]", {
+  section: "[data-hsection]",   // pinned trigger (defaults to track's <section>)
+  panelImage: "[data-speed-img]", // extra parallax selector, null to disable
+  scrub: 0.5,
+  imageScrub: 0.2,
+  travel: () => 1500,           // override the default scrollWidth − innerWidth
+});
+```
+
+**DOM:**
+
+```html
+<section data-hsection>
+  <div class="h-track" data-htrack>          <!-- width: max-content -->
+    <div class="h-panel">…<img data-speed-img></div> × N
+  </div>
+</section>
+```
+
+#### `stackedCards(wrap, options?) => destroy`
+
+Pinned card deck — cards cascade with the `ak-card-stack` bezier.
+
+```ts
+stackedCards("[data-stack-wrap]", {
+  viewport: "[data-stack-viewport]", // defaults to wrap's first child
+  card: ".ak-card",
+  scrub: 0.5,
+  stagger: 0.12,
+  ease: EASES.cardStack,
+});
+```
+
+**DOM:** a tall wrapper (e.g. `height: 500vh`) containing a sticky viewport that
+holds the cards:
+
+```html
+<div class="stack-wrap" data-stack-wrap>       <!-- tall scroll runway -->
+  <div class="stack-viewport" data-stack-viewport>  <!-- position: sticky; top: 0 -->
+    <div class="stack-cards">
+      <a class="ak-card">01 …</a> × N
+    </div>
+  </div>
+</div>
+```
+
+#### `stackedCardsPinned(wrap, { viewport, … }) => destroy`
+
+Same deck for when the sticky viewport is a **sibling** rather than a child —
+pins `viewport` with `pinSpacing: false` across `wrap`'s scroll length.
+`viewport` is required here.
+
+#### `heroShrink(target, options?) => destroy`
+
+Hero media that scales down and drifts as it scrolls away.
+
+```ts
+heroShrink("[data-hero-media]", { offsetY: "49vh", scale: 0.23, scrub: 1 });
+// options: offsetX "0px", start "top top", end "bottom top"
+```
+
+---
+
+### Loops & marquees
+
+Continuous motion — marquees, infinite draggables, equaliser bars.
+
+#### `marquee(track, options?) => destroy`
+
+Dual-row constant-speed marquee driven by `requestAnimationFrame` — 40 px/s,
+matching the source site.
+
+```ts
+marquee("[data-marquee-track]", { speed: 40, direction: "left", pauseOnHover: false });
+```
+
+| Option         | Default | Notes                                             |
+| -------------- | ------- | ------------------------------------------------- |
+| `speed`        | `40`    | pixels per second                                 |
+| `direction`    | `data-dir` | `"left"` / `"right"`; otherwise read from `data-dir` |
+| `clone`        | `true`  | duplicate content when it isn't already doubled   |
+| `pauseOnHover` | `false` |                                                 |
+
+**DOM:** a flex track of `width: max-content` inside an
+`overflow: hidden` viewport. Tracks are found by the `[data-marquee-track]`
+marker (pass one track, or a container and every track inside it is picked up);
+`data-dir="left|right"` sets each row's direction. The `.ak-marquee*` classes
+in the companion stylesheet provide the viewport and its edge masks. `destroy()`
+stops the rAF loop and removes the copy it duplicated (flag + children), so the
+markup matches what you started with — a copy you tiled yourself is left alone.
+
+#### `dragStrip(track, options?) => destroy`
+
+Infinite draggable carousel (GSAP `Draggable`), with items tilting as you pull
+and springing straight on release.
+
+```ts
+dragStrip("[data-drag]", { maxRotation: 60, rotationScale: 120, settleDuration: 1, inertia: false, clone: true, item: ":scope > *" });
+```
+
+| Option           | Default         | Notes                                                   |
+| ---------------- | --------------- | ------------------------------------------------------- |
+| `maxRotation`    | `100`           | max tilt in degrees at full drag speed                  |
+| `rotationScale`  | `100`           | divisor on the normalised drag speed — higher is subtler |
+| `settleDuration` | `1`             | spring-back duration on release, seconds                |
+| `inertia`        | `false`         | throw after release — requires GSAP's `InertiaPlugin`   |
+| `clone`          | `true`          | duplicate content for a seamless loop; `false` clamps   |
+| `item`           | `":scope > *"`  | items inside the strip that tilt                        |
+
+**How the loop works.** Draggable is the *single writer* of the track's X
+transform — a `liveSnap` hook folds every position back into `[-loop, 0]`
+(Draggable has no `modifiers` option; `liveSnap` is the supported place), so
+dragging is 1:1 with the pointer and never stutters between a tween and the
+drag. Folding is only invisible when the content tiles: with `clone: true`
+the strip duplicates itself until one tile is at least as wide as the
+viewport, and `loop` is always a whole multiple of the tile width — the same
+trick `marquee()` uses, so the seam is invisible. With `clone: false` there is
+nothing to fold against, so the strip clamps at the content edges instead
+(finite, but never an empty gap). During an inertia throw, `liveSnap` keeps
+folding each frame while the end target stays raw, so momentum keeps its
+direction.
+
+**Rotation** tracks pointer *speed* (normalised to a 60 fps frame so mouse
+and touch event rates feel the same) rather than a raw per-event delta, and is
+driven by two `quickTo` tweens: a fast follow during the drag, then a
+`settleDuration` spring on release. `destroy()` kills both tweens and the
+Draggable, removes the cloned tiles and restores the element's inline
+cursor/user-select/touch-action.
+
+**DOM:** an `overflow: hidden` viewport wrapping a flex track of
+`width: max-content` (the effect sets `cursor: grab`, `user-select: none` and
+`touch-action: pan-y` inline and restores them on destroy); items keep
+`transform-origin: 50% 100%` so they pivot from their base.
+
+#### `audioBars(target, options?) => handle`
+
+Equaliser visualiser — returns `{ start, stop, destroy }`.
+
+```ts
+const eq = audioBars("[data-eq]", { interval: 100, minHeight: 4, maxHeight: 16, bounce: 0.75, bar: ":scope > *" });
+eq.start();  // animate
+eq.stop();   // hold
+eq.destroy();
+```
+
+**DOM:** a row of `<i>` bars — `.ak-eq` in the companion stylesheet. `destroy()`
+clears the interval, kills in-flight bar tweens (otherwise their next frame
+would rewrite `height` *after* teardown) and clears the inline height.
+
+---
+
+### Buttons & links
+
+Hover affordances for CTAs and inline links.
+
+#### `liquidButton(target, options?) => destroy`
+
+SVG wave floods the button on hover.
+
+```ts
+liquidButton("[data-liquid]", { direction: "up", duration: 900, fill: "var(--ak-primary)", labelColor: "#fff" });
+```
+
+**DOM:** the `.ak-liquid` structure (the stylesheet defines the classes; the
+wave path shape is yours to choose):
+
+```html
+<button class="ak-liquid" data-liquid>
+  <svg class="ak-liquid__wave" viewBox="0 0 100 100" preserveAspectRatio="none">
+    <path d="M0,30 Q50,-5 100,30 L100,100 L0,100 Z" />
+  </svg>
+  <span class="ak-liquid__label">Lets Talk →</span>
+</button>
+```
+
+The effect stamps each element with `data-ak-liquid="up|down"` plus the
+`--ak-liquid-duration/fill/label` CSS variables (and removes them on destroy).
+Because `direction` applies to every matched element, scope the call for buttons
+that should fill the other way:
+
+```ts
+liquidButton("[data-liquid]", { direction: "up" });
+liquidButton('[data-liquid][data-dir="down"]', { direction: "down" });
+```
+
+#### `underlineLink(target) => destroy`
+
+Underline sweep for links — matches `a.ak-underline`.
+
+```ts
+underlineLink("a.ak-underline");   // or any link list
+```
+
+Pure CSS under the hood — it just adds/removes the `.ak-underline` class whose
+`::after` sweep is styled by the companion stylesheet, and `destroy()` removes
+the class again.
+
+---
+
+### Navigation & overlays
+
+Page chrome — header behaviour, fullscreen menu, cursor.
+
+#### `navHide(nav, options?) => destroy`
+
+Header that hides on scroll-down and returns on scroll-up.
+
+```ts
+navHide("[data-nav]", { threshold: 200, hideY: -100, mobileBreakpoint: 768, startHidden: true });
+```
+
+`destroy()` removes the scroll listener, kills any in-flight slide and clears
+the nav's transform — it never starts a *new* animation during teardown.
+
+#### `menuOverlay(options) => handle`
+
+Full-screen curtain menu — clip-path polygon expands from the bottom edge,
+links stagger in.
+
+```ts
+const menu = menuOverlay({
+  overlay: "[data-menu]",                          // required
+  openTrigger: "[data-menu-open], [data-menu-open-2]",
+  closeTrigger: "[data-menu-close]",
+  nav: "[data-nav]",                               // slides away while open
+  link: ".menu-link a",                            // default
+  chrome: "[data-menu-chrome]",                    // default
+  duration: 1,
+  stagger: 0.1,
+  initialOpen: false,
+  onOpen: () => {}, onClose: () => {},
+});
+
+menu.open(); menu.close(); menu.toggle(); menu.isOpen(); menu.destroy();
+```
+
+Curtain uses `EASES.curtain` (`.76,0,.24,1`).
+
+#### `cursorFollower(zone, options?) => destroy`
+
+Spring-followed cursor tag, e.g. "▶ Play Showreel" over a video.
+
+```ts
+cursorFollower("[data-showreel]", {
+  follower: "[data-cursor]",           // defaults to the first [data-cursor]
+  offset: 14,
+  spring: { mass: 0.1, stiffness: 120 },
+  blendMode: "exclusion",
+  fade: true,                          // fade in/out with the pointer
+});
+```
+
+`destroy()` kills both spring tweens (they are paused at creation and would
+otherwise live on the global timeline forever) plus any in-flight fade, removes
+the listeners, and restores the inline styles it overwrote.
+
+---
+
+### Intros & transitions
+
+Entrance and theme-change moments.
+
+#### `preloader(target, options?) => destroy`
+
+The 0→100 intro: counter ticks up while an SVG glyph fills via `inset()`
+clip-path, then the glyph scales up and the backdrop fades.
+
+```ts
+preloader("[data-preloader]", {
+  glyph: "[data-glyph]",        // defaults to the first <svg> inside the root
+  counter: "[data-counter]",    // defaults to [data-counter] inside the root
+  backdrop: "[data-backdrop]",  // defaults to [data-backdrop] inside the root
+  duration: 4,                  // seconds
+  step: 5,                      // increment per tick
+  interval: 200,                // ms
+  sessionGuard: true,           // skip when already shown this session
+  storageKey: "ak-preloader-shown",
+  onComplete: () => {},
+});
+
+// Options-object form also works:
+preloader({ root: "#preloader", sessionGuard: false });
+```
+
+`destroy()` clears the timers and kills the tweens.
+
+#### `themeReveal(options?) => handle`
+
+Light/dark toggle with a circular **View Transitions** wipe (graceful fallback
+to an instant swap when the API is missing).
+
+```ts
+const theme = themeReveal({
+  toggle: "[data-theme]",
+  storageKey: "ak-theme",
+  initial: "dark",          // defaults to <html>'s current class
+  origin: "50% 50%",        // or an element to centre the circle on
+  duration: 1,
+  onChange: (t) => {},
+});
+
+theme.set("dark"); theme.toggle(); theme.current(); theme.destroy();
+```
+
+---
+
+### Logos & SVG
+
+Vector reveals for brand marks.
+
+#### `logoReveal(svg, options?) => destroy`
+
+SVG wordmark assembling letter by letter (staggered `yPercent` + fade).
+
+```ts
+logoReveal("[data-logo]", { path: ".svg-anim-path", stagger: 0.05, once: false });
+// defaults: duration 1, ease "power2.out", start "top 80%", end "bottom top"
+```
+
+**DOM:** `<svg data-logo>` containing paths matching
+`[data-logo-path], .svg-anim-path`.
+
+---
+
+### Utilities
+
+```ts
+toArray(target, scope?)        // resolve TargetLike → Element[]
+one(target, scope?)            // resolve TargetLike → first Element | null
+onReady(fn)                    // run after DOMContentLoaded (or immediately)
+compose(...fns)                // combine destroy fns → one destroy (skips holes)
+raf(fn)                        // rAF loop → returns a stop function
+prefersReducedMotion()         // boolean, honours matchMedia
+```
+
+Types: `TargetLike`, `Destroy`, `CommonOptions`.
+
+---
+
+## Styling
+
+```ts
+import "anim-kit/styles";   // → dist/styles/anim-kit.css
+```
+
+The companion stylesheet supplies:
+
+- **Design tokens:** `--ak-primary`, `--ak-curtain`, `--ak-reveal`, `--ak-out`
+- **Text masks:** `.ak-line-mask`, `.ak-line`, `.ak-word`, `.ak-space`
+- **Heading masks:** `.ak-mask`, `.ak-mask__inner`
+- **Liquid button:** `.ak-liquid`, `.ak-liquid__wave`, `.ak-liquid__label`
+- **Underline:** `.ak-underline`
+- **Marquee:** `.ak-marquee`, `.ak-marquee__viewport`, `.ak-marquee__track`
+- **Drag strip:** `.ak-drag-track`
+- **Menu:** `.menu-overlay`, `.menu-overlay-bar`, `.menu-link`
+- **Card deck:** `.ak-stack-viewport`, `.ak-stack-cards`, `.ak-card`
+- **Misc:** `.ak-counter`, `.ak-eq`
+
+Override the tokens to rebrand:
+
+```css
+:root {
+  --ak-primary: #ff5c39;
+  --ak-curtain: cubic-bezier(0.76, 0, 0.24, 1);
+}
+```
+
+Effects only touch inline styles/transforms; the layout classes above are the
+resting states (safe with reduced motion).
+
+---
+
+## Reduced motion
+
+Everything routes through `guard()`:
+
+- With `prefers-reduced-motion: reduce`, effects do **not** animate — they snap
+  to a safe resting state (e.g. `preloader` hides the overlay, `menuOverlay`
+  leaves the curtain collapsed, `smoothScroll` stays inert).
+- Opt a single call out with `force: true`:
+
+```ts
+lineReveal("h1", { force: true });   // animate regardless
+```
+
+Keyboard focus styles (`.ak-liquid:focus-visible`, `.ak-underline:focus-visible`)
+are preserved by the stylesheet.
+
+---
+
+## Framework integration
+
+Because each effect is `target + options → destroy`, wiring is mechanical.
+
+**React**
+
+```tsx
+useEffect(() => {
+  const destroy = lineReveal(ref.current, { mode: "scroll" });
+  return destroy;            // runs on unmount / StrictMode double-invoke
+}, []);
+```
+
+**Vue**
+
+```ts
+onMounted(() => (destroy = marquee("[data-marquee-track]", { speed: 40 })));
+onBeforeUnmount(() => destroy?.());
+```
+
+**Svelte**
+
+```svelte
+<script lang="ts">
+  import { onMount } from "svelte";
+  onMount(() => parallax("[data-parallax]")); // returned fn runs on destroy
+</script>
+```
+
+**Next.js (App Router)** — effects touch `window`, so create them in
+`useEffect`; never at module scope.
+
+Mount effects **after** content is in the DOM (and after fonts/images if the
+effect measures — `scatterText` waits for `document.fonts.ready` itself), then
+destroy on teardown. Route changes and HMR are why `destroy()` exists.
+
+---
+
+## Demo & tests
+
+```bash
+npm run build     # tsc → dist/ (ESM + .d.ts) + CSS copy + tsup standalone bundle
+npm run demo      # static server on http://localhost:4321/demo/
+npm test          # build + unit smoke + demo integration smoke
+npm run smoke     # both smokes (expects dist/ to exist)
+npm run typecheck # tsc --noEmit (what CI runs)
+```
+
+The demo page wires the whole effect set against one document —
+`demo/index.html` + `demo/demo.js`. (`stackedCardsPinned`, the
+sibling-viewport variant, plus `split()` are exercised by the unit smoke
+instead.)
+
+### Copy-prompt API
+
+The demo server doubles as a **prompt server**: every effect has a ready-to-
+paste *"how to implement this with anim-kit"* prompt — markup, import,
+initialisation call, options table, teardown and gotchas:
+
+```bash
+curl http://localhost:4321/api/prompts          # { count, categories, prompts: [{ id, title, summary, category, subcategory, text }] }
+curl http://localhost:4321/api/prompts/marquee  # one prompt, text/plain
+```
+
+On the page, every labelled section carries a **copy prompt** chip, and the
+floating **⧉ prompts (22)** button at the bottom right opens the full
+catalogue grouped by [effect category](#effect-categories) — one click copies
+an effect's prompt (the prompt states its category), *copy all* puts the
+entire set on the clipboard. The catalogue lives in `scripts/prompts.mjs`:
+one entry per effect rendered by `renderPrompt()`, plus the `TAXONOMY` tree
+that classifies every effect. Adding a prompt is a matter of adding an entry
+and slotting the effect into a subcategory.
+
+**Unit smoke** (`scripts/smoke.mjs`) runs the built bundle in **jsdom** and
+asserts:
+
+1. all 38 exports are present;
+2. plugins (`ScrollTrigger`, `SplitText`, `Draggable`, `CustomEase`,
+   `ScrollSmoother`) and the 4 custom eases are registered;
+3. every effect no-ops safely on missing targets;
+4. 16 effects mount on real markup and unmount cleanly;
+5. `preloader` ticks in both the positional and options-object call forms;
+6. `lineReveal` actually splits into masked lines and restores markup on
+   destroy;
+7. `utils`, `compose` and `guard` behave per contract.
+
+**Demo smoke** (`scripts/demo-smoke.mjs`) loads the real `demo/index.html` and
+executes the real `demo/demo.js` wiring against it, then asserts the effects
+actually *did* something (hero split, preloader counter ticking, marquee track
+duplicated, per-call liquid directions, menu/theme/smooth-scroll handles in
+their initial state), that ~40 ScrollTriggers + a Draggable were created, that
+no console errors were logged, that `dragStrip` tiled its content for the
+seamless loop, that every effect referenced on the page has a `/api/prompts`
+entry, that the taxonomy classifies every effect exactly once, that the
+prompt dock renders one group per category with every effect listed once,
+and that teardown leaves **zero** live ScrollTriggers, Draggables or
+page-element tweens behind while restoring the original markup (marquee and
+drag-strip clones removed).
+
+> jsdom is used deliberately: GSAP's CSSPlugin/Draggable probe element
+> style/computed values during registration, which a hand-rolled DOM stub
+> cannot satisfy. Shared environment shims live in `scripts/env.mjs`.
+
+---
+
+## Project structure
+
+```
+anim-kit/
+├─ src/
+│  ├─ core/
+│  │  ├─ gsap.ts           initGSAP() + EASES (single source of truth)
+│  │  ├─ split.ts          SplitText wrapper + manual fallback
+│  │  ├─ smooth-scroll.ts  Lenis ↔ ScrollTrigger bridge
+│  │  ├─ guard.ts          reduced-motion gate
+│  │  ├─ util.ts           toArray/one/onReady/compose/raf
+│  │  └─ types.ts          TargetLike / Destroy / CommonOptions
+│  ├─ effects/             one file per effect (17 files, 21 effect functions)
+│  ├─ styles/anim-kit.css  companion stylesheet
+│  └─ index.ts             barrel — 38 exports
+├─ demo/                   visual demo (import map, no bundler)
+├─ scripts/
+│  ├─ serve.mjs            static server + /api/prompts (:4321)
+│  ├─ prompts.mjs          prompt catalogue + effect TAXONOMY → /api/prompts
+│  ├─ copy-assets.mjs      copies CSS into dist/
+│  ├─ env.mjs              shared jsdom shims (matchMedia, scrollTo, rAF, …)
+│  ├─ smoke.mjs            unit smoke test (incl. standalone API parity)
+│  └─ demo-smoke.mjs       runs the real demo wiring against real markup
+├─ tsup.config.ts          bundles dist/anim-kit.standalone.js (the CDN entry)
+├─ LICENSE                 MIT
+└─ dist/                   build output
+   ├─ index.js / *.d.ts    per-file ESM + declarations (tsc)
+   ├─ effects/*.js         one module per effect → anim-kit/effects/* subpaths
+   ├─ anim-kit.standalone.js  self-contained CDN bundle (gsap+lenis inlined)
+   └─ styles/anim-kit.css  plain CSS, copied verbatim
+```
+
+CI and release workflows live at the repository root:
+`.github/workflows/ci.yml` (type-check + build + smoke + pack check on every
+push/PR) and `.github/workflows/release.yml` (tag `v*` → `npm publish
+--provenance`, needs the `NPM_TOKEN` repo secret).
+
+Each effect is an independent module — if you only need the marquee, import
+`marquee` and the bundler drops the rest, or deep-import
+`anim-kit/effects/marquee` to skip the barrel entirely.
+
+---
+
+## Credits
+
+Effects extracted and reimplemented from the animation patterns of
+[dzinrstudio.com](https://dzinrstudio.com/). Built on
+[GSAP](https://gsap.com/) (free plugins only) and
+[Lenis](https://lenis.darkroom.engineering/).
+
+MIT © Kalakriti

@@ -1,0 +1,80 @@
+{
+  "name": "anim-kit",
+  "version": "1.0.0",
+  "description": "Modular, framework-agnostic animation library inspired by dzinrstudio.com — GSAP + ScrollTrigger + Lenis effects packaged as composable ES modules.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./standalone": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/anim-kit.standalone.js",
+      "default": "./dist/anim-kit.standalone.js"
+    },
+    "./effects/*": {
+      "types": "./dist/effects/*.d.ts",
+      "import": "./dist/effects/*.js",
+      "default": "./dist/effects/*.js"
+    },
+    "./effects/*.js": {
+      "types": "./dist/effects/*.d.ts",
+      "import": "./dist/effects/*.js",
+      "default": "./dist/effects/*.js"
+    },
+    "./styles": "./dist/styles/anim-kit.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/copy-assets.mjs && tsup",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "demo": "node scripts/serve.mjs",
+    "test": "npm run build && node scripts/smoke.mjs && node scripts/demo-smoke.mjs",
+    "smoke": "node scripts/smoke.mjs && node scripts/demo-smoke.mjs",
+    "prepublishOnly": "npm run build && npm run smoke"
+  },
+  "keywords": [
+    "animation",
+    "gsap",
+    "scrolltrigger",
+    "lenis",
+    "smooth-scroll",
+    "marquee",
+    "parallax",
+    "preloader"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cosmictraveler002/Ani-Kit.git"
+  },
+  "homepage": "https://github.com/Cosmictraveler002/Ani-Kit#readme",
+  "bugs": {
+    "url": "https://github.com/Cosmictraveler002/Ani-Kit/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "gsap": "^3.13.0",
+    "lenis": "^1.3.11"
+  },
+  "devDependencies": {
+    "jsdom": "^30.1.1",
+    "tsup": "^8.5.1",
+    "typescript": "^5.7.3"
+  }
+}

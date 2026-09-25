@@ -1,0 +1,54 @@
+name: Release
+
+# Publish to npm when a version tag is pushed (run from the repo root):
+#   git tag v1.0.0 && git push origin v1.0.0
+#
+# npm versions are immutable, so every pinned CDN URL
+# (cdn.jsdelivr.net/npm/anim-kit@1.0.0/…, unpkg.com/anim-kit@1.0.0/…)
+# resolves to exactly this build forever. jsDelivr/unpkg pick the new
+# version up automatically once npm accepts it — no manual CDN step.
+#
+# Repo setup required once: Settings → Secrets → Actions → NPM_TOKEN
+# (automation token with publish rights for the `anim-kit` package).
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  id-token: write # npm provenance (--provenance)
+
+defaults:
+  run:
+    working-directory: anim-kit
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+          cache-dependency-path: anim-kit/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm run smoke
+
+      - name: Publish to npm
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

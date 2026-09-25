@@ -1,0 +1,799 @@
+<!doctype html>
+<html lang="en" class="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>anim-kit — demo</title>
+    <link rel="stylesheet" href="/src/styles/anim-kit.css" />
+    <style>
+      :root {
+        --bg: #f4f2ee;
+        --fg: #111;
+        --primary: #6c5ce7;
+        --ak-background: #f4f2ee;
+        --ak-foreground: #111;
+      }
+      html.dark {
+        --bg: #0d0d0f;
+        --fg: #f4f2ee;
+        --ak-background: #0d0d0f;
+        --ak-foreground: #f4f2ee;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: auto; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        overflow-x: clip;
+      }
+      a { color: inherit; }
+
+      /* ---- nav ---- */
+      nav {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 16px 32px;
+        background: var(--bg);
+        border-bottom: 1px solid color-mix(in srgb, var(--fg) 18%, transparent);
+        z-index: 100;
+        will-change: transform;
+      }
+      nav .brand { font-weight: 700; letter-spacing: -0.03em; }
+      nav .links { display: flex; gap: 24px; font-size: 14px; }
+
+      section { padding: 0 32px; }
+      .block { max-width: 1280px; margin: 0 auto; padding: 140px 0; }
+      .label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        /* colour instead of opacity so injected copy-prompt chips stay crisp */
+        color: color-mix(in srgb, currentColor 55%, transparent);
+        margin-bottom: 24px;
+      }
+
+      h1 {
+        font-size: clamp(48px, 9vw, 140px);
+        line-height: 0.92;
+        letter-spacing: -0.04em;
+        margin: 0;
+        font-weight: 600;
+      }
+      h2 {
+        font-size: clamp(36px, 6vw, 96px);
+        line-height: 0.95;
+        letter-spacing: -0.03em;
+        margin: 0 0 32px;
+        font-weight: 600;
+      }
+      p.lede { font-size: clamp(16px, 2vw, 22px); line-height: 1.5; max-width: 60ch; }
+
+      /* ---- preloader ---- */
+      #preloader {
+        position: fixed;
+        inset: 0;
+        z-index: 999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: all;
+      }
+      #preloader [data-backdrop] {
+        position: absolute;
+        inset: 0;
+        background: var(--bg);
+      }
+      #preloader .glyph-wrap { position: relative; }
+      #preloader svg { display: block; width: 76px; height: 343px; }
+      #preloader .ghost { position: absolute; inset: 0; opacity: 0.2; }
+      #preloader [data-counter] {
+        position: absolute;
+        left: 12px;
+        bottom: 12px;
+        font-size: clamp(48px, 12vw, 100px);
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.05em;
+      }
+
+      /* ---- marquee ---- */
+      .logo-row { display: flex; gap: 4px; }
+      .logo-chip {
+        padding: 14px 28px;
+        border: 1px solid color-mix(in srgb, var(--fg) 25%, transparent);
+        border-radius: 999px;
+        font-size: 14px;
+        white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      /* ---- horizontal scroll ---- */
+      #hscroll { padding: 0; }
+      #hscroll .h-section { position: relative; height: 100vh; overflow: hidden; }
+      #hscroll .h-track {
+        display: flex;
+        height: 100%;
+        width: max-content;
+        will-change: transform;
+      }
+      #hscroll .h-panel {
+        width: 78vw;
+        height: 100%;
+        flex: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6vh 4vw;
+      }
+      #hscroll .h-panel .frame {
+        width: 100%;
+        height: 100%;
+        border-radius: 24px;
+        overflow: hidden;
+        display: flex;
+        align-items: flex-end;
+        padding: 32px;
+        color: #fff;
+        font-size: clamp(24px, 3vw, 48px);
+        letter-spacing: -0.03em;
+      }
+      #hscroll .h-panel img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        will-change: transform;
+      }
+
+      /* ---- stacked cards ---- */
+      .stack-wrap { position: relative; height: 500vh; }
+      .stack-viewport {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .stack-cards {
+        display: flex;
+        gap: 16px;
+        width: min(1280px, 92vw);
+        align-items: stretch;
+        justify-content: center;
+      }
+      .stack-cards .ak-card {
+        flex: 1;
+        height: 400px;
+        padding: 24px;
+        border-radius: 24px;
+        border: 1px solid color-mix(in srgb, var(--fg) 18%, transparent);
+        background: color-mix(in srgb, var(--fg) 6%, transparent);
+        backdrop-filter: blur(6px);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        color: var(--fg);
+        text-decoration: none;
+      }
+      .stack-cards .ak-card h3 { margin: 0; font-size: 22px; letter-spacing: -0.02em; }
+      .stack-cards .ak-card p { margin: 8px 0 0; font-size: 14px; opacity: 0.6; line-height: 1.45; }
+      .stack-cards .ak-card .num { font-size: 56px; font-weight: 600; letter-spacing: -0.04em; }
+
+      /* ---- scatter band ---- */
+      #scatter { padding: 0; overflow: hidden; }
+      #scatter .s-pin {
+        position: relative;
+        background: var(--fg);
+        color: var(--bg);
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+      }
+      #scatter .s-line {
+        flex: none;
+        white-space: nowrap;
+        font-size: 25vw;
+        line-height: 0.9;
+        letter-spacing: -0.05em;
+        font-weight: 600;
+        padding: 0 101vw;
+        will-change: transform;
+      }
+      #scatter .ak-char { display: inline-block; will-change: transform; }
+      #scatter .ak-space { display: inline-block; white-space: pre; }
+
+      /* ---- drag strip ---- */
+      .drag-viewport { overflow: hidden; padding: 8px 0; }
+      .drag-track { display: flex; gap: 16px; width: max-content; cursor: grab; user-select: none; }
+      .drag-track:active { cursor: grabbing; }
+      .drag-card {
+        width: 200px;
+        aspect-ratio: 0.9;
+        border-radius: 16px;
+        overflow: hidden;
+        flex: none;
+        transform-origin: 50% 100%;
+        background: color-mix(in srgb, var(--fg) 12%, transparent);
+        display: flex;
+        align-items: flex-end;
+        padding: 14px;
+        font-size: 13px;
+      }
+
+      /* ---- parallax grid ---- */
+      .pgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+      .pgrid figure { margin: 0; overflow: hidden; border-radius: 16px; }
+      .pgrid img { width: 100%; height: 320px; object-fit: cover; display: block; will-change: transform; }
+
+      /* ---- hero shrink ---- */
+      .hero-media {
+        position: relative;
+        height: 62vh;
+        border-radius: 24px;
+        overflow: hidden;
+        will-change: transform;
+      }
+      .hero-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+      /* ---- buttons ---- */
+      .btn-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-top: 32px; }
+
+      /* ---- stats ---- */
+      .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 32px; }
+      .stats .n {
+        font-size: clamp(44px, 7vw, 88px);
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.05em;
+        font-weight: 600;
+      }
+      .stats .cap { font-size: 13px; opacity: 0.55; margin-top: 4px; }
+
+      .rule { height: 1px; background: currentColor; width: 100%; opacity: 0.3; }
+
+      /* ---- menu ---- */
+      .menu-overlay { color: #fff; }
+      .menu-links { display: flex; flex-direction: column; }
+      .menu-link a {
+        text-transform: uppercase;
+        font-size: clamp(40px, 8vw, 120px);
+        line-height: 0.9;
+        letter-spacing: -0.04em;
+        text-decoration: none;
+        font-weight: 600;
+        opacity: 0.25;
+        transition: opacity 250ms;
+      }
+      .menu-link a:hover { opacity: 1; }
+
+      .cursor-tag {
+        position: fixed;
+        left: 0; top: 0;
+        z-index: 50;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        padding: 8px 10px;
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--fg) 12%, transparent);
+        backdrop-filter: blur(6px);
+        font-size: 13px;
+        opacity: 0;
+      }
+
+      .showreel-zone {
+        position: relative;
+        height: 70vh;
+        border-radius: 24px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #6c5ce7, #00cec9);
+        cursor: none;
+        margin-top: 32px;
+      }
+      .showreel-zone span { font-size: clamp(28px, 5vw, 64px); font-weight: 600; color: #fff; letter-spacing: -0.03em; }
+
+      .eq-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border: 0;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--fg) 12%, transparent);
+        color: var(--fg);
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      footer { padding: 80px 32px; text-align: center; opacity: 0.5; font-size: 14px; }
+
+      /* ---- copy-prompt chips + dock (served by /api/prompts) ---- */
+      .copy-prompt {
+        font: inherit;
+        font-size: 11px;
+        line-height: 1;
+        text-transform: none;
+        letter-spacing: 0;
+        opacity: 1;
+        margin-left: 12px;
+        padding: 5px 11px;
+        border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
+        border-radius: 999px;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        vertical-align: middle;
+        transition: background 180ms ease, color 180ms ease, border-color 180ms ease;
+      }
+      .copy-prompt:hover {
+        background: var(--fg);
+        border-color: var(--fg);
+        color: var(--bg);
+      }
+      .copy-prompt:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+      .prompt-dock__toggle {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        z-index: 90;
+        font: inherit;
+        font-size: 13px;
+        padding: 10px 18px;
+        border: 1px solid color-mix(in srgb, var(--fg) 30%, transparent);
+        border-radius: 999px;
+        background: var(--bg);
+        color: var(--fg);
+        cursor: pointer;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+      }
+      .prompt-dock__toggle:hover { background: var(--fg); color: var(--bg); }
+      .prompt-dock__toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+      .prompt-dock {
+        position: fixed;
+        right: 20px;
+        bottom: 74px;
+        z-index: 90;
+        width: min(430px, calc(100vw - 40px));
+        max-height: min(65vh, 560px);
+        display: flex;
+        flex-direction: column;
+        background: var(--bg);
+        color: var(--fg);
+        border: 1px solid color-mix(in srgb, var(--fg) 22%, transparent);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+      }
+      .prompt-dock[hidden] { display: none; }
+      .prompt-dock__head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        font-size: 13px;
+        border-bottom: 1px solid color-mix(in srgb, var(--fg) 18%, transparent);
+      }
+      .prompt-dock__head .copy-prompt { margin-left: auto; }
+      .prompt-dock__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        overflow-y: auto;
+      }
+      .prompt-dock__list > li + li {
+        margin-top: 6px;
+        border-top: 1px solid color-mix(in srgb, var(--fg) 12%, transparent);
+        padding-top: 6px;
+      }
+      .prompt-dock__cat {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        padding: 8px 11px 3px;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        background: var(--bg);
+        opacity: 0.75;
+        cursor: default;
+      }
+      .prompt-dock__sublist {
+        list-style: none;
+        margin: 3px 0 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .prompt-dock__list .copy-prompt {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 3px;
+        width: 100%;
+        margin: 0;
+        padding: 9px 11px;
+        border-radius: 10px;
+        text-align: left;
+        border-color: color-mix(in srgb, var(--fg) 16%, transparent);
+      }
+      .prompt-dock__list .prompt-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+      }
+      .prompt-dock__list .prompt-id { font-weight: 700; font-size: 13px; }
+      .prompt-dock__list .prompt-sub {
+        font-size: 10px;
+        letter-spacing: 0.03em;
+        opacity: 0.5;
+        text-align: right;
+      }
+      .prompt-dock__list .prompt-title { font-size: 11px; opacity: 0.65; }
+      .prompt-dock__empty { padding: 14px; font-size: 12px; opacity: 0.7; }
+
+      @media (max-width: 900px) {
+        .pgrid { grid-template-columns: 1fr; }
+        .stack-cards { flex-direction: column; }
+        .stack-cards .ak-card { height: auto; }
+        .stack-wrap { height: auto; }
+        .stack-viewport { position: static; height: auto; padding: 40px 0; }
+        #hscroll .h-panel { width: 92vw; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 1. Preloader -->
+    <div id="preloader" data-preloader>
+      <div data-backdrop></div>
+      <div class="glyph-wrap">
+        <svg data-glyph viewBox="0 0 76 343" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M75.1094 280.561H0V342.453H75.1094V280.561Z" fill="currentColor" />
+          <path d="M19.4107 251.481L4.34375 106.642V0H70.8032V106.642L55.7362 251.481H19.4107Z" fill="currentColor" />
+        </svg>
+        <svg class="ghost" viewBox="0 0 76 343" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M75.1094 280.561H0V342.453H75.1094V280.561Z" fill="currentColor" />
+          <path d="M19.4107 251.481L4.34375 106.642V0H70.8032V106.642L55.7362 251.481H19.4107Z" fill="currentColor" />
+        </svg>
+      </div>
+      <div data-counter class="ak-counter">0</div>
+    </div>
+
+    <!-- 2. Nav (hide on scroll) -->
+    <nav data-nav>
+      <span class="brand">ANIM·KIT</span>
+      <div class="links">
+        <a class="ak-underline" href="#text">Text</a>
+        <a class="ak-underline" href="#scroll">Scroll</a>
+        <a class="ak-underline" href="#loop">Loops</a>
+        <a class="ak-underline" href="#ui">UI</a>
+      </div>
+      <button class="eq-btn" data-menu-open>Menu</button>
+    </nav>
+
+    <!-- 3. Curtain menu -->
+    <div class="menu-overlay" data-menu>
+      <div class="menu-overlay-bar" data-menu-chrome>
+        <span class="brand">ANIM·KIT</span>
+        <button class="eq-btn" data-menu-close>Close</button>
+      </div>
+      <div class="menu-links">
+        <div class="menu-link"><a href="#text">Text</a></div>
+        <div class="menu-link"><a href="#scroll">Scroll</a></div>
+        <div class="menu-link"><a href="#loop">Loops</a></div>
+        <div class="menu-link"><a href="#ui">UI</a></div>
+      </div>
+    </div>
+
+    <!-- cursor follower target -->
+    <div class="cursor-tag" data-cursor>▶ Play Showreel</div>
+
+    <!-- copy-prompt dock — prompts served by GET /api/prompts -->
+    <button class="prompt-dock__toggle" id="prompt-toggle" aria-expanded="false" aria-controls="prompt-dock">
+      ⧉ prompts <span id="prompt-count"></span>
+    </button>
+    <div class="prompt-dock" id="prompt-dock" hidden>
+      <div class="prompt-dock__head">
+        <strong>Copy an implementation prompt</strong>
+        <button class="copy-prompt" type="button" data-copy-all>copy all</button>
+        <button class="copy-prompt" type="button" data-close-prompts aria-label="Close prompts">✕</button>
+      </div>
+      <ul class="prompt-dock__list" id="prompt-list"></ul>
+    </div>
+
+    <main>
+      <!-- HERO -->
+      <section>
+        <div class="block" style="padding-top: 180px">
+          <p class="label" data-effect="lineReveal">lineReveal — mode: immediate</p>
+          <h1 data-hero-text>Animations,<br />extracted and<br />made reusable.</h1>
+
+          <div class="showreel-zone" data-showreel>
+            <span>Hover me</span>
+          </div>
+
+          <div class="btn-row">
+            <button class="ak-liquid" data-liquid>
+              <svg class="ak-liquid__wave" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <path d="M0,30 Q50,-5 100,30 L100,100 L0,100 Z" />
+              </svg>
+              <span class="ak-liquid__label">Lets Talk →</span>
+            </button>
+
+            <button class="ak-liquid" data-liquid data-dir="down">
+              <svg class="ak-liquid__wave" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <path d="M0,0 L100,0 L100,70 Q50,105 0,70 Z" />
+              </svg>
+              <span class="ak-liquid__label">Fills downward</span>
+            </button>
+
+            <a class="ak-underline" href="#ui">Underline sweep</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- LOGO REVEAL -->
+      <section>
+        <div class="block" style="padding-top: 0">
+          <svg data-logo viewBox="0 0 400 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: min(400px, 80vw)">
+            <path class="svg-anim-path" d="M4 76V4h30c14 0 24 3 30 9 6 6 9 15 9 27s-3 21-9 27c-6 6-16 9-30 9H4Zm24-20h6c6 0 10-2 12-6 2-4 3-9 3-15s-1-11-3-15c-2-4-6-6-12-6h-6v42Z" fill="currentColor"/>
+            <path class="svg-anim-path" d="M92 76V4h24v72H92Z" fill="currentColor"/>
+            <path class="svg-anim-path" d="M136 76V4h24l30 44V4h24v72h-24l-30-44v44h-24Z" fill="currentColor"/>
+            <path class="svg-anim-path" d="M262 76l-40-72h26l26 48 26-48h26l-40 72h-24Z" fill="currentColor"/>
+          </svg>
+          <p class="label" data-effect="logoReveal" style="margin-top: 24px">logoReveal — staggered SVG paths</p>
+        </div>
+      </section>
+
+      <!-- HERO SHRINK -->
+      <section>
+        <div class="block" style="padding-top: 0">
+          <p class="label" data-effect="heroShrink">heroShrink — media scales down as it scrolls away</p>
+          <div class="hero-media" data-hero-media>
+            <img alt="" src="https://picsum.photos/seed/shrink/1600/900" />
+          </div>
+        </div>
+      </section>
+
+      <!-- MASK REVEAL HEADING -->
+      <section id="text">
+        <div class="block">
+          <p class="label" data-effect="maskReveal revealRule">maskReveal + revealRule</p>
+          <h2>
+            <span class="ak-mask"><span class="ak-mask__inner" data-mask>Text that</span></span>
+            <span class="ak-mask"><span class="ak-mask__inner" data-mask>rises into view.</span></span>
+          </h2>
+          <div class="rule" data-rule></div>
+
+          <p class="label" data-effect="counter" style="margin-bottom: 16px">counter — 0→240, on-scroll, padded</p>
+          <div class="stats" style="margin-top: 0">
+            <div>
+              <div class="n" data-count>0</div>
+              <div class="cap">counter() — 0 → 240</div>
+            </div>
+            <div>
+              <div class="n" data-count-scroll>0</div>
+              <div class="cap">counter() onScroll</div>
+            </div>
+            <div>
+              <div class="n" data-count-pad>0</div>
+              <div class="cap">counter() padded</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- LINE REVEAL (scroll) -->
+      <section>
+        <div class="block">
+          <p class="label" data-effect="lineReveal">lineReveal — mode: scroll (reverses on leave)</p>
+          <p class="lede" data-lines>
+            Every line of this paragraph is split into an overflow-hidden mask and
+            slid up from below with a 0.1s stagger on a power4.out curve. Scroll
+            away and it reverses, exactly like the original. It works on long
+            copy, short copy, and headings with <br />hard breaks in them.
+          </p>
+        </div>
+      </section>
+
+      <!-- MARQUEE -->
+      <section id="loop">
+        <div class="block">
+          <p class="label" data-effect="marquee">marquee — two rows, opposite directions, 40px/s</p>
+        </div>
+        <div class="ak-marquee" style="padding-bottom: 8px">
+          <div class="ak-marquee__viewport">
+            <div class="ak-marquee__track logo-row" data-marquee-track data-dir="left">
+              <span class="logo-chip">Prink</span><span class="logo-chip">Cars Daily</span>
+              <span class="logo-chip">Un:fltrd</span><span class="logo-chip">Balance Story</span>
+              <span class="logo-chip">Zerodha</span><span class="logo-chip">House of X</span>
+              <span class="logo-chip">Superyou</span><span class="logo-chip">Northwind</span>
+            </div>
+          </div>
+        </div>
+        <div class="ak-marquee">
+          <div class="ak-marquee__viewport">
+            <div class="ak-marquee__track logo-row" data-marquee-track data-dir="right">
+              <span class="logo-chip">Strategy</span><span class="logo-chip">Identity</span>
+              <span class="logo-chip">Packaging</span><span class="logo-chip">Motion</span>
+              <span class="logo-chip">Web</span><span class="logo-chip">Art Direction</span>
+              <span class="logo-chip">Campaigns</span><span class="logo-chip">Editorial</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- HORIZONTAL SCROLL -->
+      <section id="hscroll">
+        <div class="block" style="padding-bottom: 48px">
+          <p class="label" data-effect="horizontalScroll">horizontalScroll — pinned track + containerAnimation parallax</p>
+        </div>
+        <div class="h-section" data-hsection>
+          <div class="h-track" data-htrack>
+            <div class="h-panel">
+              <div class="frame" style="background: linear-gradient(135deg,#112639,#1f5f8b)">
+                <img alt="" src="https://picsum.photos/seed/dzinr1/1200/900" data-speed-img />
+                <span>01 — Prink</span>
+              </div>
+            </div>
+            <div class="h-panel">
+              <div class="frame" style="background: linear-gradient(135deg,#EE6813,#F87C47)">
+                <img alt="" src="https://picsum.photos/seed/dzinr2/1200/900" data-speed-img />
+                <span>02 — Cars Daily</span>
+              </div>
+            </div>
+            <div class="h-panel">
+              <div class="frame" style="background: linear-gradient(135deg,#570B20,#a03050)">
+                <img alt="" src="https://picsum.photos/seed/dzinr3/1200/900" data-speed-img />
+                <span>03 — Un:fltrd</span>
+              </div>
+            </div>
+            <div class="h-panel">
+              <div class="frame" style="background: linear-gradient(135deg,#F87C47,#FBC531)">
+                <img alt="" src="https://picsum.photos/seed/dzinr4/1200/900" data-speed-img />
+                <span>04 — Balance Story</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PARALLAX -->
+      <section>
+        <div class="block">
+          <p class="label" data-effect="parallax">parallax — data-speed</p>
+          <div class="pgrid" data-parallax>
+            <figure><img data-speed="-0.5" alt="" src="https://picsum.photos/seed/px1/800/600" /></figure>
+            <figure><img data-speed="0.8" alt="" src="https://picsum.photos/seed/px2/800/600" /></figure>
+            <figure><img data-speed="-0.3" alt="" src="https://picsum.photos/seed/px3/800/600" /></figure>
+          </div>
+        </div>
+      </section>
+
+      <!-- STACKED CARDS -->
+      <section>
+        <div class="block" style="padding-bottom: 48px">
+          <p class="label" data-effect="stackedCards">stackedCards — pinned deck with cascading stagger</p>
+          <h2>
+            <span class="ak-mask"><span class="ak-mask__inner" data-mask>Services.</span></span>
+          </h2>
+        </div>
+        <div class="stack-wrap" data-stack-wrap>
+          <div class="stack-viewport" data-stack-viewport>
+            <div class="stack-cards">
+              <a class="ak-card" href="#">
+                <span class="num">01</span>
+                <div><h3>Branding</h3><p>Identity systems built to last across every surface.</p></div>
+              </a>
+              <a class="ak-card" href="#">
+                <span class="num">02</span>
+                <div><h3>Strategy</h3><p>Positioning that makes the choice obvious.</p></div>
+              </a>
+              <a class="ak-card" href="#">
+                <span class="num">03</span>
+                <div><h3>Motion</h3><p>Interfaces that move with intent.</p></div>
+              </a>
+              <a class="ak-card" href="#">
+                <span class="num">04</span>
+                <div><h3>Packaging</h3><p>Shelf presence that earns the second look.</p></div>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCATTER TEXT -->
+      <section id="scatter">
+        <div class="s-pin" data-scatter-pin>
+          <p class="label" data-effect="scatterText" style="position: absolute; top: 24px; left: 32px; margin: 0">scatterText — pinned band with per-char settle</p>
+          <p class="s-line" data-scatter>So, are you ready to Stand out?</p>
+        </div>
+      </section>
+
+      <!-- DRAG STRIP -->
+      <section>
+        <div class="block">
+          <p class="label" data-effect="dragStrip">dragStrip — infinite drag with rotation on pull</p>
+          <div class="drag-viewport">
+            <div class="drag-track" data-drag>
+              <div class="drag-card">Image 01</div>
+              <div class="drag-card">Image 02</div>
+              <div class="drag-card">Image 03</div>
+              <div class="drag-card">Image 04</div>
+              <div class="drag-card">Image 05</div>
+              <div class="drag-card">Image 06</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- UI: equaliser + theme -->
+      <section id="ui">
+        <div class="block">
+          <p class="label" data-effect="audioBars themeReveal liquidButton">audioBars + themeReveal + liquidButton</p>
+          <h2>
+            <span class="ak-mask"><span class="ak-mask__inner" data-mask>Micro</span></span>
+            <span class="ak-mask"><span class="ak-mask__inner" data-mask>interactions.</span></span>
+          </h2>
+
+          <div class="btn-row">
+            <button class="eq-btn" data-eq-toggle aria-pressed="false">
+              <span class="ak-eq" data-eq>
+                <i></i><i></i><i></i><i></i><i></i>
+              </span>
+              <span data-eq-label>Play</span>
+            </button>
+
+            <button class="eq-btn" data-theme>Toggle theme</button>
+
+            <button class="ak-liquid" data-liquid data-dir="up">
+              <svg class="ak-liquid__wave" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <path d="M0,30 Q50,-5 100,30 L100,100 L0,100 Z" />
+              </svg>
+              <span class="ak-liquid__label">Get started</span>
+            </button>
+          </div>
+
+          <div class="btn-row" style="margin-top: 48px">
+            <button class="eq-btn" data-menu-open-2>Open curtain menu</button>
+          </div>
+        </div>
+      </section>
+
+      <footer>anim-kit · effects extracted from dzinrstudio.com</footer>
+    </main>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "gsap": "/node_modules/gsap/index.js",
+          "gsap/ScrollTrigger": "/node_modules/gsap/ScrollTrigger.js",
+          "gsap/SplitText": "/node_modules/gsap/SplitText.js",
+          "gsap/Draggable": "/node_modules/gsap/Draggable.js",
+          "gsap/CustomEase": "/node_modules/gsap/CustomEase.js",
+          "gsap/ScrollSmoother": "/node_modules/gsap/ScrollSmoother.js",
+          "lenis": "/node_modules/lenis/dist/lenis.mjs",
+          "anim-kit": "/dist/index.js"
+        }
+      }
+    </script>
+    <script type="module" src="/demo/demo.js"></script>
+  </body>
+</html>

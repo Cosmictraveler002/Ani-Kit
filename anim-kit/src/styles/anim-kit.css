@@ -1,0 +1,361 @@
+/**
+ * anim-kit — companion stylesheet.
+ *
+ * Most of the studio's motion is JS-driven, but a handful of effects are pure
+ * CSS (liquid button, underline sweep, marquee masks) and every effect needs a
+ * resting state that is safe with `prefers-reduced-motion`.
+ */
+
+/* ------------------------------------------------------------------ */
+/* Design tokens                                                       */
+/* ------------------------------------------------------------------ */
+
+:root {
+  --ak-primary: #6c5ce7;
+  --ak-curtain: cubic-bezier(0.76, 0, 0.24, 1);
+  --ak-reveal: cubic-bezier(0.165, 0.84, 0.44, 1);
+  --ak-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ------------------------------------------------------------------ */
+/* Text splitting — masks                                              */
+/* ------------------------------------------------------------------ */
+
+/* SplitText / split() output: one mask per line so lines can slide up. */
+.ak-line,
+.ak-line-mask {
+  overflow: hidden;
+  display: block;
+  /* Negate the descender clipping every masked-line setup has to fight. */
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+
+.ak-line > *,
+.ak-line-mask > * {
+  display: block;
+  will-change: transform;
+}
+
+.ak-char,
+.ak-word {
+  display: inline-block;
+  will-change: transform;
+}
+
+.ak-space {
+  display: inline-block;
+  white-space: pre;
+}
+
+/* ------------------------------------------------------------------ */
+/* Mask reveal (heading lines)                                         */
+/* ------------------------------------------------------------------ */
+
+.ak-mask {
+  display: block;
+  overflow: hidden;
+}
+
+.ak-mask__inner {
+  display: block;
+  will-change: transform;
+}
+
+/* ------------------------------------------------------------------ */
+/* Liquid button                                                       */
+/* ------------------------------------------------------------------ */
+
+.ak-liquid {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  isolation: isolate;
+  padding: 0.4em 1em;
+  border: 0;
+  background: var(--ak-foreground, #111);
+  color: var(--ak-background, #fff);
+  cursor: pointer;
+  transition: color 700ms ease-out;
+}
+
+.ak-liquid__wave {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  height: 160%;
+  width: 160%;
+  pointer-events: none;
+  transform: translate(-50%, 120%);
+  transition-property: transform;
+  transition-timing-function: ease-out;
+  transition-duration: var(--ak-liquid-duration, 900ms);
+}
+
+/* Rising from the bottom → the curved edge peaks on the way up. */
+[data-ak-liquid="up"] .ak-liquid__wave {
+  transform: translate(-50%, 120%);
+}
+[data-ak-liquid="up"]:hover .ak-liquid__wave,
+[data-ak-liquid="up"]:focus-visible .ak-liquid__wave {
+  transform: translate(-50%, -66.666%);
+}
+
+/* Falling in from the top. */
+[data-ak-liquid="down"] .ak-liquid__wave {
+  transform: translate(-50%, -120%);
+}
+[data-ak-liquid="down"]:hover .ak-liquid__wave,
+[data-ak-liquid="down"]:focus-visible .ak-liquid__wave {
+  transform: translate(-50%, -66.666%);
+}
+
+.ak-liquid__wave path {
+  fill: var(--ak-liquid-fill, var(--ak-primary));
+}
+
+.ak-liquid:hover,
+.ak-liquid:focus-visible {
+  color: var(--ak-liquid-label, #fff);
+}
+
+.ak-liquid__label {
+  position: relative;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ */
+/* Underline sweep                                                     */
+/* ------------------------------------------------------------------ */
+
+.ak-underline {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.ak-underline::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  width: 0;
+  background: currentColor;
+  transition: width 300ms var(--ak-out);
+}
+
+.ak-underline:hover::after,
+.ak-underline:focus-visible::after {
+  width: 100%;
+}
+
+/* ------------------------------------------------------------------ */
+/* Marquee                                                             */
+/* ------------------------------------------------------------------ */
+
+.ak-marquee {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.ak-marquee__viewport {
+  overflow: hidden;
+}
+
+.ak-marquee__track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Fade the first/last 10vw into the page background. */
+.ak-marquee::before,
+.ak-marquee::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 10vw;
+  z-index: 2;
+  pointer-events: none;
+}
+.ak-marquee::before {
+  left: 0;
+  background: linear-gradient(to right, var(--ak-background, #fff) 0%, transparent 100%);
+}
+.ak-marquee::after {
+  right: 0;
+  background: linear-gradient(to left, var(--ak-background, #fff) 0%, transparent 100%);
+}
+
+/* ------------------------------------------------------------------ */
+/* Drag strip                                                          */
+/* ------------------------------------------------------------------ */
+
+.ak-drag-track {
+  display: flex;
+  gap: 1rem;
+  width: max-content;
+  cursor: grab;
+  user-select: none;
+  touch-action: pan-y;
+  will-change: transform;
+}
+.ak-drag-track:active {
+  cursor: grabbing;
+}
+.ak-drag-track > * {
+  transform-origin: 50% 100%;
+  will-change: transform;
+}
+
+/* ------------------------------------------------------------------ */
+/* Menu overlay                                                        */
+/* ------------------------------------------------------------------ */
+
+.menu-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  background: var(--ak-primary);
+  z-index: 9999;
+  pointer-events: none;
+  will-change: clip-path;
+  /* Matches the collapsed-at-bottom resting state JS sets first. */
+  clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%);
+}
+
+.menu-overlay-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100vw;
+  padding: 20px;
+}
+
+.menu-link {
+  overflow: hidden;
+  padding-left: 20px;
+}
+
+.menu-overlay .menu-link h1,
+.menu-overlay .menu-link a {
+  display: block;
+  text-transform: uppercase;
+  font-size: 5vw;
+  font-weight: 400;
+  line-height: 0.9;
+  will-change: transform;
+}
+
+@media (max-width: 767px) {
+  .menu-overlay .menu-link h1,
+  .menu-overlay .menu-link a {
+    font-size: 16vw;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Stacked cards                                                       */
+/* ------------------------------------------------------------------ */
+
+.ak-stack-viewport {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.ak-stack-cards {
+  display: flex;
+  gap: 1rem;
+  height: 100vh;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.ak-card {
+  will-change: transform;
+}
+
+/* ------------------------------------------------------------------ */
+/* Counter                                                             */
+/* ------------------------------------------------------------------ */
+
+.ak-counter {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* ------------------------------------------------------------------ */
+/* Equaliser                                                           */
+/* ------------------------------------------------------------------ */
+
+.ak-eq {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  height: 18px;
+  width: 100%;
+}
+
+.ak-eq > * {
+  width: 1px;
+  height: 4px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+/* ------------------------------------------------------------------ */
+/* Reduced motion — show final states, never animate                   */
+/* ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .ak-line,
+  .ak-line-mask,
+  .ak-mask {
+    overflow: visible;
+  }
+
+  .ak-liquid__wave,
+  .ak-underline::after,
+  .ak-marquee__track,
+  .ak-drag-track,
+  .ak-card,
+  .menu-overlay {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .ak-liquid__wave {
+    transform: translate(-50%, 120%) !important;
+  }
+
+  [data-ak-liquid]:hover .ak-liquid__wave {
+    transform: translate(-50%, -66.666%) !important;
+  }
+
+  .menu-overlay {
+    display: none;
+  }
+}
