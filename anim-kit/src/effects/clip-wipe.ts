@@ -10,6 +10,10 @@
  *   from: "bottom" inset(100% 0 0 0)   → grows upward from the bottom edge
  *   from: "frame"  inset(15% 15% 15% 15%) → opens out of a centered frame
  *
+ * The wipe can also be bound to scroll progress (`scrub`), so the inset
+ * opens as the element travels through the viewport — the reveal then
+ * reverses with the scroll instead of playing once.
+ *
  * Works on images, videos, blocks and text. destroy() kills the tween and
  * removes the inline clip-path.
  */
@@ -35,8 +39,15 @@ export interface ClipWipeOptions extends CommonOptions {
   mode?: "scroll" | "immediate";
   /** ScrollTrigger start position. @default "top 85%" */
   start?: string;
+  /** ScrollTrigger end position (scrub mode). @default "top 20%" */
+  end?: string;
   /** Re-wipe when leaving / re-entering the viewport. @default false */
   replay?: boolean;
+  /**
+   * Bind the wipe to scroll progress instead of playing it on enter —
+   * number = scrub smoothing seconds, `true` = immediate. unset = one-shot.
+   */
+  scrub?: number | boolean;
 }
 
 const FROM: Record<string, string> = {
@@ -59,7 +70,9 @@ export function clipWipe(target: TargetLike, options: ClipWipeOptions = {}): Des
     delay = 0,
     mode = "scroll",
     start = "top 85%",
+    end = "top 20%",
     replay = false,
+    scrub,
   } = options;
 
   const els = toArray<HTMLElement>(target);
@@ -80,7 +93,15 @@ export function clipWipe(target: TargetLike, options: ClipWipeOptions = {}): Des
       delay,
       overwrite: "auto",
     };
-    if (mode === "scroll") {
+    if (scrub !== undefined) {
+      vars.ease = "none";
+      vars.scrollTrigger = {
+        trigger: els[0],
+        start,
+        end,
+        scrub: scrub === true ? true : scrub,
+      };
+    } else if (mode === "scroll") {
       vars.scrollTrigger = {
         trigger: els[0],
         start,

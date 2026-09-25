@@ -551,6 +551,7 @@ inside a frame margin) and the inset animates to zero so it wipes into view.
 ```ts
 clipWipe("[data-clip]", { from: "left" });                    // inset(0 100% 0 0) → 0
 clipWipe("[data-frame]", { from: "frame", inset: 12 });       // opens out of a frame
+clipWipe("[data-scrub]", { from: "frame", scrub: 0.5 });      // bound to scroll progress
 ```
 
 | Option | Default | Notes |
@@ -562,6 +563,8 @@ clipWipe("[data-frame]", { from: "frame", inset: 12 });       // opens out of a 
 | `stagger` | `0.08` | seconds between targets |
 | `mode` | `"scroll"` | or `"immediate"` to play at once |
 | `start` | `"top 85%"` | ScrollTrigger start |
+| `end` | `"top 20%"` | ScrollTrigger end (scrub mode) |
+| `scrub` | unset | number = scrub smoothing seconds, `true` = immediate: tie the wipe to scroll progress |
 | `replay` | `false` | re-wipe when leaving / re-entering |
 
 Works on images, video, blocks and text. `destroy()` removes the inline
@@ -1061,16 +1064,17 @@ npm run typecheck # tsc --noEmit (what CI runs)
 ```
 
 The demo page wires the whole effect set against one document —
-`demo/index.html` + `demo/demo.js`. (`stackedCardsPinned`, the
-sibling-viewport variant, plus `split()` are exercised by the unit smoke
-instead.)
+`demo/index.html` + `demo/demo.js` — and every effect in the catalogue has
+an on-page *copy prompt* chip (the demo smoke enforces the two-way mapping).
+(`split()` is exercised by the unit smoke instead.)
 
 ### Copy-prompt API
 
 The demo server doubles as a **prompt server**: every effect has a ready-to-
-paste *"how to implement this with anim-kit"* prompt — markup, import, CDN
-usage (version-pinned, no build step), initialisation call, options table,
-teardown and gotchas:
+paste *"how to implement this with anim-kit"* prompt — markup, a numbered
+copy-paste procedure that runs straight from the version-pinned CDN (no
+build step, plus the npm import for bundlers), initialisation call, options
+table, teardown and gotchas:
 
 ```bash
 curl http://localhost:4321/api/prompts          # { count, categories, prompts: [{ id, title, summary, category, subcategory, text }] }

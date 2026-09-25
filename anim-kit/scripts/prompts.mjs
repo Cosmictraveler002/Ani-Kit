@@ -18,18 +18,18 @@ anim-kit is a framework-agnostic ESM animation library (TypeScript source, compi
 
     effect(target, options) => destroy
 
-It is published on npm **and** loadable straight from a version-pinned CDN — step 3 shows how, with no build step.
+It is published on npm **and** loadable straight from a version-pinned CDN — step 2 below is a complete, copy-paste \`index.html\` that runs as-is with no build step.
 `;
 
-const EPILOGUE = `## 6. Teardown
+const EPILOGUE = `## 5. Teardown
 
 Always keep the destroy function and call it when the effect is no longer
 needed (component unmount, route change, HMR reload):
 
-    const destroy = /* result of step 4 */;
+    const destroy = /* result of step 3 */;
     destroy();
 
-## 7. Behaviour guarantees
+## 6. Behaviour guarantees
 
 - \`target\` accepts a selector string, an Element, an array or a NodeList.
   When nothing matches, the effect returns a no-op destroy — never throws.
@@ -37,73 +37,119 @@ needed (component unmount, route change, HMR reload):
   resting state. Pass \`force: true\` in options to animate regardless.
 - \`initGSAP()\` runs inside every effect; call it yourself only if you need
   \`gsap\`/\`ScrollTrigger\` configured before first paint.
+- npm and the CDN serve the **same** files — the CDN imports from §2 and the
+  npm import are interchangeable, byte for byte.
 - Custom eases live in the \`EASES\` map (\`EASES.curtain\`, \`EASES.cardStack\`,
   \`EASES.reveal\`, \`EASES.preloadOut\`).
 `;
 
-/** Version-pinned CDN release that step 3 of every prompt points at. */
+/** Version-pinned CDN release that every prompt's procedure points at. */
 const CDN_VERSION = "1.1.0";
 
+/** Indent every line of a snippet (for nesting it inside the example file). */
+const indent = (text, spaces) =>
+  text.replace(/^(.*)$/gm, (line) => (line ? " ".repeat(spaces) + line : line));
+
 /**
- * Step 3 of every prompt: how to load anim-kit straight from a CDN with no
- * build step, in the three verified strategies (mirrors README §CDN usage),
- * plus what the loaded pieces actually are.
+ * Step 2 of every prompt: a numbered, copy-paste procedure that runs the
+ * effect straight from our version-pinned CDN — a complete `index.html`
+ * first (markup + init in one file), then the alternative loaders, the
+ * bundler fallback, and what the loaded pieces actually are.
+ * (Mirrors README §CDN usage — all three strategies, all pinned.)
  */
-const CDN_SECTION = (imports) => `## 3. Use it from a CDN (no build step)
+const PROCEDURE_SECTION = (title, imports, markup, usage) => `## 2. Procedure — run it from our CDN (no build step)
 
-No bundler, no \`npm install\`: the CDN serves the same ESM files as the npm
-tarball. Every URL is **version-pinned** — npm versions are immutable, so
+Every URL is **version-pinned** — npm versions are immutable, so
 \`@cosmictraveler002/anim-kit@${CDN_VERSION}\` always resolves to this exact
-build, forever. Pick ONE strategy:
+build, forever.
 
-**Option 1 — standalone bundle (simplest):** one script tag, \`gsap\` + \`lenis\` inlined:
+**Step 1 — save this as \`index.html\`.** A complete working file: the markup
+from §1 plus initialisation, nothing else required:
 
 \`\`\`html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/styles/anim-kit.css" />
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${title}</title>
+    <!-- companion stylesheet: masks, tokens, resting states -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/styles/anim-kit.css"
+    />
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 0; padding: 12vh 8vw; }
+    </style>
+  </head>
+  <body>
+${indent(markup.trim(), 4)}
 
-<script type="module">
-  import { ${imports.join(", ")} } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/anim-kit.standalone.js";
-</script>
+    <script type="module">
+      // One URL — gsap (with the plugins anim-kit uses) and lenis are inlined.
+      import { ${imports.join(", ")} } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/anim-kit.standalone.js";
+
+      // Selectors that match nothing no-op safely — this never throws.
+${indent(usage.trim(), 6)}
+
+      // Keep the destroy function (see §5) and call it when the effect should
+      // stop: route change, content swap, HMR reload.
+    </script>
+  </body>
+</html>
 \`\`\`
 
-**Option 2 — jsDelivr \`+esm\`:** the CDN bundles the package with its dependencies:
+**Step 2 — open it.** Double-click the file, or serve it statically
+(\`npx serve\`, \`python -m http.server\`). No bundler, no \`npm install\`, no
+config — the CDN delivers the same ESM files as the npm tarball.
 
-\`\`\`html
-<script type="module">
-  import { ${imports.join(", ")} } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/+esm";
-</script>
-\`\`\`
+**Step 3 — swap the loader only if you need a different strategy** (all
+pinned to \`@${CDN_VERSION}\`):
 
-**Option 3 — per-file ESM + import map:** unbundled files, \`gsap\`/\`lenis\` pinned
-individually (import maps match specifiers literally — list GSAP subpaths one
-by one; a trailing-slash map would produce extension-less URLs CDNs don't
-serve). Use this to share one GSAP between anim-kit and the rest of your page:
+- **unpkg instead of jsDelivr** — byte-identical standalone file:
+  \`https://unpkg.com/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/anim-kit.standalone.js\`
 
-\`\`\`html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/styles/anim-kit.css" />
+- **jsDelivr \`+esm\`** — the CDN bundles the package with its dependencies:
 
-<script type="importmap">
-  {
-    "imports": {
-      "@cosmictraveler002/anim-kit": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/index.js",
-      "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/index.js",
-      "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollTrigger.js",
-      "gsap/SplitText": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/SplitText.js",
-      "gsap/Draggable": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/Draggable.js",
-      "gsap/CustomEase": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/CustomEase.js",
-      "gsap/ScrollSmoother": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollSmoother.js",
-      "lenis": "https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.mjs"
+  \`\`\`html
+  <script type="module">
+    import { ${imports.join(", ")} } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/+esm";
+  </script>
+  \`\`\`
+
+- **per-file ESM + import map** — unbundled files, one shared gsap between
+  anim-kit and the rest of your page. Import maps match specifiers
+  literally, so list GSAP subpaths one by one (a trailing-slash map
+  produces extension-less URLs CDNs don't serve):
+
+  \`\`\`html
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/styles/anim-kit.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "@cosmictraveler002/anim-kit": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/index.js",
+        "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/index.js",
+        "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollTrigger.js",
+        "gsap/SplitText": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/SplitText.js",
+        "gsap/Draggable": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/Draggable.js",
+        "gsap/CustomEase": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/CustomEase.js",
+        "gsap/ScrollSmoother": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollSmoother.js",
+        "lenis": "https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.mjs"
+      }
     }
-  }
-</script>
+  </script>
+  <script type="module">
+    import { ${imports.join(", ")} } from "@cosmictraveler002/anim-kit";
+  </script>
+  \`\`\`
 
-<script type="module">
+- **already using a bundler (Vite / Next / Webpack / Astro)?** Skip the CDN,
+  install the package and import it — same code, same files:
+
+  \`\`\`js
   import { ${imports.join(", ")} } from "@cosmictraveler002/anim-kit";
-</script>
-\`\`\`
-
-Swap the host for unpkg — the file layout is identical. The stylesheet link
-works in every strategy (same URL, different host).
+  import "@cosmictraveler002/anim-kit/styles"; // companion stylesheet (classes, masks, tokens)
+  \`\`\`
 
 **The building blocks you just loaded:**
 
@@ -116,11 +162,9 @@ works in every strategy (same URL, different host).
   (\`.ak-liquid\`, \`.ak-underline\`, \`.ak-marquee\`, \`.ak-roll\`); the motion
   itself is 100% JS.
 - It is plain ESM with \`.d.ts\` files — TypeScript consumers get types straight
-  from the same URLs.
-
-Deep imports work as CDN URLs too, e.g.
-\`https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/styles/anim-kit.css\`
-for \`@cosmictraveler002/anim-kit/styles\`.
+  from the same URLs, and deep imports work as CDN URLs too, e.g.
+  \`https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/styles/anim-kit.css\`
+  for \`@cosmictraveler002/anim-kit/styles\`.
 `;
 
 /**
@@ -247,16 +291,14 @@ export function renderPrompt(entry) {
 
   out.push(`## 1. Markup\n\n\`\`\`html\n${markup.trim()}\n\`\`\`\n`);
 
-  out.push(
-    `## 2. Import\n\n\`\`\`js\nimport { ${imports.join(", ")} } from "@cosmictraveler002/anim-kit";\nimport "@cosmictraveler002/anim-kit/styles"; // companion stylesheet (classes, masks, tokens)\n\`\`\`\n`,
-  );
+  // Step 2: the copy-paste procedure — complete file from the CDN first,
+  // then alternative loaders and the npm/bundler fallback.
+  out.push(PROCEDURE_SECTION(title, imports, markup, usage));
 
-  out.push(CDN_SECTION(imports));
-
-  out.push(`## 4. Initialise\n\nRun this after the DOM is ready (and after fonts/images if it measures layout):\n\n\`\`\`js\n${usage.trim()}\n\`\`\`\n`);
+  out.push(`## 3. Initialise\n\nRun this after the DOM is ready (and after fonts/images if it measures layout):\n\n\`\`\`js\n${usage.trim()}\n\`\`\`\n`);
 
   if (options.length) {
-    out.push(`## 5. Options\n\n| Option | Default | Description |\n| --- | --- | --- |\n${options
+    out.push(`## 4. Options\n\n| Option | Default | Description |\n| --- | --- | --- |\n${options
       .map(([name, def, desc]) => `| \`${name}\` | ${def} | ${desc} |`)
       .join("\n")}\n`);
   }
@@ -536,12 +578,17 @@ unfoldReveal("[data-unfold-x]", { axis: "x", origin: "left", duration: 1.2 });`,
       "A `clip-path: inset()` wipe: the element is collapsed behind one edge (or inside a frame margin) and the inset animates to zero so it wipes into view.",
     imports: ["clipWipe"],
     markup: `<figure data-clip><img src="…" alt="…" /></figure>
-<h2 data-clip-frame>Wipes out of a frame.</h2>`,
+<h2 data-clip-frame>Wipes out of a frame.</h2>
+<figure data-clip-scrub><img src="…" alt="…" /></figure>`,
     usage: `// Grow rightward from the left edge:
 const destroy = clipWipe("[data-clip]", { from: "left" });
 
 // Open out of a centered frame (inset 15%):
-clipWipe("[data-clip-frame]", { from: "frame", inset: 15, duration: 1.2 });`,
+clipWipe("[data-clip-frame]", { from: "frame", inset: 15, duration: 1.2 });
+
+// Scroll-bound: the inset opens as the element travels through the
+// viewport — and closes again when you scroll back up:
+clipWipe("[data-clip-scrub]", { from: "frame", inset: 8, scrub: 0.5, start: "top bottom", end: "top 20%" });`,
     options: [
       ["from", "`'left'`", "`'left'` / `'right'` / `'top'` / `'bottom'` edge, or `'frame'`."],
       ["inset", "`15`", "Frame margin in % (`from: 'frame'` only)."],
@@ -551,12 +598,15 @@ clipWipe("[data-clip-frame]", { from: "frame", inset: 15, duration: 1.2 });`,
       ["delay", "`0`", "Seconds before playing."],
       ["mode", "`'scroll'`", "`'scroll'` plays on enter; `'immediate'` plays at once."],
       ["start", "`'top 85%'`", "ScrollTrigger start."],
+      ["end", "`'top 20%'`", "ScrollTrigger end (scrub mode)."],
+      ["scrub", "unset", "number = scrub smoothing seconds, `true` = immediate: bind the wipe to scroll progress instead of playing on enter."],
       ["replay", "`false`", "Re-wipe when leaving / re-entering the viewport."],
       ["force", "`false`", "Run even under `prefers-reduced-motion`."],
     ],
     notes: [
       "Works on images, video, blocks and text — anything with a box.",
       "`from: 'left'` starts at `inset(0 100% 0 0)` and animates to `inset(0 0% 0 0%)`; the other edges mirror it.",
+      "With `scrub` set, the wipe tracks scroll progress from `start` to `end` and reverses when you scroll back — `duration` no longer applies.",
       "`destroy()` kills the tween and removes the inline `clip-path`, restoring the authored (visible) state.",
     ],
   },

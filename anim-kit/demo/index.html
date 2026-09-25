@@ -523,12 +523,19 @@
       <section>
         <div class="block" style="padding-top: 180px">
           <p class="label" data-effect="lineReveal">lineReveal — mode: immediate</p>
+          <p class="label" data-effect="smoothScroll preloader navHide menuOverlay">
+            page chrome — smoothScroll · preloader · navHide · menuOverlay
+          </p>
           <h1 data-hero-text>Animations,<br />extracted and<br />made reusable.</h1>
 
+          <p class="label" data-effect="cursorFollower" style="margin-top: 40px">
+            cursorFollower — spring follower over the showreel zone
+          </p>
           <div class="showreel-zone" data-showreel>
             <span>Hover me</span>
           </div>
 
+          <p class="label" data-effect="underlineLink">underlineLink — sweep underline on hover</p>
           <div class="btn-row">
             <button class="ak-liquid" data-liquid>
               <svg class="ak-liquid__wave" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -726,7 +733,7 @@
             <figure data-clip-frame>
               <img data-settle alt="" src="https://picsum.photos/seed/settle2/800/600" />
             </figure>
-            <figure>
+            <figure data-clip-scrub>
               <img data-settle-scrub alt="" src="https://picsum.photos/seed/settle3/800/600" />
             </figure>
           </div>
@@ -759,6 +766,42 @@
               <a class="ak-card" href="#">
                 <span class="num">04</span>
                 <div><h3>Packaging</h3><p>Shelf presence that earns the second look.</p></div>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STACKED CARDS PINNED — the sibling-viewport variant -->
+      <section>
+        <div class="block" style="padding-bottom: 48px">
+          <p class="label" data-effect="stackedCardsPinned">
+            stackedCardsPinned — sibling viewport, pinned with pinSpacing:false
+          </p>
+          <h2>
+            <span class="ak-mask"><span class="ak-mask__inner" data-mask>Also pinned.</span></span>
+          </h2>
+        </div>
+        <div style="position: relative">
+          <!-- tall wrapper = the scroll trigger; the viewport is a SIBLING, not a child -->
+          <div class="stack-wrap" data-stack-wrap-pinned style="height: 300vh"></div>
+          <div
+            class="stack-viewport"
+            data-stack-viewport-pinned
+            style="position: absolute; top: 0; left: 0; width: 100%; z-index: 2"
+          >
+            <div class="stack-cards">
+              <a class="ak-card" href="#">
+                <span class="num">01</span>
+                <div><h3>Art direction</h3><p>Sticky where CSS can't reach — the viewport is a sibling.</p></div>
+              </a>
+              <a class="ak-card" href="#">
+                <span class="num">02</span>
+                <div><h3>Systems</h3><p>Pinned with pinSpacing:false over the wrapper's scroll length.</p></div>
+              </a>
+              <a class="ak-card" href="#">
+                <span class="num">03</span>
+                <div><h3>Build</h3><p>The same cascading stagger as stackedCards.</p></div>
               </a>
             </div>
           </div>

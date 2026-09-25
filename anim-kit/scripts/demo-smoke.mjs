@@ -176,13 +176,14 @@ const pageEffects = [...doc.querySelectorAll("[data-effect]")].flatMap((el) =>
 for (const id of pageEffects) {
   assert.ok(promptIds.has(id), `no /api/prompts entry for on-page effect "${id}"`);
 }
-// ...and the panel-only effects are covered too.
-const panelOnly = [
-  "smoothScroll", "preloader", "navHide", "menuOverlay",
-  "underlineLink", "cursorFollower", "stackedCardsPinned",
-];
-for (const id of panelOnly) {
-  assert.ok(promptIds.has(id), `no /api/prompts entry for "${id}"`);
+// ...and the reverse holds too: the demo page demonstrates EVERY effect in
+// the catalogue — no dead prompts, each one has an on-page chip.
+const chipIds = new Set(pageEffects);
+for (const id of promptIds) {
+  assert.ok(
+    chipIds.has(id),
+    `effect "${id}" has a prompt but is not demonstrated on the demo page (missing data-effect chip)`,
+  );
 }
 // each prompt is a self-contained implementation guide.
 for (const entry of PROMPT_ENTRIES) {

@@ -21,6 +21,7 @@ import {
   heroShrink,
   mediaSettle,
   stackedCards,
+  stackedCardsPinned,
   scatterText,
   dragStrip,
   liquidButton,
@@ -137,6 +138,16 @@ cleanups.push(unfoldReveal("[data-unfold]", { axis: "y", origin: "top" }));
 cleanups.push(unfoldReveal("[data-unfold-x]", { axis: "x", origin: "left", duration: 1.1 }));
 cleanups.push(clipWipe("[data-clip-left]", { from: "left", duration: 1.1 }));
 cleanups.push(clipWipe("[data-clip-frame]", { from: "frame", inset: 12 }));
+// Scroll-bound wipe: opens as the figure travels through the viewport.
+cleanups.push(
+  clipWipe("[data-clip-scrub]", {
+    from: "frame",
+    inset: 8,
+    scrub: 0.5,
+    start: "top bottom",
+    end: "top 20%",
+  }),
+);
 cleanups.push(mediaSettle("[data-settle]", { from: 1.15 }));
 cleanups.push(mediaSettle("[data-settle-scrub]", { scrub: 0.6, from: 1.2 }));
 
@@ -146,6 +157,16 @@ cleanups.push(
   stackedCards("[data-stack-wrap]", {
     viewport: "[data-stack-viewport]",
     card: ".ak-card",
+    stagger: 0.12,
+  }),
+);
+
+// The sibling-viewport variant: viewport is NOT inside the wrapper.
+cleanups.push(
+  stackedCardsPinned("[data-stack-wrap-pinned]", {
+    viewport: "[data-stack-viewport-pinned]",
+    card: ".ak-card",
+    scrub: 0.5,
     stagger: 0.12,
   }),
 );
