@@ -321,6 +321,14 @@ import "@cosmictraveler002/anim-kit/styles"; // companion stylesheet (optional)<
             anim-kit and the rest of your page. Other shapes (standalone bundle,
             <code>+esm</code>) are spelled out in every copy prompt.
           </p>
+          <p class="d-lede" style="font-size: 15px">
+            <strong>Stuck on the loader?</strong> Check the console first: a
+            <code>SyntaxError &mdash; does not provide an export named
+            &lsquo;X&rsquo;</code> means the CDN <code>@version</code> pin is
+            older than the code importing it. Bump <em>every</em> CDN URL to
+            the same version together and reload &mdash; never patch a copied
+            demo by hand, regenerate it (<code>npm run sync:live</code>).
+          </p>
         </section>
 
         <section class="d-sec">

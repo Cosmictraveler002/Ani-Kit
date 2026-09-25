@@ -173,6 +173,36 @@ import maps match specifiers literally: a trailing-slash prefix map would
 produce extension-less URLs, which CDNs don't serve. The `gsap`/`lenis` pins
 match `package-lock.json`.
 
+### Version discipline — the pin must match the code
+
+The pin is a contract between the URL and the importing code: a bundle older
+than the names your code imports fails at **module instantiation**, before a
+single line runs —
+
+```text
+SyntaxError: The requested module '…/anim-kit@<old-version>/dist/anim-kit.standalone.js'
+does not provide an export named 'clipWipe'
+```
+
+On a page with a preloader that reads as **frozen on the loader**: the script
+that would dismiss it never executed. Whenever a loader won't clear, open the
+console first — an `… does not provide an export named 'X'` error is version
+skew, not an effect bug.
+
+Rules that keep it from happening:
+
+- **Never hand-copy the demo or hand-edit CDN URLs.** Regenerate the
+  deployable copy with `npm run sync:live` — it rewrites every pin from
+  `CDN_VERSION` in `scripts/prompts.mjs`, the single source, and
+  `demo-smoke` fails CI if `demo/`, `demo_live/` or this README drift from
+  the release version.
+- **On a release bump**, change `version` and `CDN_VERSION` together (the
+  smoke enforces it); every copy prompt, the docs page and `demo_live/`
+  follow automatically.
+- **In your own project**, every CDN URL you ship must carry the *same*
+  version — mixing a new JS pin with an old CSS pin (or vice versa) is the
+  same bug in slow motion.
+
 ---
 
 ## Quick start

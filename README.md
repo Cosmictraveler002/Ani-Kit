@@ -100,9 +100,11 @@ npm run demo          # server on :4321 — demo page + /api/prompts (build firs
 
 ## Recent structural fixes — bug classes and how to fix the next one
 
-Two "doesn't work" reports from browser verification of the demo, plus the
-check that stopped a third class before it shipped. All three are paid for
-with regression tests; treat them as the template for similar reports.
+Two "doesn't work" reports from browser verification of the demo, a check
+that stopped a third class before it shipped, and a fourth class caught when
+a hand-copied deployment froze on its loader. Each is paid for with a
+regression test or a CI guard; treat them as the template for similar
+reports.
 
 ### A. Position math must match the positioning mode (`cursorFollower`)
 
@@ -156,6 +158,35 @@ again. Fast, one-pass checks hide exactly this bug.
 **on purpose** (one timeline, two DOM structures); only the pinning differs —
 CSS `position: sticky` vs a GSAP pin with `pinSpacing: false`. Check computed
 `position` mid-scrub (`sticky` vs `fixed`) before "fixing" them apart.
+
+### D. A stale CDN pin freezes the page on its loader (hand-copied demos)
+
+**What happened.** A hand-copied deployment kept the *current* demo code but
+pinned the CDN bundle at `@1.0.0`, which predates seven of the names the code
+imports (`clipWipe`, `flipWords`, `magnetic`, …). One missing named import
+fails the whole module at instantiation:
+
+```text
+SyntaxError: The requested module '…/anim-kit@1.0.0/dist/anim-kit.standalone.js'
+does not provide an export named 'clipWipe'
+```
+
+Nothing in `demo.js` runs, so nothing dismisses the preloader — reported as
+"the page is stuck at the loader screen".
+
+**Rule.** Pin and code ship the same release. Never hand-copy a demo or edit
+CDN URLs by hand: regenerate copies with `npm run sync:live`, which rewrites
+every pin from `CDN_VERSION` (single source).
+
+**The fix.** Bump every CDN URL to the version the code targets (or downgrade
+the code to the pin). In this repo `demo-smoke.mjs` fails CI on any drift
+between `package.json`, `CDN_VERSION`, the README pins and `demo_live/` —
+so the class can only appear in copies made outside that guard.
+
+**How to verify.** Read the console *before* the UI: any
+`… does not provide an export named` is version skew, not an effect bug.
+Then load the page headless and assert the loader clears within a few
+seconds.
 
 ### Process notes
 
