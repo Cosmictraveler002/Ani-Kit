@@ -56,7 +56,7 @@ const THREE_EPILOGUE = `
 `;
 
 /** Version-pinned CDN release that every prompt's procedure points at. */
-export const CDN_VERSION = "1.3.0";
+export const CDN_VERSION = "1.4.0";
 
 /**
  * Optional peer served by the `./three` subpath — the pin printed in WebGL
@@ -197,9 +197,24 @@ pinned to \`@${CDN_VERSION}\`):
  * PROCEDURE_SECTION, but the standalone bundle does NOT inline three, so
  * Step 1 is an import map that pins `three`, the anim-kit /three entry and
  * the same gsap/lenis pins the core procedure prints.
+ *
+ * `extras` carries per-effect Step-1 `<style>` blocks and "building blocks"
+ * bullets — the pieces that legitimately differ between WebGL effects (a
+ * hover card's wrapper CSS is not a rail stage's CSS).
  */
-const PROCEDURE_SECTION_THREE = (title, imports, markup, usage) => {
+const WEBGL_MEDIA_STYLE = `      /* the WebGL wrapper: the canvas covers it, the <img> lays it out */
+      [data-gl] { position: relative; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 16px; }
+      [data-gl] img { width: 100%; height: 100%; object-fit: cover; display: block; }`;
+
+const WEBGL_MEDIA_PIECES = `- \`three\` — one \`WebGLRenderer\` per card, an orthographic camera in pixel
+  space and a single \`ShaderMaterial\`: rounded-box SDF corners, the hover
+  dent (sample squeeze + dome shading), chroma split and the reveal wipe all
+  run in one fragment shader.`;
+
+const PROCEDURE_SECTION_THREE = (title, imports, markup, usage, extras = {}) => {
   const pkg = PKG_THREE;
+  const style = extras.style ?? WEBGL_MEDIA_STYLE;
+  const pieces = extras.pieces ?? WEBGL_MEDIA_PIECES;
   const map = [
     `          "three": "https://cdn.jsdelivr.net/npm/three@${THREE_VERSION}/build/three.module.js",`,
     `          "${PKG_THREE}": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/three/index.js",`,
@@ -245,9 +260,7 @@ ${map}
     </script>
     <style>
       body { font-family: system-ui, sans-serif; margin: 0; padding: 12vh 8vw; }
-      /* the WebGL wrapper: the canvas covers it, the <img> lays it out */
-      [data-gl] { position: relative; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 16px; }
-      [data-gl] img { width: 100%; height: 100%; object-fit: cover; display: block; }
+${style}
     </style>
   </head>
   <body>
@@ -296,14 +309,11 @@ pinned to \`@${CDN_VERSION}\`):
 
 **The building blocks you just loaded:**
 
-- \`three\` — one \`WebGLRenderer\` per card, an orthographic camera in pixel
-  space and a single \`ShaderMaterial\`: rounded-box SDF corners, the hover
-  dent (sample squeeze + dome shading), chroma split and the reveal wipe all
-  run in one fragment shader.
-- \`gsap\` + \`ScrollTrigger\` drive the hover/reveal tweens and anything you
-  compose; \`lenis\` powers \`smoothScroll()\`.
-- The wrapper keeps the layout (its \`<img>\` supplies sizing + alt text); the
-  canvas only paints. Without WebGL the effect no-ops and the image shows.
+${pieces}
+- \`gsap\` drives the ticker, tweens and anything you compose; \`lenis\` powers
+  \`smoothScroll()\`.
+- The DOM keeps the layout (elements, sizing, alt text); the canvas only
+  paints. Without WebGL the GL layer steps aside and the images show.
 - It is plain ESM with \`.d.ts\` files — TypeScript consumers get types from
   the same URLs, e.g. \`https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/three/index.d.ts\`.
 `;
@@ -360,7 +370,7 @@ export const TAXONOMY = [
     name: "WebGL",
     blurb: "GPU media — shader cards drawn with three.js, straight over your images.",
     subcategories: [
-      { id: "shadermedia", name: "Shader media", effects: ["webglMedia"] },
+      { id: "shadermedia", name: "Shader media", effects: ["webglMedia", "glRail"] },
     ],
   },
   {
@@ -447,10 +457,11 @@ export function renderPrompt(entry) {
   out.push(`## 1. Markup\n\n\`\`\`html\n${markup.trim()}\n\`\`\`\n`);
 
   // Step 2: the copy-paste procedure — complete file from the CDN first,
-  // then alternative loaders and the npm/bundler fallback.
+  // then alternative loaders and the npm/bundler fallback. WebGL entries may
+  // carry per-effect `procedure` extras (their Step-1 style + pieces).
   out.push(
     three
-      ? PROCEDURE_SECTION_THREE(title, imports, markup, usage)
+      ? PROCEDURE_SECTION_THREE(title, imports, markup, usage, entry.procedure)
       : PROCEDURE_SECTION(title, imports, markup, usage),
   );
 
@@ -1433,7 +1444,7 @@ const destroy = reelText("[data-reel]", {
     id: "dragRail",
     title: "Drag rail — bounded inertia rail",
     summary:
-      "A grabbable horizontal rail with real physics: pointer, wheel and trackpad feed one intent value, the track lerps toward it, the ends give way through a tanh rubber-band, and a flick coasts on sampled momentum. Finite — unlike dragStrip's infinite loop.",
+      "A grabbable rail with real physics: pointer, wheel and trackpad feed one intent value, the track lerps toward it, the ends give way through a tanh rubber-band, and a flick coasts on sampled momentum. Horizontal by default — `axis: \"auto\"` flips it vertical when only the column overflows (a mobile card stack). Finite — unlike dragStrip's infinite loop.",
     imports: ["dragRail"],
     markup: `<div class="rail-viewport"> <!-- overflow: hidden -->
   <div data-rail> <!-- display: flex; width: max-content; gap: 1rem;
@@ -1447,9 +1458,11 @@ const destroy = reelText("[data-reel]", {
   tilt: 0.05,      // children lean into motion (deg per px/frame), 0 = off
   throwScale: 14,  // momentum multiplier on release
   wheel: true,     // trackpad/wheel drives the rail too
+  axis: "auto",    // "x" | "y" | "auto" — auto follows the layout
 });`,
     options: [
       ["viewport", "track's parent", "Scroll viewport around the track."],
+      ["axis", "`\"x\"`", "`\"x\"`, `\"y\"`, or `\"auto\"` — auto runs vertical when only the column overflows (touch-action claims the rail's own axis: `pan-y` / `pan-x`)."],
       ["item", "`:scope > *`", "Children that tilt with velocity."],
       ["lerp", "`0.1`", "Follow speed toward the intent, per 60fps frame (0..1)."],
       ["edge", "`140`", "Rubber-band resistance distance past the ends, px."],
@@ -1457,14 +1470,16 @@ const destroy = reelText("[data-reel]", {
       ["wheel", "`true`", "Wheel/trackpad drives the rail (consumed while it can still move)."],
       ["tilt", "`0`", "Degrees of tilt per px/frame of velocity — `0` disables."],
       ["tiltMax", "`8`", "Tilt clamp, degrees."],
-      ["onTick", "—", "`(pos, velocity) => {}` every rendered frame — feed shaders/skews."],
+      ["onTick", "—", "`(pos, velocity) => {}` every rendered frame (pos along the active axis) — feed shaders/skews."],
       ["force", "`false`", "Run even under `prefers-reduced-motion`."],
     ],
     notes: [
       "**Single writer.** One ticker renders `intent → pos` with a `lerp * deltaRatio` catch-up; pointermove, wheel and release only ever touch *intent*. Nothing else writes the track's transform — that separation is what gives a hard throw its buttery settle.",
       "**tanh rubber-band.** Past either end, intent squashes through `edge * tanh(overshoot / edge)`: pull further, gain less, never a hard stop. When input stops a restore force springs the overscrolled intent home while the lerp chases it.",
       "**Wheel is Lenis-safe.** While the rail can still move in that direction the event gets `preventDefault` **and** `stopPropagation` (Lenis listens above us and would scroll the page in parallel). Once over-extended a full `edge`, the wheel passes through to the page — the section never traps the reader.",
+      "**Two axes.** `axis: \"auto\"` resolves per layout (only the column overflows → vertical, otherwise horizontal) and re-resolves on resize, re-keying the transform on a flip. For a vertical stack give the track `flex-direction: column; width: 100%; height: max-content` inside an `overflow: hidden` viewport.",
       "**vs dragStrip**: `dragStrip` clones tiles for a seamless *infinite* loop; `dragRail` is *bounded* with elastic ends — use one per page-role, not both on the same content.",
+      "**vs glRail**: `glRail` (the `/three` subpath) runs this exact physics under a WebGL overlay — the cards bend around a cylinder over a grid floor. Pick `dragRail` for plain-DOM rails, `glRail` when the media should curve.",
       "`destroy()` removes every listener + the ticker, clears the track transform/tilt and restores the inline cursor / user-select / touch-action the effect overwrote.",
     ],
   },
@@ -1501,6 +1516,82 @@ const destroy = reelText("[data-reel]", {
       "Corners are shader-true (SDF with a 1px AA edge), cover-crop runs in-shader (`object-fit: cover` maths), so any source aspect fills any card aspect without letterboxing.",
       "Reduced motion → the canvas never mounts; the static image is the resting state. `destroy()` kills ticker + tweens + observers and disposes geometry, material, texture and renderer.",
     ],
+  },
+  {
+    id: "glRail",
+    title: "GL rail — WebGL overlay drag rail",
+    summary:
+      "The bounded drag rail drawn as a WebGL layer: every card re-rendered onto one fixed canvas, its surface bent around an invisible cylinder, over a perspective grid floor — while the DOM keeps layout, labels and hit areas. dragRail's physics underneath (inertia throw, tanh rubber-band, Lenis-safe wheel) with an axis that flips vertical when only the column overflows, so the same init serves a desktop row and a mobile stack.",
+    imports: ["glRail"],
+    importsFrom: "@cosmictraveler002/anim-kit/three",
+    markup: `<div class="rail-screen"> <!-- position: relative; overflow: hidden; dark stage -->
+  <div data-rail> <!-- flex row (column when stacked); width: max-content;
+                       cursor: grab; user-select: none -->
+    <article class="rail-card"> <!-- position: relative; transparent background -->
+      <img src="card-01.jpg" alt="" draggable="false" />
+      <p>Night Atlas ↗</p> <!-- label: DOM, paints above the canvas -->
+    </article>
+    <article class="rail-card">
+      <img src="card-02.jpg" alt="" draggable="false" />
+      <p>Signal Bloom ↗</p>
+    </article>
+  </div>
+</div>`,
+    usage: `const destroy = glRail("[data-rail]", {
+  radius: 1200,   // cylinder radius, px — smaller = stronger bend
+  grid: true,     // perspective grid floor under the cards
+  corner: 16,     // SDF corner radius, px
+  axis: "auto",   // row/vertical — the layout decides (same rule as dragRail)
+});`,
+    options: [
+      ["viewport", "track's parent", "The stage the canvas covers — keep it `overflow: hidden`."],
+      ["card", "`:scope > *`", "Cards re-rendered on the canvas — each needs an `<img>`."],
+      ["axis", "`\"auto\"`", "`\"x\"`, `\"y\"`, or `\"auto\"` — picks the motion *and* the bend axis from the layout (only the column overflows → vertical)."],
+      ["radius", "`1200`", "Cylinder radius the cards bend around, px — smaller = stronger bend."],
+      ["corner", "`16`", "Corner radius, px (rounded-box SDF in the fragment shader)."],
+      ["grid", "`true`", "Perspective grid floor under the cards (drifts slightly with the rail)."],
+      ["dpr", "`2`", "Device-pixel-ratio cap."],
+      ["lerp", "`0.1`", "Follow speed toward the intent, per 60fps frame (0..1)."],
+      ["edge", "`140`", "Rubber-band resistance distance past the ends, px."],
+      ["throwScale", "`14`", "Momentum multiplier on release."],
+      ["wheel", "`true`", "Wheel/trackpad drives the rail (consumed while it can still move)."],
+      ["onTick", "—", "`(pos, velocity) => {}` every rendered frame (pos along the active axis)."],
+      ["force", "`false`", "Run even under `prefers-reduced-motion`."],
+    ],
+    notes: [
+      "**Physics is dragRail.** The same single-writer intent/pos ticker, tanh rubber-band, throw momentum and Lenis-safe wheel — `glRail` only adds the GPU layer on top (plus the axis rule shared with `dragRail`, so a desktop row and a mobile stack need no re-init).",
+      "**The DOM stays the source of truth.** Cards keep owning layout, labels, hit areas and alt text; each frame the effect reads their viewport rects and the shader re-creates the pixels beneath them. Labels never drift off their card because the card *is* the rect the label sits in — only the picture curves.",
+      "**The bend is a uniform, not CPU work.** The vertex shader maps each vertex onto the cylinder (`a = o / R`, `x = R·sin a`, `z = −R·(1−cos a)`) re-centred on the card's own middle: the centre stays glued to the DOM position while the edges foreshorten, and the rotation the cards need arrives free from the curve.",
+      "**Card backgrounds must stay transparent** — the single alpha canvas paints *under* the track (the track's transform creates a stacking context above it), so DOM labels sit over the GL media for free. The effect hides only each `<img>` — and only once its texture has actually loaded.",
+      "**Silent no-op ladder**: missing target → no-op; no `WebGLRenderingContext` (SSR, jsdom, WebGL disabled) → the **flat dragRail rail** still runs (motion works, plain `<img>`s show), *before* any context probe; renderer refused → flat rail; texture 404 → that one card keeps its image; reduced motion → nothing mounts. Nothing ever logs.",
+      "`destroy()` unwinds the physics and the GPU together: listeners, ticker, observers, geometry, materials, textures and the renderer are disposed, the canvas is removed, and image opacities + the stage's inline position are restored.",
+    ],
+    procedure: {
+      style: `      /* the rail stage: the canvas covers it, the DOM keeps the labels */
+      .rail-screen { position: relative; overflow: hidden; height: 64vh;
+                     background: #07080b; border-radius: 28px; cursor: grab; }
+      .rail-track { display: flex; gap: 16px; width: max-content; height: 100%;
+                    align-items: center; padding: 0 32px;
+                    user-select: none; touch-action: pan-y; }
+      .rail-card { position: relative; flex: none; height: 58%;
+                   aspect-ratio: 2048 / 1172; border-radius: 16px;
+                   background: transparent; }
+      .rail-card img { width: 100%; height: 100%; object-fit: cover; display: block;
+                       pointer-events: none; }
+      .rail-card p { position: absolute; inset: auto 0 0; margin: 0;
+                     padding: 14px 18px; color: #fff; font-size: 15px;
+                     background: linear-gradient(to top, rgba(4,5,8,.7), transparent); }
+      @media (max-width: 700px) {
+        .rail-track { flex-direction: column; width: 100%; height: max-content;
+                      padding: 18px 14px; touch-action: pan-x; }
+        .rail-card { height: auto; width: 100%; }
+      }`,
+      pieces: `- \`three\` — ONE \`WebGLRenderer\` for the whole rail on a single fixed alpha
+  canvas under the track: every card's picture recreated from its DOM rect
+  each frame, bent onto the cylinder in the vertex shader (rounded-box SDF
+  corners + in-shader cover-crop in the fragment), over a grid-floor shader
+  that fades into the horizon and drifts with the rail.`,
+    },
   },];
 
 /** id → rendered prompt text. */

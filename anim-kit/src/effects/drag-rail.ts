@@ -1,5 +1,5 @@
 /**
- * Drag rail — the bounded, inertia-driven horizontal rail.
+ * Drag rail — the bounded, inertia-driven rail (horizontal or vertical).
  *
  * A grab-and-throw rail with real physics, extracted from the drag-driven
  * portfolio rail pattern: pointer drag, wheel and trackpad all feed one
@@ -29,11 +29,18 @@
  * - **Velocity-reactive items.** `tilt` rotates children proportionally to the
  *   rendered per-frame velocity (the cards lean into motion and spring flat at
  *   rest); `onTick` exposes pos/velocity for WebGL or custom consumers.
+ * - **Two axes.** `axis: "x"` (default), `"y"`, or `"auto"` — under `auto`
+ *   the *layout* decides via `resolveRailAxis()` (only the column overflows →
+ *   vertical, otherwise horizontal; the same rule glRail uses to pick its
+ *   bend axis). touch-action claims the rail's own gesture axis (`pan-y` for
+ *   a horizontal rail, `pan-x` for a vertical one) so the page never fights
+ *   the rail for a swipe, and a mid-life flip re-keys the transform instead
+ *   of leaving the stale axis behind.
  * - **Fidelity.** `destroy()` removes every listener + the ticker, kills the
  *   tilt state and restores the inline cursor/user-select/touch-action the
  *   effect had overwritten.
  *
- *   dragRail(".ak-rail-track", { tilt: 0.05 })
+ *   dragRail(".ak-rail-track", { tilt: 0.05, axis: "auto" })
  *
  * CSS: viewport `overflow: hidden`; track `display: flex; width: max-content;
  * gap: 1rem; cursor: grab; user-select: none; touch-action: pan-y`.
@@ -46,6 +53,8 @@ import type { CommonOptions, Destroy, TargetLike } from "../core/types.js";
 export interface DragRailOptions extends CommonOptions {
   /** Scroll viewport around the track — defaults to `track.parentElement`. */
   viewport?: TargetLike;
+  /** Motion axis — `"auto"` flips vertical when only the column overflows. @default `"x"` */
+  axis?: "x" | "y" | "auto";
   /** Children that tilt with velocity. @default `":scope > *"` */
   item?: string;
   /** Follow speed toward the intent, per 60fps frame (0..1). @default 0.1 */
@@ -60,8 +69,24 @@ export interface DragRailOptions extends CommonOptions {
   tilt?: number;
   /** Tilt clamp, degrees. @default 8 */
   tiltMax?: number;
-  /** `(pos, velocity) => {}` called every rendered frame while mounted. */
+  /** `(pos, velocity) => {}` called every rendered frame while mounted (pos along the active axis). */
   onTick?: (pos: number, velocity: number) => void;
+}
+
+/**
+ * The axis rule shared by `dragRail` and `glRail`: fixed when asked, otherwise
+ * the layout decides — a rail only runs vertical when the *column* overflows
+ * and the row doesn't (a mobile stack), everything else is horizontal.
+ */
+export function resolveRailAxis(
+  track: HTMLElement,
+  viewport: HTMLElement,
+  pref: "x" | "y" | "auto",
+): "x" | "y" {
+  if (pref !== "auto") return pref;
+  const overflowY = track.scrollHeight - viewport.clientHeight;
+  const overflowX = track.scrollWidth - viewport.clientWidth;
+  return overflowY > 0 && overflowX <= 0 ? "y" : "x";
 }
 
 export function dragRail(target: TargetLike, options: DragRailOptions = {}): Destroy {
@@ -72,6 +97,7 @@ export function dragRail(target: TargetLike, options: DragRailOptions = {}): Des
 
   const {
     viewport,
+    axis: axisOpt = "x",
     item = ":scope > *",
     lerp = 0.1,
     edge = 140,
@@ -92,14 +118,26 @@ export function dragRail(target: TargetLike, options: DragRailOptions = {}): Des
 
     /* ---------------- bounds ---------------- */
 
-    let min = 0; // most-negative resting x (content overflows left)
+    let axis: "x" | "y" = resolveRailAxis(track, vp, axisOpt);
+    let flipped = false; // axis changed mid-life → force a transform re-key
+    let min = 0; // most-negative resting position (content overflows)
     let max = 0; // start of the rail
-    let pos = 0; // rendered x
-    let intent = 0; // wanted x (drag/wheel/throw feed this)
+    let pos = 0; // rendered position
+    let intent = 0; // wanted position (drag/wheel/throw feed this)
 
     const measure = () => {
-      const overflow = Math.max(0, track.scrollWidth - vp.clientWidth);
-      min = -overflow;
+      const next = resolveRailAxis(track, vp, axisOpt);
+      if (next !== axis) {
+        axis = next;
+        flipped = true;
+        // Claim the rail's own gesture axis; the other one belongs to the page.
+        track.style.touchAction = axis === "x" ? "pan-y" : "pan-x";
+      }
+      const overflow =
+        axis === "x"
+          ? track.scrollWidth - vp.clientWidth
+          : track.scrollHeight - vp.clientHeight;
+      min = -Math.max(0, overflow);
       max = 0;
       // Fold an out-of-range position back through the soft edge (no jump).
       intent = soft(intent);
@@ -116,14 +154,17 @@ export function dragRail(target: TargetLike, options: DragRailOptions = {}): Des
     /* ---------------- pointer drag ---------------- */
 
     let dragging = false;
-    let lastX = 0;
+    let last = 0; // last pointer coordinate along the active axis
     let velocity = 0; // smoothed pointer delta (px/frame-ish)
     let renderedVel = 0; // rendered per-frame velocity (drives tilt/onTick)
+
+    const along = (e: { clientX: number; clientY: number }) =>
+      axis === "x" ? e.clientX : e.clientY;
 
     const onPointerDown = (e: PointerEvent) => {
       if (e.pointerType === "mouse" && e.button !== 0) return;
       dragging = true;
-      lastX = e.clientX;
+      last = along(e);
       velocity = 0;
       try {
         vp.setPointerCapture(e.pointerId);
@@ -135,10 +176,10 @@ export function dragRail(target: TargetLike, options: DragRailOptions = {}): Des
 
     const onPointerMove = (e: PointerEvent) => {
       if (!dragging) return;
-      const dx = e.clientX - lastX;
-      lastX = e.clientX;
-      velocity = velocity * 0.7 + dx * 0.3; // smooth out event-rate jitter
-      intent = soft(intent + dx);
+      const delta = along(e) - last;
+      last = along(e);
+      velocity = velocity * 0.7 + delta * 0.3; // smooth out event-rate jitter
+      intent = soft(intent + delta);
     };
 
     const endDrag = (e?: PointerEvent) => {
@@ -164,7 +205,13 @@ export function dragRail(target: TargetLike, options: DragRailOptions = {}): Des
 
     const onWheel = (e: WheelEvent) => {
       if (!wheel) return;
-      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      const delta =
+        axis === "x"
+          ? Math.abs(e.deltaX) > Math.abs(e.deltaY)
+            ? e.deltaX
+            : e.deltaY
+          : e.deltaY;
+      if (!delta) return;
       const bound = delta > 0 ? max : min;
       const outward = (intent - bound) * (delta > 0 ? 1 : -1);
       if (outward > edge) return; // over-extended — hand the scroll back to the page
@@ -188,8 +235,10 @@ export function dragRail(target: TargetLike, options: DragRailOptions = {}): Des
       const prev = pos;
       pos += (intent - pos) * Math.min(1, lerp * ratio);
       renderedVel = pos - prev;
-      if (renderedVel === 0 && pos === intent) return; // idle: skip the write
-      gsap.set(track, { x: pos });
+      if (renderedVel === 0 && pos === intent && !flipped) return; // idle: skip the write
+      flipped = false;
+      // Re-key both axes: a flip must clear the stale one, never leave it behind.
+      gsap.set(track, axis === "x" ? { x: pos, y: 0 } : { x: 0, y: pos });
       if (items.length) {
         gsap.set(items, {
           rotation: gsap.utils.clamp(-tiltMax, tiltMax, renderedVel * tilt),
@@ -204,7 +253,7 @@ export function dragRail(target: TargetLike, options: DragRailOptions = {}): Des
     track.dataset.akRail = "true";
     track.style.cursor = "grab";
     track.style.userSelect = "none";
-    track.style.touchAction = "pan-y";
+    track.style.touchAction = axis === "x" ? "pan-y" : "pan-x";
 
     vp.addEventListener("pointerdown", onPointerDown);
     vp.addEventListener("pointermove", onPointerMove);

@@ -1,4 +1,4 @@
-# anim-kit demo & docs (v1.3.0)
+# anim-kit demo & docs (v1.4.0)
 
 > Modular, framework-agnostic animation library (GSAP + ScrollTrigger +
 > Lenis): every effect as a composable ES module. This site is the live
@@ -16,7 +16,7 @@ JS-rendered shell whose content comes from that same file.
 
 ## Data
 
-- [prompts.json](https://anikit.vercel.app/prompts.json): full machine-readable catalogue (32 prompts, 9 categories)
+- [prompts.json](https://anikit.vercel.app/prompts.json): full machine-readable catalogue (33 prompts, 9 categories)
 
 ## Library
 

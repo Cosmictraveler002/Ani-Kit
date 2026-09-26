@@ -25,7 +25,6 @@ import {
   stackedCardsPinned,
   scatterText,
   dragStrip,
-  dragRail,
   flipWords,
   liquidButton,
   underlineLink,
@@ -37,7 +36,7 @@ import {
   themeReveal,
   compose,
 } from "@cosmictraveler002/anim-kit";
-import { webglMedia } from "@cosmictraveler002/anim-kit/three";
+import { webglMedia, glRail } from "@cosmictraveler002/anim-kit/three";
 
 const cleanups = [];
 
@@ -126,7 +125,8 @@ cleanups.push(flipWords("[data-flip-from]", { to: "[data-flip-to]", scrub: 0.6 }
 /* Reel text + drag rail + WebGL cards                               */
 /* ---------------------------------------------------------------- */
 cleanups.push(reelText("[data-reel]", { mode: "scroll", frames: 4 }));
-cleanups.push(dragRail("[data-rail]", { tilt: 0.05, throwScale: 14 }));
+// glRail = dragRail's physics under a WebGL overlay (bent cards + grid floor).
+cleanups.push(glRail("[data-rail]", { radius: 1200, grid: true, throwScale: 14, wheel: true }));
 document.querySelectorAll("[data-gl]").forEach((el) => {
   cleanups.push(webglMedia(el, { corner: 18, dent: 70, chroma: 2 }));
 });

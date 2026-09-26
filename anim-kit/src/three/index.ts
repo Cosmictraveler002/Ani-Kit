@@ -6,7 +6,9 @@
  * The core barrel (`@cosmictraveler002/anim-kit`) never imports three, so
  * plain DOM/scroll users keep a gsap+lenis-only dependency tree.
  *
- *   import { webglMedia } from "@cosmictraveler002/anim-kit/three";
+ *   import { webglMedia, glRail } from "@cosmictraveler002/anim-kit/three";
  */
 export { webglMedia } from "./webgl-media.js";
 export type { WebglMediaOptions } from "./webgl-media.js";
+export { glRail } from "./gl-rail.js";
+export type { GlRailOptions } from "./gl-rail.js";

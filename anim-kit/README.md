@@ -98,7 +98,7 @@ resolves declarations through the same map — no `typesVersions` shim needed.
 
 No build step on the consumer's end: `dist/` is served as-is from the npm
 tarball by any npm CDN. Every URL is **version-pinned** — npm versions are
-immutable, so `@cosmictraveler002/anim-kit@1.3.0` always resolves to exactly that build, forever
+immutable, so `@cosmictraveler002/anim-kit@1.4.0` always resolves to exactly that build, forever
 (only a new version creates a new URL; nothing floats unless you ask for a
 range).
 
@@ -109,12 +109,12 @@ plugins anim-kit uses) and `lenis` **inlined** — no import map, one URL, works
 identically on jsDelivr and unpkg:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.3.0/dist/styles/anim-kit.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.4.0/dist/styles/anim-kit.css" />
 
 <script type="module">
   import {
     smoothScroll, lineReveal, marquee,
-  } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.3.0/dist/anim-kit.standalone.js";
+  } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.4.0/dist/anim-kit.standalone.js";
 
   smoothScroll();
   lineReveal("[data-lines]", { mode: "scroll" });
@@ -122,7 +122,7 @@ identically on jsDelivr and unpkg:
 </script>
 ```
 
-unpkg serves the same file: `https://unpkg.com/@cosmictraveler002/anim-kit@1.3.0/dist/anim-kit.standalone.js`
+unpkg serves the same file: `https://unpkg.com/@cosmictraveler002/anim-kit@1.4.0/dist/anim-kit.standalone.js`
 
 ### Option 2 — jsDelivr `+esm`
 
@@ -131,7 +131,7 @@ per version):
 
 ```html
 <script type="module">
-  import { lineReveal } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.3.0/+esm";
+  import { lineReveal } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.4.0/+esm";
 </script>
 ```
 
@@ -143,13 +143,13 @@ locally, with CDN URLs — and the way to share one GSAP between anim-kit and
 the rest of your page:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.3.0/dist/styles/anim-kit.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.4.0/dist/styles/anim-kit.css" />
 
 <script type="importmap">
   {
     "imports": {
-      "@cosmictraveler002/anim-kit": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.3.0/dist/index.js",
-      "@cosmictraveler002/anim-kit/three": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.3.0/dist/three/index.js",
+      "@cosmictraveler002/anim-kit": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.4.0/dist/index.js",
+      "@cosmictraveler002/anim-kit/three": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.4.0/dist/three/index.js",
       "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
       "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/index.js",
       "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollTrigger.js",
@@ -170,7 +170,7 @@ the rest of your page:
 </script>
 ```
 
-Swap the host for unpkg (`https://unpkg.com/@cosmictraveler002/anim-kit@1.3.0/dist/index.js`, …) —
+Swap the host for unpkg (`https://unpkg.com/@cosmictraveler002/anim-kit@1.4.0/dist/index.js`, …) —
 the file layout is identical. GSAP subpaths are listed one by one because
 import maps match specifiers literally: a trailing-slash prefix map would
 produce extension-less URLs, which CDNs don't serve. The `gsap`/`lenis` pins
@@ -320,7 +320,7 @@ prompt dock, and backs the `category` / `subcategory` fields on
 | Scroll & media | Parallax & depth | `parallax` |
 | Scroll & media | Heroes & media | `heroShrink`, `mediaSettle` |
 | Scroll & media | Enter reveals | `revealRule`, `unfoldReveal`, `clipWipe` |
-| WebGL | Shader media | `webglMedia` |
+| WebGL | Shader media | `webglMedia`, `glRail` |
 | Loops & marquees | Marquees | `marquee` |
 | Loops & marquees | Draggables & rails | `dragStrip`, `dragRail` |
 | Loops & marquees | Equalizers | `audioBars` |
@@ -847,6 +847,68 @@ alt text in its `<img>`; the canvas takes over only after the texture has
 loaded. `destroy()` kills ticker + tweens + resize observer and disposes
 geometry, material, texture and renderer.
 
+#### `glRail(track, options?) => destroy`
+
+> From `@cosmictraveler002/anim-kit/three`, not the core barrel.
+
+The bounded drag rail drawn as a **WebGL overlay**: one fixed alpha canvas
+covers the stage and re-creates every card's picture from its DOM rect each
+frame, with the surface bent around an invisible cylinder — `dragRail`'s
+physics (intent/pos ticker, tanh rubber-band, throw momentum, Lenis-safe
+wheel) underneath, and a perspective grid floor that fades into the horizon
+and drifts with the rail. The DOM keeps layout, labels and hit areas: the
+canvas paints *under* the track, so a caption sits over the GL media for
+free, and only each `<img>` gets hidden — after its texture has loaded.
+
+The bend is one uniform per card in the vertex shader: each vertex maps its
+offset onto the cylinder (`a = o / R`, `x = R·sin a`, `z = −R·(1−cos a)`)
+re-centred on the card's own middle — the centre stays glued to the DOM
+position while the edges foreshorten, and the rotation arrives free from the
+curve. `axis: "auto"` hands the same rule to physics *and* bend: a row
+overflows → horizontal, only the column overflows → vertical, so one init
+serves the desktop row and the mobile stack.
+
+```html
+<div class="rail-screen"> <!-- position: relative; overflow: hidden -->
+  <div data-rail>
+    <article class="rail-card"><img src="card-01.jpg" alt="" /><p>Night Atlas</p></article>
+    <article class="rail-card"><img src="card-02.jpg" alt="" /><p>Signal Bloom</p></article>
+  </div>
+</div>
+```
+
+```ts
+import { glRail } from "@cosmictraveler002/anim-kit/three";
+
+glRail("[data-rail]", { radius: 1200, grid: true, throwScale: 14 });
+```
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `viewport` | track's parent | the stage the canvas covers — keep it `overflow: hidden` |
+| `card` | `":scope > *"` | cards re-rendered — each needs an `<img>` |
+| `axis` | `"auto"` | `"x"` / `"y"` / `"auto"` — picks motion **and** bend axis |
+| `radius` | `1200` | cylinder radius the cards bend around, px |
+| `corner` | `16` | corner radius, px (SDF, not `border-radius`) |
+| `grid` | `true` | perspective grid floor under the cards |
+| `dpr` | `2` | device-pixel-ratio cap |
+| `lerp` / `edge` / `throwScale` / `wheel` / `onTick` | `0.1` / `140` / `14` / `true` / — | `dragRail` physics passthrough |
+| `force` | `false` | run even under `prefers-reduced-motion` |
+
+**Silent no-op ladder.** Missing target → no-op; no `WebGLRenderingContext`
+(SSR, jsdom, WebGL disabled) → the **flat `dragRail` rail** still runs
+(plain `<img>`s, full motion) *before* any context probe; renderer refused
+→ flat rail; texture 404 → that one card keeps its image; reduced motion →
+nothing mounts. Nothing ever logs. `destroy()` unwinds physics + GPU
+together (listeners, ticker, observers, geometry, materials, textures,
+renderer, canvas) and restores image opacities + the stage's inline
+position.
+
+**DOM.** Stage `position: relative; overflow: hidden` with a transparent
+card background; the track is a flex row (or `flex-direction: column; width:
+100%; height: max-content` for the vertical layout) with `cursor: grab;
+user-select: none`.
+
 ---
 
 ### Loops & marquees
@@ -929,14 +991,17 @@ GSAP's `deltaRatio`, so the settle rate is framerate-independent), past
 either end the intent squashes through a tanh rubber-band
 (`edge * tanh(overshoot / edge)` — pull further, gain less, never a hard
 stop), and a release coasts on velocity sampled over the last few frames.
+Horizontal by default; `axis: "auto"` flips the rail vertical when only the
+column overflows, so a mobile card stack needs no re-init.
 
 ```ts
-dragRail("[data-rail]", { tilt: 0.05, throwScale: 14, wheel: true });
+dragRail("[data-rail]", { tilt: 0.05, throwScale: 14, wheel: true, axis: "auto" });
 ```
 
 | Option | Default | Notes |
 | --- | --- | --- |
 | `viewport` | track's parent | scroll viewport around the track |
+| `axis` | `"x"` | `"x"` / `"y"` / `"auto"` — auto follows the layout (`pan-y` / `pan-x` claims the rail's own gesture) |
 | `item` | `":scope > *"` | children that tilt with velocity |
 | `lerp` | `0.1` | follow speed toward intent, per 60fps frame (0..1) |
 | `edge` | `140` | rubber-band resistance distance past the ends, px |
@@ -958,6 +1023,13 @@ and would scroll the page in parallel). Once over-extended a full `edge`, the
 wheel passes through to the page — the section never traps the reader. When
 input stops, a restore force springs any overscrolled intent home while the
 lerp chases it.
+
+**Two axes.** `axis: "auto"` re-resolves on every measure (only the column
+overflows → vertical) and re-keys the transform on a flip instead of leaving
+the stale axis behind — resize across the breakpoint and the rail just
+follows. **vs `glRail`**: the identical physics runs beneath `glRail`'s
+WebGL overlay (bent cards + grid floor, `/three` subpath) — use plain
+`dragRail` for DOM media, `glRail` when the pictures should curve.
 
 **DOM:** same shape as `dragStrip` — `overflow: hidden` viewport, flex track
 of `width: max-content`; the effect sets inline `cursor` / `user-select` /

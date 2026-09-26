@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>anim-kit — demo</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.3.0/dist/styles/anim-kit.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.4.0/dist/styles/anim-kit.css" />
     <style>
       :root {
         --bg: #f4f2ee;
@@ -486,24 +486,33 @@
       margin: 24px 0 0;
     }
 
-    /* ---------- Drag rail (bounded) ---------- */
-    .rail-viewport {
+    /* ---------- Drag rail — dark stage + WebGL overlay ---------- */
+    .rail-screen {
+      position: relative;
       overflow: hidden;
-      padding-bottom: 6px;
+      margin: 0 clamp(14px, 3vw, 44px);
+      height: min(70vh, 620px);
+      background: #07080b;
+      border-radius: clamp(18px, 3vw, 34px);
+      cursor: grab;
     }
     .rail-track {
       display: flex;
-      gap: 14px;
+      gap: clamp(14px, 2vw, 34px);
       width: max-content;
+      height: 100%;
+      align-items: center;
+      padding: 0 clamp(16px, 3vw, 56px);
       will-change: transform;
     }
     .rail-card {
+      position: relative;
       flex: none;
-      width: min(340px, 72vw);
-      aspect-ratio: 4 / 3;
-      border-radius: 14px;
+      height: 58%;
+      aspect-ratio: 2048 / 1172;
+      border-radius: 16px;
       overflow: hidden;
-      background: #101418;
+      background: transparent; /* the GL canvas paints the media beneath */
     }
     .rail-card img {
       width: 100%;
@@ -511,6 +520,65 @@
       object-fit: cover;
       display: block;
       pointer-events: none;
+    }
+    /* scrim + labels are DOM, so they paint above the canvas for free */
+    .rail-card::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 46%;
+      background: linear-gradient(to top, rgba(4, 5, 8, 0.72), transparent);
+      pointer-events: none;
+    }
+    .rail-card__meta {
+      position: absolute;
+      inset: auto 0 0;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin: 0;
+      padding: 0 14px 14px 18px;
+      color: #f4f6fb;
+      font-size: 15px;
+      letter-spacing: 0.01em;
+    }
+    .rail-card__arrow {
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      background: rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      transition: background 0.25s ease, transform 0.25s ease;
+    }
+    .rail-card__arrow:hover {
+      background: rgba(255, 255, 255, 0.24);
+      transform: translateY(-2px);
+    }
+    .rail-card__arrow svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.6;
+    }
+    @media (max-width: 900px) {
+      /* the stack flips vertical — dragRail's axis:"auto" follows the layout */
+      .rail-screen { height: min(74svh, 560px); }
+      .rail-track {
+        flex-direction: column;
+        width: 100%;
+        height: max-content;
+        align-items: stretch;
+        gap: 16px;
+        padding: 18px 14px;
+      }
+      .rail-card { height: auto; width: 100%; }
     }
 
     /* ---------- WebGL media cards ---------- */
@@ -985,21 +1053,45 @@
         </div>
       </section>
 
-      <!-- DRAG RAIL (bounded inertia) -->
+      <!-- DRAG RAIL (bounded inertia) + GL overlay -->
       <section>
         <div class="block" style="padding-bottom: 48px">
-          <p class="label" data-effect="dragRail">dragRail — bounded drag rail: inertia throw, tanh rubber-band ends, wheel input</p>
+          <p class="label" data-effect="dragRail glRail">dragRail — bounded drag rail: inertia throw, tanh rubber-band ends, wheel input · glRail — the same physics drawn as a WebGL overlay: cards bent around a cylinder, perspective grid floor (three.js)</p>
         </div>
-        <div class="rail-viewport">
+        <div class="rail-screen">
           <div class="rail-track" data-rail>
-            <div class="rail-card"><img alt="" src="assets/card-01.jpg" draggable="false" /></div>
-            <div class="rail-card"><img alt="" src="assets/card-02.webp" draggable="false" /></div>
-            <div class="rail-card"><img alt="" src="assets/card-03.jpg" draggable="false" /></div>
-            <div class="rail-card"><img alt="" src="assets/card-04.webp" draggable="false" /></div>
-            <div class="rail-card"><img alt="" src="assets/card-05.webp" draggable="false" /></div>
-            <div class="rail-card"><img alt="" src="assets/card-06.jpg" draggable="false" /></div>
-            <div class="rail-card"><img alt="" src="assets/card-07.webp" draggable="false" /></div>
-            <div class="rail-card"><img alt="" src="assets/card-08.webp" draggable="false" /></div>
+            <article class="rail-card">
+              <img alt="" src="assets/card-01.jpg" draggable="false" />
+              <p class="rail-card__meta"><span>Night Atlas</span><span class="rail-card__arrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg></span></p>
+            </article>
+            <article class="rail-card">
+              <img alt="" src="assets/card-02.webp" draggable="false" />
+              <p class="rail-card__meta"><span>Signal Bloom</span><span class="rail-card__arrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg></span></p>
+            </article>
+            <article class="rail-card">
+              <img alt="" src="assets/card-03.jpg" draggable="false" />
+              <p class="rail-card__meta"><span>Drift Season</span><span class="rail-card__arrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg></span></p>
+            </article>
+            <article class="rail-card">
+              <img alt="" src="assets/card-04.webp" draggable="false" />
+              <p class="rail-card__meta"><span>Paper Comet</span><span class="rail-card__arrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg></span></p>
+            </article>
+            <article class="rail-card">
+              <img alt="" src="assets/card-05.webp" draggable="false" />
+              <p class="rail-card__meta"><span>Second Horizon</span><span class="rail-card__arrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg></span></p>
+            </article>
+            <article class="rail-card">
+              <img alt="" src="assets/card-06.jpg" draggable="false" />
+              <p class="rail-card__meta"><span>Velvet Static</span><span class="rail-card__arrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg></span></p>
+            </article>
+            <article class="rail-card">
+              <img alt="" src="assets/card-07.webp" draggable="false" />
+              <p class="rail-card__meta"><span>North Archive</span><span class="rail-card__arrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg></span></p>
+            </article>
+            <article class="rail-card">
+              <img alt="" src="assets/card-08.webp" draggable="false" />
+              <p class="rail-card__meta"><span>Quiet Machine</span><span class="rail-card__arrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg></span></p>
+            </article>
           </div>
         </div>
       </section>
@@ -1039,8 +1131,8 @@
           "gsap/Flip": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/Flip.js",
           "gsap/ScrollSmoother": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollSmoother.js",
           "lenis": "https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.mjs",
-          "@cosmictraveler002/anim-kit": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.3.0/dist/index.js",
-          "@cosmictraveler002/anim-kit/three": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.3.0/dist/three/index.js",
+          "@cosmictraveler002/anim-kit": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.4.0/dist/index.js",
+          "@cosmictraveler002/anim-kit/three": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.4.0/dist/three/index.js",
           "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js"
         }
       }

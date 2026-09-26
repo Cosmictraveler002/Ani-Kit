@@ -211,6 +211,19 @@ assert.equal(
   "true",
   "dragRail should stamp the demo rail track",
 );
+// glRail drives the demo rail — jsdom has no WebGL, so the GL layer must
+// mount nothing while the flat physics fallback still stamps the track.
+const railStage = doc.querySelector("[data-rail]")?.parentElement;
+assert.equal(
+  railStage?.querySelector("canvas") ?? null,
+  null,
+  "jsdom has no WebGL — glRail must mount no canvas (flat rail fallback)",
+);
+assert.equal(
+  railStage?.dataset.akGlRail,
+  undefined,
+  "glRail must not stamp the stage it never mounted",
+);
 const glCards = [...doc.querySelectorAll("[data-gl]")];
 assert.ok(glCards.length >= 3, `demo should show at least 3 WebGL cards (saw ${glCards.length})`);
 assert.equal(
@@ -218,7 +231,7 @@ assert.equal(
   0,
   "jsdom has no WebGL — webglMedia must mount nothing (plain <img> fallback)",
 );
-console.log("ok  reelText split, dragRail stamped, webglMedia no-oped without WebGL");
+console.log("ok  reelText split, dragRail stamped, glRail + webglMedia no-oped without WebGL");
 
 /* ---------------- copy-prompt catalogue ---------------- */
 // (entries, classify, payload — imported above so the dock could fetch them)

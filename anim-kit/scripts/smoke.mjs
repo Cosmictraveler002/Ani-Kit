@@ -309,7 +309,16 @@ assert.equal(railTrack.style.touchAction, "pan-y", "dragRail must claim horizont
 railDestroy();
 assert.equal(railTrack.dataset.akRail, undefined, "dragRail must clear its stamp");
 assert.equal(railTrack.style.touchAction ?? "", "", "dragRail must restore touch-action");
-console.log("ok  reelText masks + dragRail wiring, both unwound cleanly");
+// axis: "y" claims the vertical gesture; "auto" on a zero-layout (jsdom)
+// fixture resolves horizontal — only a column overflow flips it to vertical.
+const railYDestroy = lib.dragRail(railTrack, { axis: "y" });
+assert.equal(railTrack.style.touchAction, "pan-x", "a vertical rail must claim vertical gestures");
+railYDestroy();
+const railAutoDestroy = lib.dragRail(railTrack, { axis: "auto" });
+assert.equal(railTrack.style.touchAction, "pan-y", 'axis: "auto" must fall back to horizontal without a column overflow');
+railAutoDestroy();
+assert.equal(railTrack.style.touchAction ?? "", "", "dragRail must restore touch-action after every axis");
+console.log("ok  reelText masks + dragRail wiring (both axes), unwound cleanly");
 
 /* ---------------- ./three subpath: WebGL entry (optional peer) ------------- */
 const threeLib = await import("../dist/three/index.js");
@@ -334,7 +343,33 @@ assert.equal(glHost.querySelector("img").style.opacity, "", "webglMedia must lea
 assert.equal(glFigure.dataset.akGl, undefined, "webglMedia must not stamp a host it never mounted");
 glDestroy();
 glHost.remove();
-console.log("ok  /three entry exports webglMedia, no-ops silently without WebGL");
+
+// glRail: same ladder — without WebGL the FLAT rail (dragRail) still runs.
+assert.equal(typeof threeLib.glRail, "function", "the /three entry must export glRail");
+assert.ok(!("glRail" in lib), "glRail must NOT leak into the core barrel (three stays optional)");
+const glRailMissing = asDestroy(threeLib.glRail("[data-nope]"));
+assert.equal(typeof glRailMissing, "function", "glRail must no-op on missing targets");
+glRailMissing();
+const grHost = mountHost("glrail-host", `<div class="stage"><div data-rail-gl><i>x</i><i>y</i></div></div>`);
+const grStage = grHost.querySelector(".stage");
+const grTrack = grHost.querySelector("[data-rail-gl]");
+const grDestroy = threeLib.glRail(grTrack);
+assert.equal(
+  grTrack.dataset.akRail,
+  "true",
+  "glRail must run dragRail's physics even without WebGL (flat rail fallback)",
+);
+assert.equal(grHost.querySelector("canvas"), null, "glRail must not mount a canvas when WebGL is unavailable");
+assert.equal(
+  grStage.dataset.akGlRail,
+  undefined,
+  "glRail must not stamp a stage it never mounted",
+);
+grDestroy();
+assert.equal(grTrack.dataset.akRail, undefined, "glRail must unwind the physics on destroy");
+assert.equal(grStage.dataset.akGlRail, undefined, "glRail must leave no stamp behind");
+grHost.remove();
+console.log("ok  /three entry exports webglMedia + glRail, both no-op silently without WebGL");
 
 /* ---------------- utils ---------------- */
 assert.deepEqual(lib.toArray("[data-xyz-nope]"), [], "toArray on missing selector");
