@@ -38,9 +38,8 @@
 │   ├── dist/                 build output (gitignored)
 │   ├── tsup.config.ts        standalone CDN bundle config
 │   └── README.md             full package documentation
-├── _scrape/                  READ-ONLY reference: raw CSS/JS scraped from the source sites
 ├── .github/workflows/        ci.yml (push/PR) + release.yml (tag → npm publish)
-├── .gitignore                ignores node_modules/, dist/, *.tgz
+├── .gitignore                ignores node_modules/, dist/, *.tgz and local-only material
 └── README.md                 this file
 ```
 
@@ -88,8 +87,9 @@ npm run demo          # server on :4321 — demo page + /api/prompts (build firs
 6. **`npm test` green before every commit** — includes the teardown gate:
    destroying all effects leaves 0 ScrollTriggers, 0 Draggables, 0 tweens and
    restores the original markup.
-7. **`_scrape/` is read-only reference material** — consult it, never edit it
-   and never ship it.
+7. **Local-only reference material is never published** — working-copy-only
+   folders are listed in `.gitignore`: consult them, never edit them, never
+   commit or ship them.
 8. **Reduced motion goes through `guard()`** (`force: true` opts out per call)
    — don't hand-roll `matchMedia` checks inside effects.
 9. **GSAP gotchas already paid for** — Draggable has no `modifiers` option (use
