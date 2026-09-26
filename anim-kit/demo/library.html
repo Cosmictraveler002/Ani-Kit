@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Colour &amp; font library — ANIM·KIT</title>
+    <meta
+      name="description"
+      content="Seven sample design systems: 7-token CSS palettes with free Google Fonts pairings (premium originals matched to their closest free alternative). One-click copy."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='7'%20fill='%236c5ce7'/%3E%3Cpath%20d='M9%2023%2016%209l7%2014h-4l-1.4-3h-3.2L13%2023Zm5.4-6h3.2L16%2013.6Z'%20fill='%23fff'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="/src/styles/anim-kit.css" />
+    <style>
+      /* ---- library chrome — matches the demo/docs light theme ---- */
+      :root {
+        --l-bg: #f4f2ee;
+        --l-panel: #ffffff;
+        --l-fg: #111111;
+        --l-muted: #6f6b64;
+        --l-line: #e0ddd5;
+        --l-accent: var(--ak-primary, #6c5ce7);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--l-bg);
+        color: var(--l-fg);
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      a { color: inherit; }
+      .l-wrap { width: min(1240px, calc(100% - 40px)); margin: 0 auto; }
+
+      /* ---- header ---- */
+      .l-top {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 22px 0;
+        border-bottom: 1px solid var(--l-line);
+        font-size: 14px;
+      }
+      .l-brand { font-weight: 700; letter-spacing: -0.03em; text-decoration: none; }
+      .l-brand em { font-style: normal; color: var(--l-muted); font-weight: 400; }
+      .l-top__links { display: flex; gap: 20px; }
+      .l-top__links a { color: var(--l-muted); text-decoration: none; }
+      .l-top__links a:hover { color: var(--l-fg); }
+
+      /* ---- hero ---- */
+      .l-hero { padding: 72px 0 34px; }
+      .l-label {
+        margin: 0 0 18px;
+        font-size: 12px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--l-muted);
+      }
+      .l-hero h1 {
+        margin: 0 0 18px;
+        font-size: clamp(38px, 6vw, 74px);
+        line-height: 0.98;
+        letter-spacing: -0.04em;
+        font-weight: 700;
+      }
+      .l-lede {
+        margin: 0;
+        max-width: 64ch;
+        font-size: clamp(15px, 1.6vw, 18px);
+        line-height: 1.55;
+        color: var(--l-muted);
+      }
+      .l-lede strong { color: var(--l-fg); font-weight: 500; }
+
+      /* ---- filters ---- */
+      .l-filters { display: flex; gap: 10px; margin: 30px 0 0; }
+      .l-filter {
+        appearance: none;
+        border: 1px solid var(--l-line);
+        background: transparent;
+        color: var(--l-muted);
+        font: inherit;
+        font-size: 13px;
+        padding: 7px 16px;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+      .l-filter:hover { color: var(--l-fg); border-color: var(--l-fg); }
+      .l-filter[aria-pressed="true"] {
+        background: var(--l-fg);
+        border-color: var(--l-fg);
+        color: var(--l-bg);
+      }
+
+      /* ---- grid + card ---- */
+      .l-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 26px;
+        padding: 40px 0 80px;
+      }
+      .l-card {
+        background: var(--l-panel);
+        border: 1px solid var(--l-line);
+        border-radius: 14px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .l-card[hidden] { display: none; }
+      .l-card__bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px 18px 14px;
+      }
+      .l-card__bar h2 { margin: 0; font-size: 20px; letter-spacing: -0.02em; }
+      .l-mood {
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--l-muted);
+        border: 1px solid var(--l-line);
+        border-radius: 999px;
+        padding: 4px 10px;
+      }
+
+      /* preview — painted with the entry's own tokens */
+      .l-preview {
+        margin: 0 18px;
+        border-radius: 10px;
+        border: 1px solid var(--border, transparent);
+        background: var(--bg);
+        color: var(--text);
+        padding: 26px 24px 24px;
+        min-height: 208px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .l-preview__mono {
+        font-family: var(--font-mono, var(--font-body));
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .l-preview__display {
+        margin: 0;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: clamp(24px, 2.4vw, 32px);
+        line-height: 1.02;
+        letter-spacing: -0.02em;
+      }
+      .l-preview__body {
+        margin: 0;
+        font-family: var(--font-body);
+        font-size: 14px;
+        line-height: 1.5;
+        color: var(--muted);
+        max-width: 40ch;
+      }
+      .l-preview__btn {
+        margin-top: auto;
+        align-self: flex-start;
+        font-family: var(--font-display);
+        font-size: 13px;
+        font-weight: 500;
+        padding: 9px 18px;
+        border-radius: 999px;
+        background: var(--accent);
+        color: var(--bg);
+      }
+      .l-blurb {
+        margin: 14px 18px 0;
+        font-size: 13.5px;
+        line-height: 1.5;
+        color: var(--l-muted);
+      }
+
+      /* swatches */
+      .l-swatches {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        margin: 14px 18px 0;
+      }
+      .l-swatch {
+        appearance: none;
+        border: 1px solid var(--l-line);
+        border-radius: 8px;
+        padding: 8px 6px 6px;
+        min-height: 52px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 2px;
+        font: inherit;
+        text-align: left;
+      }
+      .l-swatch__name { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.75; }
+      .l-swatch__hex { font-size: 10.5px; font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; opacity: 0.9; }
+      .l-swatch:hover { transform: translateY(-1px); }
+
+      /* fonts list */
+      .l-fonts {
+        list-style: none;
+        margin: 14px 18px 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 12.5px;
+      }
+      .l-fonts li { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+      .l-fonts strong { font-weight: 600; }
+      .l-fonts .l-role {
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--l-muted);
+        border: 1px solid var(--l-line);
+        border-radius: 4px;
+        padding: 1px 6px;
+      }
+      .l-fonts .l-orig { color: var(--l-muted); text-decoration: line-through; }
+      .l-fonts .l-free { color: var(--l-muted); }
+
+      /* actions */
+      .l-actions { display: flex; gap: 10px; padding: 16px 18px; margin-top: auto; }
+      .l-copy {
+        appearance: none;
+        border: 1px solid var(--l-line);
+        background: transparent;
+        color: var(--l-fg);
+        font: inherit;
+        font-size: 13px;
+        padding: 9px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .l-copy:hover { border-color: var(--l-fg); }
+      .l-copy.is-done { background: var(--l-accent); border-color: var(--l-accent); color: #fff; }
+
+      /* source attribution */
+      .l-source {
+        border-top: 1px solid var(--l-line);
+        padding: 10px 18px;
+        font-size: 12px;
+        color: var(--l-muted);
+      }
+      .l-source summary { cursor: pointer; }
+      .l-source a { color: var(--l-fg); }
+
+      /* footer */
+      .l-foot {
+        border-top: 1px solid var(--l-line);
+        padding: 26px 0 44px;
+        font-size: 13px;
+        color: var(--l-muted);
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .l-foot a { color: var(--l-fg); }
+      .l-empty { color: var(--l-muted); padding: 30px 0 60px; }
+
+      @media (max-width: 720px) {
+        .l-top { flex-direction: column; gap: 10px; }
+        .l-hero { padding-top: 48px; }
+        .l-grid { grid-template-columns: 1fr; }
+        .l-swatches { grid-template-columns: repeat(4, 1fr); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="l-wrap">
+      <header class="l-top">
+        <a class="l-brand" href="/demo/">ANIM·KIT <em>library</em></a>
+        <div class="l-top__links">
+          <a href="/demo/">&larr; live demo</a>
+          <a href="/demo/docs.html">docs</a>
+          <a href="https://github.com/Cosmictraveler002/Ani-Kit" target="_blank" rel="noreferrer">github</a>
+        </div>
+      </header>
+
+      <main>
+        <section class="l-hero">
+          <p class="l-label">Colour &amp; type library &middot; <span id="l-count">&hellip;</span> systems</p>
+          <h1>Palettes &amp; fonts,<br />ready to paste.</h1>
+          <p class="l-lede">
+            Each system ships a <strong>7-token CSS palette</strong>
+            (<code>--bg</code>, <code>--surface</code>, <code>--text</code>,
+            <code>--muted</code>, <code>--accent</code>, <code>--accent-2</code>,
+            <code>--border</code>) plus <code>--font-display</code> /
+            <code>--font-body</code> / <code>--font-mono</code> on
+            <strong>free Google Fonts</strong> — premium originals are paired
+            with their closest free alternative. Preview it, then copy the
+            variables or the stylesheet link.
+          </p>
+          <div class="l-filters" role="group" aria-label="Filter by mood">
+            <button class="l-filter" data-filter="all" aria-pressed="true">all</button>
+            <button class="l-filter" data-filter="dark" aria-pressed="false">dark</button>
+            <button class="l-filter" data-filter="light" aria-pressed="false">light</button>
+          </div>
+        </section>
+
+        <section id="l-grid" class="l-grid" aria-live="polite">
+          <p class="l-empty">Loading the library&hellip;</p>
+        </section>
+      </main>
+
+      <footer class="l-foot">
+        <span>Free fonts only — originals are credited in each card.</span>
+        <span><a href="/demo/">demo</a> &middot; <a href="/demo/docs.html">docs</a> &middot; <a href="https://www.npmjs.com/package/@cosmictraveler002/anim-kit" target="_blank" rel="noreferrer">npm</a></span>
+      </footer>
+    </div>
+
+    <script type="module" src="/demo/library.js"></script>
+  </body>
+</html>

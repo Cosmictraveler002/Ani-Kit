@@ -5,6 +5,8 @@
  * API:
  *   GET /api/prompts  →  { count, prompts: [{ id, title, summary, text }] }
  *                        copy-paste prompts for every anim-kit effect
+ *   GET /api/library  →  { count, entries: [{ name, palette, fonts, css }] }
+ *                        colour + font systems behind demo/library.html
  */
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
@@ -12,6 +14,7 @@ import { extname, join, normalize } from "node:path";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promptsById, promptsPayload } from "./prompts.mjs";
+import { libraryPayload } from "./design-library.mjs";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const port = Number(process.env.PORT) || 4321;
@@ -57,6 +60,16 @@ createServer(async (req, res) => {
         "Cache-Control": "no-store",
       });
       res.end(text);
+      return;
+    }
+
+    /* ---------------- colour & font library ---------------- */
+    if (url.pathname === "/api/library") {
+      res.writeHead(200, {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-store",
+      });
+      res.end(JSON.stringify(libraryPayload(), null, 2));
       return;
     }
 

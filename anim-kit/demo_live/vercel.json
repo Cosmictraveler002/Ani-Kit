@@ -3,6 +3,10 @@
     {
       "source": "/api/prompts",
       "destination": "/prompts.json"
+    },
+    {
+      "source": "/api/library",
+      "destination": "/library.json"
     }
   ]
 }

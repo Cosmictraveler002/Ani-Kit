@@ -24,6 +24,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { CDN_VERSION, promptsPayload } from "./prompts.mjs";
+import { libraryPayload } from "./design-library.mjs";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -75,18 +76,30 @@ const wireHtml = (html) =>
  */
 export function buildFiles() {
   const files = {};
-  for (const name of ["index.html", "docs.html"]) {
+  for (const name of ["index.html", "docs.html", "library.html"]) {
     files[name] = wireHtml(readFileSync(join(root, "demo", name), "utf8"));
   }
-  for (const name of ["demo.js", "docs.js"]) {
+  for (const name of ["demo.js", "docs.js", "library.js"]) {
     files[name] = readFileSync(join(root, "demo", name), "utf8");
   }
   const payload = promptsPayload();
   files["prompts.json"] = JSON.stringify(payload, null, 2);
+  // Colour & font library (demo/library.html) — same static-fallback idea.
+  const libPayload = libraryPayload();
+  files["library.json"] = JSON.stringify(libPayload, null, 2);
   // Vercel hosts answer /api/prompts from the static file — other hosts use
   // the client-side prompts.json fallback in demo.js/docs.js.
   files["vercel.json"] =
-    JSON.stringify({ rewrites: [{ source: "/api/prompts", destination: "/prompts.json" }] }, null, 2) + "\n";
+    JSON.stringify(
+      {
+        rewrites: [
+          { source: "/api/prompts", destination: "/prompts.json" },
+          { source: "/api/library", destination: "/library.json" },
+        ],
+      },
+      null,
+      2,
+    ) + "\n";
   // Crawler/agent entry points, absolute URLs from SITE_URL.
   files["robots.txt"] = [
     "# anim-kit demo — fully open to every agent (human and AI).",
@@ -100,7 +113,7 @@ export function buildFiles() {
   files["sitemap.xml"] = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    ...["/", "/docs.html", "/prompts.json"].map(
+    ...["/", "/docs.html", "/library.html", "/prompts.json"].map(
       (p) => `  <url><loc>${SITE_URL}${p}</loc></url>`,
     ),
     "</urlset>",
@@ -122,10 +135,12 @@ export function buildFiles() {
     "",
     `- [Demo](${SITE_URL}/): every effect running live, with copy-prompt chips`,
     `- [Docs](${SITE_URL}/docs.html): install, initialisation process, per-effect reference`,
+    `- [Library](${SITE_URL}/library.html): colour & font systems — 7-token palettes + free font pairings`,
     "",
     "## Data",
     "",
     `- [prompts.json](${SITE_URL}/prompts.json): full machine-readable catalogue (${payload.count} prompts, ${payload.categories.length} categories)`,
+    `- [library.json](${SITE_URL}/library.json): colour & font library (${libPayload.count} systems, each with a CSS palette, a Google Fonts URL and a copy-ready :root block)`,
     "",
     "## Library",
     "",

@@ -13,10 +13,12 @@ JS-rendered shell whose content comes from that same file.
 
 - [Demo](https://anikit.vercel.app/): every effect running live, with copy-prompt chips
 - [Docs](https://anikit.vercel.app/docs.html): install, initialisation process, per-effect reference
+- [Library](https://anikit.vercel.app/library.html): colour & font systems — 7-token palettes + free font pairings
 
 ## Data
 
 - [prompts.json](https://anikit.vercel.app/prompts.json): full machine-readable catalogue (33 prompts, 9 categories)
+- [library.json](https://anikit.vercel.app/library.json): colour & font library (7 systems, each with a CSS palette, a Google Fonts URL and a copy-ready :root block)
 
 ## Library
 

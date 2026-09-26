@@ -33,7 +33,7 @@
 │   │   ├── three/            WebGL entry (./three subpath) — optional three.js peer
 │   │   ├── styles/           anim-kit.css (ships untouched as plain CSS)
 │   │   └── index.ts          public barrel — the 47-export contract
-│   ├── demo/                 demo page + developer docs page (import map, no bundler)
+│   ├── demo/                 demo page + developer docs + colour/font library (import map, no bundler)
 │   ├── scripts/              prompts + taxonomy, demo server, build helper, smoke tests
 │   ├── dist/                 build output (gitignored)
 │   ├── tsup.config.ts        standalone CDN bundle config
@@ -64,6 +64,7 @@ npm run demo          # server on :4321 — demo page + /api/prompts (build firs
 | GSAP setup, custom eases, internal `killTweens()` | `anim-kit/src/core/gsap.ts`                                                                                                                                                                              |
 | Effect taxonomy (categories → subcategories)      | `TAXONOMY` in `anim-kit/scripts/prompts.mjs`                                                                                                                                                             |
 | Copy-prompt text served by the demo               | `renderPrompt()` in `anim-kit/scripts/prompts.mjs`                                                                                                                                                       |
+| Colour & font library (palettes, free fonts)      | `anim-kit/scripts/design-library.mjs` → `GET /api/library` + static `library.json` → `anim-kit/demo/library.html`                                                                                        |
 | CDN version pin (prompts, docs page, README pins) | `CDN_VERSION` in `anim-kit/scripts/prompts.mjs` — must equal `package.json` `version`; `demo-smoke.mjs` enforces both                                                                                    |
 | Styles (`.ak-*` classes, keyframes)               | `anim-kit/src/styles/anim-kit.css` — copied byte-for-byte to `dist/styles/`; never import CSS from JS                                                                                                    |
 | npm exports map, version, dependencies            | `anim-kit/package.json`                                                                                                                                                                                  |
@@ -239,10 +240,20 @@ Interactive developer docs site (install, initialisation process, every
 effect's markup/options/boilerplate, category navigation):
 [`anim-kit/demo/docs.html`](anim-kit/demo/docs.html) — served by `npm run demo`
 → <http://localhost:4321/demo/docs.html>, linked as **Docs** in the demo nav.
-A static-host-ready copy of both pages lives in
-[`anim-kit/demo_live/`](anim-kit/demo_live/) — fixed CDN pins, a generated
-`prompts.json`, and agent crawler files (`robots.txt` / `sitemap.xml` /
-`llms.txt`), no server required (regenerate from `demo/` with
+
+Colour & font library (seven sample systems: 7-token CSS palettes + free
+Google Fonts pairings, premium originals matched to their closest free
+alternative, one-click copy of the `:root` block or the stylesheet link):
+[`anim-kit/demo/library.html`](anim-kit/demo/library.html) — served by
+`npm run demo` → <http://localhost:4321/demo/library.html>, linked as
+**Library** in the demo nav and the docs header. Data lives in
+[`anim-kit/scripts/design-library.mjs`](anim-kit/scripts/design-library.mjs)
+(`GET /api/library`, static fallback `library.json`).
+
+A static-host-ready copy of all pages lives in
+[`anim-kit/demo_live/`](anim-kit/demo_live/) — fixed CDN pins, generated
+`prompts.json` / `library.json`, and agent crawler files (`robots.txt` /
+`sitemap.xml` / `llms.txt`), no server required (regenerate from `demo/` with
 `npm run sync:live`).
 
 ---
