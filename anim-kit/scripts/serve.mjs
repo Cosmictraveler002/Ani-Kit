@@ -26,6 +26,7 @@ const TYPES = {
   ".png": "image/png",
   ".jpg": "image/jpeg",
   ".webp": "image/webp",
+  ".txt": "text/plain; charset=utf-8",
   ".woff2": "font/woff2",
   ".map": "application/json",
 };

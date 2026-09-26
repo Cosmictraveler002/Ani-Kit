@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>anim-kit — demo</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.2.0/dist/styles/anim-kit.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.3.0/dist/styles/anim-kit.css" />
     <style>
       :root {
         --bg: #f4f2ee;
@@ -477,6 +477,71 @@
         .stack-viewport { position: static; height: auto; padding: 40px 0; }
         #hscroll .h-panel { width: 92vw; }
       }
+    /* ---------- Reel text — per-character reel cells ---------- */
+    [data-reel] {
+      font-size: clamp(2.4rem, 7vw, 5.5rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin: 24px 0 0;
+    }
+
+    /* ---------- Drag rail (bounded) ---------- */
+    .rail-viewport {
+      overflow: hidden;
+      padding-bottom: 6px;
+    }
+    .rail-track {
+      display: flex;
+      gap: 14px;
+      width: max-content;
+      will-change: transform;
+    }
+    .rail-card {
+      flex: none;
+      width: min(340px, 72vw);
+      aspect-ratio: 4 / 3;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #101418;
+    }
+    .rail-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
+    }
+
+    /* ---------- WebGL media cards ---------- */
+    .gl-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+      gap: 18px;
+      margin-top: 28px;
+    }
+    .gl-cell {
+      margin: 0;
+    }
+    .gl-card {
+      position: relative;
+      margin: 0;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      border-radius: 18px;
+      background: #101418;
+    }
+    .gl-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .gl-cap {
+      margin-top: 10px;
+      color: #6d7683;
+      font-size: 0.82rem;
+    }
     </style>
   </head>
   <body>
@@ -912,6 +977,54 @@
         </div>
       </section>
 
+      <!-- REEL TEXT -->
+      <section>
+        <div class="block">
+          <p class="label" data-effect="reelText">reelText — per-character odometer roll, a scroll-triggered slot-machine decode</p>
+          <p data-reel>Every character rolls into place.</p>
+        </div>
+      </section>
+
+      <!-- DRAG RAIL (bounded inertia) -->
+      <section>
+        <div class="block" style="padding-bottom: 48px">
+          <p class="label" data-effect="dragRail">dragRail — bounded drag rail: inertia throw, tanh rubber-band ends, wheel input</p>
+        </div>
+        <div class="rail-viewport">
+          <div class="rail-track" data-rail>
+            <div class="rail-card"><img alt="" src="assets/card-01.jpg" draggable="false" /></div>
+            <div class="rail-card"><img alt="" src="assets/card-02.webp" draggable="false" /></div>
+            <div class="rail-card"><img alt="" src="assets/card-03.jpg" draggable="false" /></div>
+            <div class="rail-card"><img alt="" src="assets/card-04.webp" draggable="false" /></div>
+            <div class="rail-card"><img alt="" src="assets/card-05.webp" draggable="false" /></div>
+            <div class="rail-card"><img alt="" src="assets/card-06.jpg" draggable="false" /></div>
+            <div class="rail-card"><img alt="" src="assets/card-07.webp" draggable="false" /></div>
+            <div class="rail-card"><img alt="" src="assets/card-08.webp" draggable="false" /></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- WEBGL MEDIA (three.js) -->
+      <section id="webgl">
+        <div class="block">
+          <p class="label" data-effect="webglMedia">webglMedia — three.js shader cards: SDF corners, hover dent + chroma split (WebGL)</p>
+          <div class="gl-grid">
+            <figure class="gl-cell">
+              <div class="gl-card" data-gl><img alt="" src="assets/card-02.webp" /></div>
+              <figcaption class="gl-cap">hover — the picture dents inward, channels split</figcaption>
+            </figure>
+            <figure class="gl-cell">
+              <div class="gl-card" data-gl><img alt="" src="assets/card-04.webp" /></div>
+              <figcaption class="gl-cap">any aspect — the cover-crop runs in-shader</figcaption>
+            </figure>
+            <figure class="gl-cell">
+              <div class="gl-card" data-gl><img alt="" src="assets/card-07.webp" /></div>
+              <figcaption class="gl-cap">no WebGL — the plain &lt;img&gt; stays, nothing logs</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
       <footer>anim-kit · effects by <a href="https://kalakritico.in" target="_blank">kalakritico.in</a></footer>
     </main>
 
@@ -926,7 +1039,9 @@
           "gsap/Flip": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/Flip.js",
           "gsap/ScrollSmoother": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollSmoother.js",
           "lenis": "https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.mjs",
-          "@cosmictraveler002/anim-kit": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.2.0/dist/index.js"
+          "@cosmictraveler002/anim-kit": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.3.0/dist/index.js",
+          "@cosmictraveler002/anim-kit/three": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.3.0/dist/three/index.js",
+          "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js"
         }
       }
     </script>

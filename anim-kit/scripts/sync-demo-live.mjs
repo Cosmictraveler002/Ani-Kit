@@ -20,7 +20,7 @@
  * demo-smoke re-runs this transform and fails if demo_live/ is stale:
  * edit demo/, then `npm run sync:live`.
  */
-import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { CDN_VERSION, promptsPayload } from "./prompts.mjs";
@@ -42,6 +42,10 @@ const wireImportMap = (html) =>
     for (const [spec, url] of Object.entries(imports)) {
       if (spec === "@cosmictraveler002/anim-kit") {
         cdn[spec] = `https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/index.js`;
+        continue;
+      }
+      if (spec === "@cosmictraveler002/anim-kit/three") {
+        cdn[spec] = `https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/three/index.js`;
         continue;
       }
       const m = url.match(/^\/node_modules\/((?:@[^/]+\/)?[^/]+)\/(.+)$/);
@@ -130,6 +134,15 @@ export function buildFiles() {
     "- [GitHub](https://github.com/Cosmictraveler002/Ani-Kit): source repository",
     "",
   ].join("\n");
+  // Static assets (images for the media + WebGL effects) — byte-copies, so
+  // demo-smoke compares them with Buffer.equals instead of utf8.
+  const assetsDir = join(root, "demo", "assets");
+  if (existsSync(assetsDir)) {
+    for (const name of readdirSync(assetsDir)) {
+      if (name.startsWith(".")) continue;
+      files[`assets/${name}`] = readFileSync(join(assetsDir, name));
+    }
+  }
   return files;
 }
 
@@ -138,14 +151,32 @@ function main() {
   const dir = join(root, "demo_live");
   mkdirSync(dir, { recursive: true });
   for (const [name, body] of Object.entries(files)) {
-    writeFileSync(join(dir, name), body);
+    const target = join(dir, name);
+    mkdirSync(dirname(target), { recursive: true }); // nested paths (assets/…)
+    writeFileSync(target, body);
   }
-  for (const name of readdirSync(dir)) {
-    // Dotfiles are host/CLI territory (user .gitignore, .vercel/ project
-    // link) — they live beside the generated set and are never swept.
-    if (name.startsWith(".")) continue;
-    if (!(name in files)) rmSync(join(dir, name), { recursive: true, force: true });
+  // Sweep generated paths only, recursing — and never touching dotfiles at
+  // any depth (host/CLI territory: .vercel/, .gitignore), then prune the
+  // directories that emptied out so a removed asset can't linger.
+  const walk = (d, prefix = "") =>
+    readdirSync(d, { withFileTypes: true }).flatMap((e) =>
+      e.name.startsWith(".")
+        ? []
+        : e.isDirectory()
+          ? walk(join(d, e.name), `${prefix}${e.name}/`)
+          : [`${prefix}${e.name}`],
+    );
+  for (const rel of walk(dir)) {
+    if (!(rel in files)) rmSync(join(dir, rel), { force: true });
   }
+  const prune = (d) => {
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      if (!e.isDirectory() || e.name.startsWith(".")) continue;
+      prune(join(d, e.name));
+      if (readdirSync(join(d, e.name)).length === 0) rmSync(join(d, e.name), { recursive: true });
+    }
+  };
+  prune(dir);
   console.log(`demo_live regenerated: ${Object.keys(files).join(", ")}`);
 }
 

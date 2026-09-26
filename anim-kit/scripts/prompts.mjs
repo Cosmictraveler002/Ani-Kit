@@ -43,8 +43,31 @@ needed (component unmount, route change, HMR reload):
   \`EASES.reveal\`, \`EASES.preloadOut\`).
 `;
 
+/**
+ * Appended to the shared epilogue for /three effects — the dependency
+ * contract differs there: three is an optional peer, never a core dependency.
+ */
+const THREE_EPILOGUE = `
+- \`three\` is an **optional peer dependency**: the core package never
+  imports it — only \`@cosmictraveler002/anim-kit/three\` does, so installing
+  anim-kit alone keeps your tree gsap+lenis. Add \`three\` when you use WebGL
+  effects (the §2 import map already serves a pinned build — no install needed
+  for the CDN path).
+`;
+
 /** Version-pinned CDN release that every prompt's procedure points at. */
-export const CDN_VERSION = "1.2.0";
+export const CDN_VERSION = "1.3.0";
+
+/**
+ * Optional peer served by the `./three` subpath — the pin printed in WebGL
+ * procedures. demo-smoke asserts it against node_modules/three, so it cannot
+ * drift from what is installed.
+ */
+export const THREE_VERSION = "0.186.1";
+
+/** Import specifiers: core barrel vs the WebGL (three.js) subpath. */
+const PKG_CORE = "@cosmictraveler002/anim-kit";
+const PKG_THREE = "@cosmictraveler002/anim-kit/three";
 
 /** Indent every line of a snippet (for nesting it inside the example file). */
 const indent = (text, spaces) =>
@@ -170,6 +193,124 @@ pinned to \`@${CDN_VERSION}\`):
 `;
 
 /**
+ * Step 2 for WebGL effects (`/three` subpath) — same shape as
+ * PROCEDURE_SECTION, but the standalone bundle does NOT inline three, so
+ * Step 1 is an import map that pins `three`, the anim-kit /three entry and
+ * the same gsap/lenis pins the core procedure prints.
+ */
+const PROCEDURE_SECTION_THREE = (title, imports, markup, usage) => {
+  const pkg = PKG_THREE;
+  const map = [
+    `          "three": "https://cdn.jsdelivr.net/npm/three@${THREE_VERSION}/build/three.module.js",`,
+    `          "${PKG_THREE}": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/three/index.js",`,
+    `          "${PKG_CORE}": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/index.js",`,
+    `          "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/index.js",`,
+    `          "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollTrigger.js",`,
+    `          "gsap/SplitText": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/SplitText.js",`,
+    `          "gsap/Draggable": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/Draggable.js",`,
+    `          "gsap/CustomEase": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/CustomEase.js",`,
+    `          "gsap/Flip": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/Flip.js",`,
+    `          "gsap/ScrollSmoother": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollSmoother.js",`,
+    `          "lenis": "https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.mjs"`,
+  ].join("\n");
+
+  return `## 2. Procedure — run it from our CDN (no build step)
+
+Every URL is **version-pinned** — npm versions are immutable, so
+\`@cosmictraveler002/anim-kit@${CDN_VERSION}\` and \`three@${THREE_VERSION}\`
+always resolve to these exact builds, forever.
+
+**Step 1 — save this as \`index.html\`.** A complete working file: the markup
+from §1 plus initialisation, nothing else required:
+
+\`\`\`html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${title}</title>
+    <!-- companion stylesheet: masks, tokens, resting states -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/styles/anim-kit.css"
+    />
+    <!-- import map: three (optional peer) + the anim-kit WebGL entry, both pinned -->
+    <script type="importmap">
+      {
+        "imports": {
+${map}
+        }
+      }
+    </script>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 0; padding: 12vh 8vw; }
+      /* the WebGL wrapper: the canvas covers it, the <img> lays it out */
+      [data-gl] { position: relative; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 16px; }
+      [data-gl] img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    </style>
+  </head>
+  <body>
+${indent(markup.trim(), 4)}
+
+    <script type="module">
+      // three, gsap + lenis come from the import map; this line loads the entry.
+      import { ${imports.join(", ")} } from "${pkg}";
+
+      // Selectors that match nothing no-op safely — this never throws.
+${indent(usage.trim(), 6)}
+
+      // Keep the destroy function (see §5) and call it when the effect should
+      // stop: route change, content swap, HMR reload.
+    </script>
+  </body>
+</html>
+\`\`\`
+
+**Step 2 — open it.** Double-click the file, or serve it statically
+(\`npx serve\`, \`python -m http.server\`). No bundler, no \`npm install\`, no
+config — the import map pulls pinned ESM files straight from the CDN, the
+same bytes the npm tarball ships.
+
+**Step 3 — swap the loader only if you need a different strategy** (all
+pinned to \`@${CDN_VERSION}\`):
+
+- **unpkg instead of jsDelivr** — same import map, swap the CDN host:
+
+  \`\`\`
+  https://unpkg.com/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/three/index.js
+  https://unpkg.com/three@${THREE_VERSION}/build/three.module.js
+  \`\`\`
+
+- **already using a bundler (Vite / Next / Webpack / Astro)?** Install both
+  packages and skip the map — node resolves \`three\` from your lockfile:
+
+  \`\`\`sh
+  npm install three @cosmictraveler002/anim-kit
+  \`\`\`
+
+  \`\`\`js
+  import { ${imports.join(", ")} } from "${pkg}";
+  import "@cosmictraveler002/anim-kit/styles"; // companion stylesheet
+  \`\`\`
+
+**The building blocks you just loaded:**
+
+- \`three\` — one \`WebGLRenderer\` per card, an orthographic camera in pixel
+  space and a single \`ShaderMaterial\`: rounded-box SDF corners, the hover
+  dent (sample squeeze + dome shading), chroma split and the reveal wipe all
+  run in one fragment shader.
+- \`gsap\` + \`ScrollTrigger\` drive the hover/reveal tweens and anything you
+  compose; \`lenis\` powers \`smoothScroll()\`.
+- The wrapper keeps the layout (its \`<img>\` supplies sizing + alt text); the
+  canvas only paints. Without WebGL the effect no-ops and the image shows.
+- It is plain ESM with \`.d.ts\` files — TypeScript consumers get types from
+  the same URLs, e.g. \`https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@${CDN_VERSION}/dist/three/index.d.ts\`.
+`;
+
+};
+
+/**
  * Effect taxonomy — the single source of truth for how anim-kit's effects are
  * classified. Two levels: category → subcategory → effects.
  *
@@ -198,7 +339,7 @@ export const TAXONOMY = [
       { id: "reveals", name: "Line & mask reveals", effects: ["lineReveal", "maskReveal"] },
       { id: "scatter", name: "Per-character scatter", effects: ["scatterText"] },
       { id: "decode", name: "Decode & scramble", effects: ["scrambleText"] },
-      { id: "rolls", name: "Rolling text", effects: ["rollText"] },
+      { id: "rolls", name: "Rolling text", effects: ["rollText", "reelText"] },
       { id: "counters", name: "Counters", effects: ["counter"] },
       { id: "transfer", name: "Layout transfers", effects: ["flipWords"] },
     ],
@@ -215,12 +356,20 @@ export const TAXONOMY = [
     ],
   },
   {
+    id: "webgl",
+    name: "WebGL",
+    blurb: "GPU media — shader cards drawn with three.js, straight over your images.",
+    subcategories: [
+      { id: "shadermedia", name: "Shader media", effects: ["webglMedia"] },
+    ],
+  },
+  {
     id: "loops",
     name: "Loops & marquees",
     blurb: "Continuous motion — tickers, infinite draggables, indicators.",
     subcategories: [
       { id: "marquees", name: "Marquees", effects: ["marquee"] },
-      { id: "draggables", name: "Infinite draggables", effects: ["dragStrip"] },
+      { id: "draggables", name: "Draggables & rails", effects: ["dragStrip", "dragRail"] },
       { id: "equalizers", name: "Equalizers", effects: ["audioBars"] },
     ],
   },
@@ -286,8 +435,10 @@ export function taxonomyEffects() {
 
 /** Render one catalogue entry into a full prompt. */
 export function renderPrompt(entry) {
-  const { title, summary, imports, markup, usage, options = [], notes = [] } = entry;
+  const { title, summary, imports, markup, usage, options = [], notes = [], importsFrom } = entry;
 
+  // WebGL effects load from the /three subpath (different procedure + note).
+  const three = importsFrom === PKG_THREE;
   const out = [PREAMBLE(title, summary)];
 
   const cls = classify(entry.id);
@@ -297,7 +448,11 @@ export function renderPrompt(entry) {
 
   // Step 2: the copy-paste procedure — complete file from the CDN first,
   // then alternative loaders and the npm/bundler fallback.
-  out.push(PROCEDURE_SECTION(title, imports, markup, usage));
+  out.push(
+    three
+      ? PROCEDURE_SECTION_THREE(title, imports, markup, usage)
+      : PROCEDURE_SECTION(title, imports, markup, usage),
+  );
 
   out.push(`## 3. Initialise\n\nRun this after the DOM is ready (and after fonts/images if it measures layout):\n\n\`\`\`js\n${usage.trim()}\n\`\`\`\n`);
 
@@ -311,7 +466,7 @@ export function renderPrompt(entry) {
     out.push(`## Notes\n\n${notes.map((n) => `- ${n}`).join("\n")}\n`);
   }
 
-  out.push(EPILOGUE);
+  out.push(EPILOGUE + (three ? THREE_EPILOGUE : ""));
   return out.join("\n");
 }
 
@@ -1241,7 +1396,112 @@ console.log(theme.current());`,
       "`destroy()` removes the injected styles and listeners but leaves the current theme applied.",
     ],
   },
-];
+
+  {
+    id: "reelText",
+    title: "Reel text — per-character odometer roll",
+    summary:
+      "Every character gets a masked vertical strip of ghost glyphs that rolls upward and lands on the real text — a DOM slot-machine decode for headlines and stat lines, scroll-triggered or immediate.",
+    imports: ["reelText"],
+    markup: `<p data-reel>Every character rolls into place.</p>`,
+    usage: `// immediate (default) or scroll: roll when the line enters the viewport
+const destroy = reelText("[data-reel]", {
+  mode: "scroll",
+  frames: 4,      // ghost glyphs per character before the final one
+  stagger: 0.05,  // left-to-right wave between characters
+  duration: 0.8,  // roll time per character
+  replay: false,  // true = re-arm on every scroll re-entry
+});`,
+    options: [
+      ["mode", "`'immediate'`", "`'scroll'` rolls on viewport enter instead of on mount."],
+      ["start", "`'top 85%'`", "ScrollTrigger start (only with `mode: 'scroll'`)."],
+      ["frames", "`4`", "Ghost frames per character before the final glyph."],
+      ["duration", "`0.8`", "Roll duration per character, seconds."],
+      ["stagger", "`0.05`", "Delay between characters, seconds."],
+      ["ease", "`'power4.out'`", "GSAP ease for the roll."],
+      ["replay", "`false`", "Re-arm on every scroll re-entry instead of playing once."],
+      ["force", "`false`", "Run even under `prefers-reduced-motion`."],
+    ],
+    notes: [
+      "Targets must be **plain text** — the effect snapshots `innerHTML`, splits the text into masks and restores the original markup byte for byte when the roll completes (and on `destroy()`), so screen readers and copy/paste always see the final line.",
+      "Only alphanumerics spin; spaces and punctuation pass through. Ghost glyphs match the character's case (uppercase rolls through A–Z), so the line never changes colour mid-roll.",
+      "No stylesheet required: each wrapper is measured from its *final* glyph (no width jitter while spinning), inherits the target's `line-height`, and carries inline mask styles.",
+      "Reduced motion leaves the target completely untouched.",
+    ],
+  },
+  {
+    id: "dragRail",
+    title: "Drag rail — bounded inertia rail",
+    summary:
+      "A grabbable horizontal rail with real physics: pointer, wheel and trackpad feed one intent value, the track lerps toward it, the ends give way through a tanh rubber-band, and a flick coasts on sampled momentum. Finite — unlike dragStrip's infinite loop.",
+    imports: ["dragRail"],
+    markup: `<div class="rail-viewport"> <!-- overflow: hidden -->
+  <div data-rail> <!-- display: flex; width: max-content; gap: 1rem;
+                       cursor: grab; user-select: none; touch-action: pan-y -->
+    <img src="card-01.jpg" alt="" draggable="false" />
+    <img src="card-02.jpg" alt="" draggable="false" />
+    <img src="card-03.jpg" alt="" draggable="false" />
+  </div>
+</div>`,
+    usage: `const destroy = dragRail("[data-rail]", {
+  tilt: 0.05,      // children lean into motion (deg per px/frame), 0 = off
+  throwScale: 14,  // momentum multiplier on release
+  wheel: true,     // trackpad/wheel drives the rail too
+});`,
+    options: [
+      ["viewport", "track's parent", "Scroll viewport around the track."],
+      ["item", "`:scope > *`", "Children that tilt with velocity."],
+      ["lerp", "`0.1`", "Follow speed toward the intent, per 60fps frame (0..1)."],
+      ["edge", "`140`", "Rubber-band resistance distance past the ends, px."],
+      ["throwScale", "`14`", "Momentum multiplier on release."],
+      ["wheel", "`true`", "Wheel/trackpad drives the rail (consumed while it can still move)."],
+      ["tilt", "`0`", "Degrees of tilt per px/frame of velocity — `0` disables."],
+      ["tiltMax", "`8`", "Tilt clamp, degrees."],
+      ["onTick", "—", "`(pos, velocity) => {}` every rendered frame — feed shaders/skews."],
+      ["force", "`false`", "Run even under `prefers-reduced-motion`."],
+    ],
+    notes: [
+      "**Single writer.** One ticker renders `intent → pos` with a `lerp * deltaRatio` catch-up; pointermove, wheel and release only ever touch *intent*. Nothing else writes the track's transform — that separation is what gives a hard throw its buttery settle.",
+      "**tanh rubber-band.** Past either end, intent squashes through `edge * tanh(overshoot / edge)`: pull further, gain less, never a hard stop. When input stops a restore force springs the overscrolled intent home while the lerp chases it.",
+      "**Wheel is Lenis-safe.** While the rail can still move in that direction the event gets `preventDefault` **and** `stopPropagation` (Lenis listens above us and would scroll the page in parallel). Once over-extended a full `edge`, the wheel passes through to the page — the section never traps the reader.",
+      "**vs dragStrip**: `dragStrip` clones tiles for a seamless *infinite* loop; `dragRail` is *bounded* with elastic ends — use one per page-role, not both on the same content.",
+      "`destroy()` removes every listener + the ticker, clears the track transform/tilt and restores the inline cursor / user-select / touch-action the effect overwrote.",
+    ],
+  },
+  {
+    id: "webglMedia",
+    title: "WebGL media — three.js shader card",
+    summary:
+      "Re-renders a plain <img> as a rounded GL plane: hover presses a dent into the picture (sample squeeze + fake dome lighting), splits its channels, and the card wipes in on reveal — one fragment shader, silent no-op wherever WebGL isn't available.",
+    imports: ["webglMedia"],
+    importsFrom: "@cosmictraveler002/anim-kit/three",
+    markup: `<figure data-gl> <!-- position: relative; aspect-ratio: 4/3; overflow: hidden -->
+  <img src="photo.jpg" alt="" />
+</figure>`,
+    usage: `const destroy = webglMedia("[data-gl]", {
+  corner: 18, // rounded-corner radius, px (shader SDF, not border-radius)
+  dent: 70,   // hover press depth, px
+  chroma: 2,  // rgb split at full hover, px
+});`,
+    options: [
+      ["src", "first `<img>`", "Image source override when the wrapper has no image."],
+      ["corner", "`16`", "Corner radius, px (rounded-box SDF in the fragment shader)."],
+      ["dent", "`70`", "Dent depth pressed into the card on hover, px."],
+      ["chroma", "`2`", "Chromatic split at full hover, px."],
+      ["reveal", "`true`", "Wipe the card in bottom-up when its texture loads."],
+      ["revealDuration", "`1.1`", "Reveal duration, seconds."],
+      ["hoverDuration", "`0.6`", "Hover response duration, seconds."],
+      ["dpr", "`2`", "Device-pixel-ratio cap."],
+      ["force", "`false`", "Run even under `prefers-reduced-motion`."],
+    ],
+    notes: [
+      "**Optional peer.** Imports from `@cosmictraveler002/anim-kit/three` — `three` is never a core dependency. Bundler: `npm i three`; CDN: the §2 import map serves the pinned build.",
+      "**Silent no-op ladder**: missing target → no-op; no `WebGLRenderingContext` (SSR, jsdom, WebGL disabled) → no-op *before* any context probe; renderer refused → no-op; texture 404 → the plain `<img>` stays visible. Nothing ever logs.",
+      "The `<img>` keeps layout and alt text (the canvas covers the wrapper and only takes over its pixels once the texture has loaded); destroy removes the canvas and puts the image back.",
+      "Corners are shader-true (SDF with a 1px AA edge), cover-crop runs in-shader (`object-fit: cover` maths), so any source aspect fills any card aspect without letterboxing.",
+      "Reduced motion → the canvas never mounts; the static image is the resting state. `destroy()` kills ticker + tweens + observers and disposes geometry, material, texture and renderer.",
+    ],
+  },];
 
 /** id → rendered prompt text. */
 export function promptsById() {
@@ -1255,6 +1515,8 @@ export function promptsPayload() {
     // release pin — the docs page interpolates its CDN blocks from this, and
     // demo-smoke fails the build if package.json/README drift from it.
     version: CDN_VERSION,
+    // release pin for the optional three peer (docs import map + asserts)
+    threeVersion: THREE_VERSION,
     categories: TAXONOMY.map((c) => ({
       id: c.id,
       name: c.name,
@@ -1269,6 +1531,7 @@ export function promptsPayload() {
       // structured fields — the docs page (demo/docs.js) renders these as
       // import/markup/usage/options/notes blocks alongside the rendered text.
       imports: e.imports,
+      ...(e.importsFrom ? { importsFrom: e.importsFrom } : {}),
       markup: e.markup,
       usage: e.usage,
       options: e.options ?? [],

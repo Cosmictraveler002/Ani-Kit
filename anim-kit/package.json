@@ -1,6 +1,6 @@
 {
   "name": "@cosmictraveler002/anim-kit",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Modular, framework-agnostic animation library — GSAP + ScrollTrigger + Lenis effects packaged as composable ES modules.",
   "type": "module",
   "main": "./dist/index.js",
@@ -16,6 +16,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/anim-kit.standalone.js",
       "default": "./dist/anim-kit.standalone.js"
+    },
+    "./three": {
+      "types": "./dist/three/index.d.ts",
+      "import": "./dist/three/index.js",
+      "default": "./dist/three/index.js"
     },
     "./effects/*": {
       "types": "./dist/effects/*.d.ts",
@@ -76,8 +81,18 @@
     "gsap": "^3.13.0",
     "lenis": "^1.3.11"
   },
+  "peerDependencies": {
+    "three": ">=0.160.0"
+  },
+  "peerDependenciesMeta": {
+    "three": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@types/three": "^0.186.0",
     "jsdom": "^25.0.1",
+    "three": "^0.186.1",
     "tsup": "^8.5.1",
     "typescript": "^5.7.3"
   }

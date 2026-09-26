@@ -24,13 +24,37 @@ const html = readFileSync(path.join(root, "demo", "index.html"), "utf8");
 const { dom, window, errors } = setupDom(html, { verbose: false });
 const doc = window.document;
 
+// The import map must carry the /three entry + a local three build — without
+// both, the WebGL section is dead on arrival. The generator rewrites each to
+// a version-pinned CDN URL (asserted further down against demo_live/).
+const importMapBlock = html.match(/<script type="importmap">([\s\S]*?)<\/script>/);
+assert.ok(importMapBlock, "demo index.html must ship an import map");
+assert.ok(
+  importMapBlock[1].includes('"/dist/three/index.js"') &&
+    importMapBlock[1].includes("/node_modules/three/build/three.module.js"),
+  "import map must map @cosmictraveler002/anim-kit/three and the three build",
+);
+
 /* ---------------- run the real demo wiring ---------------- */
 // demo.js imports the scoped specifier "@cosmictraveler002/anim-kit"; Node has
 // no import maps, so rewrite it to the built bundle and execute it as a module.
-const demoSrc = readFileSync(path.join(root, "demo", "demo.js"), "utf8").replace(
-  'from "@cosmictraveler002/anim-kit"',
-  'from "../dist/index.js"',
-);
+const demoSrc = readFileSync(path.join(root, "demo", "demo.js"), "utf8")
+  .replace('from "@cosmictraveler002/anim-kit"', 'from "../dist/index.js"')
+  .replace('from "@cosmictraveler002/anim-kit/three"', 'from "../dist/three/index.js"')
+  // The reel rolls and restores itself ~2s after wiring — by the time this
+  // module finishes evaluating, the mounted state is already gone (jsdom
+  // wiring takes seconds). Snapshot it AT the call site instead, or the
+  // structure assert below races the animation.
+  .replace(
+    'cleanups.push(reelText("[data-reel]", { mode: "scroll", frames: 4 }));',
+    `const __reel = reelText("[data-reel]", { mode: "scroll", frames: 4 });
+  globalThis.__reelAtWire = {
+    stamped: document.querySelector("[data-reel]")?.dataset.akReel,
+    cells: document.querySelectorAll("[data-reel] .ak-reel__ch").length,
+    strips: document.querySelectorAll("[data-reel] .ak-reel__strip").length,
+  };
+  cleanups.push(__reel);`,
+  );
 const tmp = path.join(here, ".tmp-demo-run.mjs");
 writeFileSync(tmp, demoSrc, "utf8");
 
@@ -60,6 +84,7 @@ const {
   classify,
   taxonomyEffects,
   promptsPayload,
+  THREE_VERSION,
 } = await import("../scripts/prompts.mjs");
 const payload = promptsPayload();
 const promptIds = new Set(PROMPT_ENTRIES.map((e) => e.id));
@@ -167,6 +192,34 @@ assert.equal(
 );
 console.log("ok  rollText wrapped its rows + clone, scrambleText stamped");
 
+// New expansion effects: dragRail stamps its track and keeps it until
+// teardown; webglMedia must no-op silently under jsdom (no WebGLRenderingContext
+// — it exits before any context probe, the probe itself logs a jsdom error).
+// The reel's mounted state is snapshotted at its call site (see the demoSrc
+// rewrite above) because its roll restores the markup mid-test.
+assert.equal(
+  globalThis.__reelAtWire?.stamped,
+  "true",
+  "reelText should stamp + split its chars when demo.js wires it",
+);
+assert.ok(
+  (globalThis.__reelAtWire?.cells ?? 0) > 0 && (globalThis.__reelAtWire?.strips ?? 0) > 0,
+  "reelText should build roll strips + cells at wiring (reel did not split)",
+);
+assert.equal(
+  doc.querySelector("[data-rail]")?.dataset.akRail,
+  "true",
+  "dragRail should stamp the demo rail track",
+);
+const glCards = [...doc.querySelectorAll("[data-gl]")];
+assert.ok(glCards.length >= 3, `demo should show at least 3 WebGL cards (saw ${glCards.length})`);
+assert.equal(
+  doc.querySelectorAll("[data-gl] canvas").length,
+  0,
+  "jsdom has no WebGL — webglMedia must mount nothing (plain <img> fallback)",
+);
+console.log("ok  reelText split, dragRail stamped, webglMedia no-oped without WebGL");
+
 /* ---------------- copy-prompt catalogue ---------------- */
 // (entries, classify, payload — imported above so the dock could fetch them)
 
@@ -197,9 +250,11 @@ for (const a of [...doc.querySelectorAll('a[href^="#"]')]) {
 // each prompt is a self-contained implementation guide.
 for (const entry of PROMPT_ENTRIES) {
   const text = renderPrompt(entry);
+  // Most effects import from the core barrel; WebGL effects come from /three.
+  const pkg = entry.importsFrom ?? "@cosmictraveler002/anim-kit";
   assert.ok(
-    text.includes(`import { ${entry.imports.join(", ")} } from "@cosmictraveler002/anim-kit"`),
-    `prompt "${entry.id}" must show the import`,
+    text.includes(`import { ${entry.imports.join(", ")} } from "${pkg}"`),
+    `prompt "${entry.id}" must show the import from ${pkg}`,
   );
   assert.ok(text.includes("destroy()"), `prompt "${entry.id}" must show teardown`);
   assert.ok(text.includes("## 1. Markup"), `prompt "${entry.id}" must include markup`);
@@ -257,6 +312,20 @@ for (const p of payload.prompts) {
   assert.ok(p.markup && p.usage, `payload "${p.id}" must ship markup + usage for the docs page`);
   assert.ok(p.text.includes(`@${payload.version}`), `prompt "${p.id}" must pin @${payload.version}`);
 }
+// The WebGL entry imports from the /three subpath (docs page renders it), and
+// the three CDN pin must match what's actually installed — a drifted pin 404s.
+const glEntry = payload.prompts.find((p) => p.id === "webglMedia");
+assert.ok(glEntry, "payload must include webglMedia");
+assert.equal(
+  glEntry.importsFrom,
+  "@cosmictraveler002/anim-kit/three",
+  "webglMedia prompt must import from the /three subpath",
+);
+assert.equal(
+  payload.threeVersion,
+  JSON.parse(readFileSync(path.join(root, "node_modules", "three", "package.json"), "utf8")).version,
+  "payload three pin must match the installed three",
+);
 assert.ok(readme.includes(`@${payload.version}`), `README must pin @${payload.version}`);
 const docsHtml = readFileSync(path.join(root, "demo", "docs.html"), "utf8");
 const docsJs = readFileSync(path.join(root, "demo", "docs.js"), "utf8");
@@ -271,20 +340,26 @@ console.log(`ok  docs page ships from the payload, all pins @${payload.version}`
 // internal links, and a static prompts.json so the dock + docs work without
 // the Node server. Disk must equal a fresh transform — otherwise sync:live.
 const liveFiles = buildFiles();
-const liveOnDisk = readdirSync(path.join(root, "demo_live"))
-  .filter((n) => !n.startsWith(".")) // host/CLI artifacts (.vercel/, .gitignore) aren't generated
-  .sort();
+// Recursive: demo_live nests now (assets/…), and dotfiles at ANY depth
+// (.vercel/, .gitignore) are host/CLI artifacts that aren't generated.
+const walkLive = (dir, prefix = "") =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+    e.name.startsWith(".")
+      ? []
+      : e.isDirectory()
+        ? walkLive(path.join(dir, e.name), `${prefix}${e.name}/`)
+        : [`${prefix}${e.name}`],
+  );
+const liveOnDisk = walkLive(path.join(root, "demo_live")).sort();
 assert.deepEqual(
   liveOnDisk,
   Object.keys(liveFiles).sort(),
   "demo_live file set drifted — run `npm run sync:live`",
 );
 for (const [name, want] of Object.entries(liveFiles)) {
-  assert.equal(
-    readFileSync(path.join(root, "demo_live", name), "utf8"),
-    want,
-    `demo_live/${name} is stale — run \`npm run sync:live\``,
-  );
+  const got = readFileSync(path.join(root, "demo_live", name));
+  const same = Buffer.isBuffer(want) ? got.equals(want) : got.toString("utf8") === want;
+  assert.ok(same, `demo_live/${name} is stale — run \`npm run sync:live\``);
 }
 const liveIndex = liveFiles["index.html"];
 assert.ok(
@@ -293,6 +368,11 @@ assert.ok(
   `demo_live must pin the CDN build at @${payload.version}`,
 );
 assert.ok(!liveIndex.includes('"/dist/index.js"'), "demo_live must not fall back to the local bundle");
+assert.ok(
+  liveIndex.includes(`three@${payload.threeVersion}/build/three.module.js`) &&
+    liveIndex.includes(`anim-kit@${payload.version}/dist/three/index.js`),
+  "demo_live must pin three + the anim-kit /three entry on the CDN",
+);
 assert.ok(
   liveFiles["prompts.json"].includes(`"version": "${payload.version}"`),
   `demo_live/prompts.json must carry the release version @${payload.version}`,
@@ -419,6 +499,30 @@ const unfoldAfter = doc.querySelector("[data-unfold]");
 assert.equal(unfoldAfter?.style.transform, "", "unfoldReveal teardown must clear transform");
 const clipAfter = doc.querySelector("[data-clip-left]");
 assert.equal(clipAfter?.style.clipPath, "", "clipWipe teardown must clear clip-path");
+const reelAfter = doc.querySelector("[data-reel]");
+assert.equal(reelAfter?.dataset.akReel, undefined, "reelText teardown must clear its stamp");
+assert.ok(
+  reelAfter && !reelAfter.querySelector(".ak-reel__ch"),
+  "reelText teardown must unwind the reel masks",
+);
+assert.ok(
+  reelAfter?.textContent.includes("rolls into place"),
+  `reelText must restore the original line (saw "${reelAfter?.textContent}")`,
+);
+const railAfter = doc.querySelector("[data-rail]");
+assert.equal(railAfter?.dataset.akRail, undefined, "dragRail teardown must clear its stamp");
+assert.equal(railAfter?.style.touchAction ?? "", "", "dragRail teardown must restore touch-action");
+assert.equal(railAfter?.style.transform, "", "dragRail teardown must clear the track transform");
+assert.equal(
+  doc.querySelectorAll("[data-gl] canvas").length,
+  0,
+  "webglMedia teardown must leave no canvas behind",
+);
+assert.equal(
+  doc.querySelector("[data-gl]")?.dataset.akGl,
+  undefined,
+  "webglMedia teardown must clear its stamp",
+);
 console.log("ok  expansion effects restore text / rows / transforms on teardown");
 assert.equal(
   lib.gsap.getTweensOf(Array.from(dragTrackEl.children)).length,

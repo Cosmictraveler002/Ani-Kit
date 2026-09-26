@@ -78,8 +78,9 @@ inside the published tarball):
 
 | Specifier | Resolves to | Use for |
 |---|---|---|
-| `@cosmictraveler002/anim-kit` | `dist/index.js` + `dist/index.d.ts` | the full barrel — 45 exports |
+| `@cosmictraveler002/anim-kit` | `dist/index.js` + `dist/index.d.ts` | the full barrel — 47 exports |
 | `@cosmictraveler002/anim-kit/effects/<name>` | `dist/effects/<name>.js` + `.d.ts` | one effect in isolation (`marquee`, `lineReveal`, …) |
+| `@cosmictraveler002/anim-kit/three` | `dist/three/index.js` + `.d.ts` | WebGL effects — needs the optional `three` peer (never a core dep) |
 | `@cosmictraveler002/anim-kit/standalone` | `dist/anim-kit.standalone.js` (types → `index.d.ts`) | the self-contained bundle — same API |
 | `@cosmictraveler002/anim-kit/styles` | `dist/styles/anim-kit.css` | untouched plain CSS |
 
@@ -97,7 +98,7 @@ resolves declarations through the same map — no `typesVersions` shim needed.
 
 No build step on the consumer's end: `dist/` is served as-is from the npm
 tarball by any npm CDN. Every URL is **version-pinned** — npm versions are
-immutable, so `@cosmictraveler002/anim-kit@1.2.0` always resolves to exactly that build, forever
+immutable, so `@cosmictraveler002/anim-kit@1.3.0` always resolves to exactly that build, forever
 (only a new version creates a new URL; nothing floats unless you ask for a
 range).
 
@@ -108,12 +109,12 @@ plugins anim-kit uses) and `lenis` **inlined** — no import map, one URL, works
 identically on jsDelivr and unpkg:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.2.0/dist/styles/anim-kit.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.3.0/dist/styles/anim-kit.css" />
 
 <script type="module">
   import {
     smoothScroll, lineReveal, marquee,
-  } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.2.0/dist/anim-kit.standalone.js";
+  } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.3.0/dist/anim-kit.standalone.js";
 
   smoothScroll();
   lineReveal("[data-lines]", { mode: "scroll" });
@@ -121,7 +122,7 @@ identically on jsDelivr and unpkg:
 </script>
 ```
 
-unpkg serves the same file: `https://unpkg.com/@cosmictraveler002/anim-kit@1.2.0/dist/anim-kit.standalone.js`
+unpkg serves the same file: `https://unpkg.com/@cosmictraveler002/anim-kit@1.3.0/dist/anim-kit.standalone.js`
 
 ### Option 2 — jsDelivr `+esm`
 
@@ -130,7 +131,7 @@ per version):
 
 ```html
 <script type="module">
-  import { lineReveal } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.2.0/+esm";
+  import { lineReveal } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.3.0/+esm";
 </script>
 ```
 
@@ -142,12 +143,14 @@ locally, with CDN URLs — and the way to share one GSAP between anim-kit and
 the rest of your page:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.2.0/dist/styles/anim-kit.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.3.0/dist/styles/anim-kit.css" />
 
 <script type="importmap">
   {
     "imports": {
-      "@cosmictraveler002/anim-kit": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.2.0/dist/index.js",
+      "@cosmictraveler002/anim-kit": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.3.0/dist/index.js",
+      "@cosmictraveler002/anim-kit/three": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.3.0/dist/three/index.js",
+      "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
       "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/index.js",
       "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollTrigger.js",
       "gsap/SplitText": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/SplitText.js",
@@ -167,7 +170,7 @@ the rest of your page:
 </script>
 ```
 
-Swap the host for unpkg (`https://unpkg.com/@cosmictraveler002/anim-kit@1.2.0/dist/index.js`, …) —
+Swap the host for unpkg (`https://unpkg.com/@cosmictraveler002/anim-kit@1.3.0/dist/index.js`, …) —
 the file layout is identical. GSAP subpaths are listed one by one because
 import maps match specifiers literally: a trailing-slash prefix map would
 produce extension-less URLs, which CDNs don't serve. The `gsap`/`lenis` pins
@@ -310,15 +313,16 @@ prompt dock, and backs the `category` / `subcategory` fields on
 | Text animations | Line & mask reveals | `lineReveal`, `maskReveal` |
 | Text animations | Per-character scatter | `scatterText` |
 | Text animations | Decode & scramble | `scrambleText` |
-| Text animations | Rolling text | `rollText` |
+| Text animations | Rolling text | `rollText`, `reelText` |
 | Text animations | Counters | `counter` |
 | Text animations | Layout transfers | `flipWords` |
 | Scroll & media | Pinned galleries | `horizontalScroll`, `stackedCards`, `stackedCardsPinned` |
 | Scroll & media | Parallax & depth | `parallax` |
 | Scroll & media | Heroes & media | `heroShrink`, `mediaSettle` |
 | Scroll & media | Enter reveals | `revealRule`, `unfoldReveal`, `clipWipe` |
+| WebGL | Shader media | `webglMedia` |
 | Loops & marquees | Marquees | `marquee` |
-| Loops & marquees | Infinite draggables | `dragStrip` |
+| Loops & marquees | Draggables & rails | `dragStrip`, `dragRail` |
 | Loops & marquees | Equalizers | `audioBars` |
 | Buttons & links | Liquid fills | `liquidButton` |
 | Buttons & links | Underlines | `underlineLink` |
@@ -382,7 +386,7 @@ Central reduced-motion gate. If the user prefers reduced motion and
 ### Text animations
 
 Typography in motion — masked lines, rising masks, per-character scatter,
-decode reveals, rolling words, tickers, layout transfers.
+decode reveals, rolling words and reels, tickers, layout transfers.
 
 #### `lineReveal(target, options?) => destroy`
 
@@ -510,6 +514,40 @@ rollText("[data-roll-rev]", { direction: "down" }); // walk rows in reverse
 **DOM:** rows are direct children of the target; the effect stacks them as
 blocks itself. `destroy()` unwraps the rows, removes the clone and restores
 every inline style — markup comes back byte-identical.
+
+#### `reelText(target, options?) => destroy`
+
+Per-character odometer roll — the DOM slot-machine decode. Every alphanumeric
+character gets a masked cell holding a vertical strip of same-case ghost
+glyphs; the strip rolls upward and lands on the real text, staggered left to
+right. Spaces and punctuation pass through untouched.
+
+```html
+<p data-reel>Every character rolls into place.</p>
+```
+
+```ts
+reelText("[data-reel]", { mode: "scroll", frames: 4, stagger: 0.05 }); // roll on enter
+reelText("[data-immediate]");                                          // roll at init
+```
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `mode` | `"immediate"` | `"scroll"` rolls on viewport enter instead |
+| `start` | `"top 85%"` | ScrollTrigger start (scroll mode) |
+| `frames` | `4` | ghost glyphs per character before the final one |
+| `duration` | `0.8` | roll time per character, seconds |
+| `stagger` | `0.05` | delay between characters, seconds |
+| `ease` | `"power4.out"` | GSAP ease for the roll |
+| `replay` | `false` | re-arm on every scroll re-entry instead of once |
+| `force` | `false` | run even under `prefers-reduced-motion` |
+
+**DOM:** targets must be plain text — the effect snapshots `innerHTML`, wraps
+each character in a measured mask (width taken from the *final* glyph, so the
+line never jitters while spinning) and restores the original markup byte for
+byte when the roll completes and on `destroy()`. Scroll-mode registration
+happens once and is killed on teardown; reduced motion leaves the target
+completely untouched. No stylesheet required — masks are inline.
 
 #### `flipWords(target, { to }, options?) => destroy`
 
@@ -757,9 +795,63 @@ the entrance.
 
 ---
 
+### WebGL
+
+GPU media — three.js re-renders your images as shader cards. This is the only
+category behind the `@cosmictraveler002/anim-kit/three` subpath: `three` is an
+**optional peer** (see [Subpath exports](#subpath-exports)), so the core
+barrel and the standalone bundle stay three-free.
+
+#### `webglMedia(target, options?) => destroy`
+
+> From `@cosmictraveler002/anim-kit/three`, not the core barrel.
+
+Re-renders a plain `<img>` as a rounded GL plane: hover presses a dent into
+the picture (the sample UV is squeezed toward the cursor, with a fake dome
+lighting term and a chroma split), and the card wipes in bottom-up on reveal.
+Corners are shader-true (rounded-box SDF with a 1px AA edge) and the cover
+crop runs in-shader (`object-fit: cover` maths), so any source aspect fills
+any card aspect without letterboxing.
+
+```html
+<figure data-gl><img src="photo.jpg" alt="" /></figure>
+```
+
+```ts
+import { webglMedia } from "@cosmictraveler002/anim-kit/three";
+
+webglMedia("[data-gl]", { corner: 18, dent: 70, chroma: 2 });
+```
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `src` | first `<img>` | image source override when the wrapper has none |
+| `corner` | `16` | corner radius, px (SDF, not `border-radius`) |
+| `dent` | `70` | dent depth pressed into the card on hover, px |
+| `chroma` | `2` | rgb split at full hover, px |
+| `reveal` | `true` | wipe the card in bottom-up when its texture loads |
+| `revealDuration` | `1.1` | reveal duration, seconds |
+| `hoverDuration` | `0.6` | hover response duration, seconds |
+| `dpr` | `2` | device-pixel-ratio cap |
+| `force` | `false` | run even under `prefers-reduced-motion` |
+
+**Silent no-op ladder.** Missing target → no-op; no `WebGLRenderingContext`
+(SSR, jsdom, WebGL disabled) → no-op *before* any context probe (a probe
+itself logs an error in jsdom); renderer refused → no-op; texture 404 → the
+plain `<img>` stays visible. Nothing ever logs. Reduced motion → the canvas
+never mounts; the static image is the resting state.
+
+**DOM.** The wrapper gets inline `position: relative` if it was static (so
+the canvas can cover it — restored on destroy) and keeps layout, sizing and
+alt text in its `<img>`; the canvas takes over only after the texture has
+loaded. `destroy()` kills ticker + tweens + resize observer and disposes
+geometry, material, texture and renderer.
+
+---
+
 ### Loops & marquees
 
-Continuous motion — marquees, infinite draggables, equaliser bars.
+Continuous motion — marquees, draggable rails, equaliser bars.
 
 #### `marquee(track, options?) => destroy`
 
@@ -827,6 +919,50 @@ cursor/user-select/touch-action.
 `width: max-content` (the effect sets `cursor: grab`, `user-select: none` and
 `touch-action: pan-y` inline and restores them on destroy); items keep
 `transform-origin: 50% 100%` so they pivot from their base.
+
+#### `dragRail(track, options?) => destroy`
+
+Bounded drag rail with real physics — the finite counterpart to
+`dragStrip()`'s infinite loop. Pointer, wheel and trackpad all feed one
+*intent* value; a single ticker lerps the track toward it (`lerp` scaled by
+GSAP's `deltaRatio`, so the settle rate is framerate-independent), past
+either end the intent squashes through a tanh rubber-band
+(`edge * tanh(overshoot / edge)` — pull further, gain less, never a hard
+stop), and a release coasts on velocity sampled over the last few frames.
+
+```ts
+dragRail("[data-rail]", { tilt: 0.05, throwScale: 14, wheel: true });
+```
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `viewport` | track's parent | scroll viewport around the track |
+| `item` | `":scope > *"` | children that tilt with velocity |
+| `lerp` | `0.1` | follow speed toward intent, per 60fps frame (0..1) |
+| `edge` | `140` | rubber-band resistance distance past the ends, px |
+| `throwScale` | `14` | momentum multiplier on release |
+| `wheel` | `true` | wheel/trackpad drives the rail too |
+| `tilt` | `0` | degrees of tilt per px/frame of velocity (`0` = off) |
+| `tiltMax` | `8` | tilt clamp, degrees |
+| `onTick` | — | `(pos, velocity) => {}` every rendered frame |
+| `force` | `false` | run even under `prefers-reduced-motion` |
+
+**Single writer.** Pointer, wheel and release handlers only ever touch
+*intent*; the ticker is the sole writer of the track transform — that
+separation is what gives a hard throw its buttery settle (the v1 stutter
+came from letting every input path write `x` directly).
+
+**Wheel is Lenis-safe.** While the rail can still move in that direction the
+event gets `preventDefault` **and** `stopPropagation` (Lenis listens above us
+and would scroll the page in parallel). Once over-extended a full `edge`, the
+wheel passes through to the page — the section never traps the reader. When
+input stops, a restore force springs any overscrolled intent home while the
+lerp chases it.
+
+**DOM:** same shape as `dragStrip` — `overflow: hidden` viewport, flex track
+of `width: max-content`; the effect sets inline `cursor` / `user-select` /
+`touch-action` and clears them plus the transform/tilt on `destroy()`. Feed
+`onTick(pos, velocity)` a shader or skew effect to drive along with the rail.
 
 #### `audioBars(target, options?) => handle`
 
@@ -1174,8 +1310,10 @@ Two trees share that wiring:
   offline, and the pages `demo-smoke` drives.
 - **`demo_live/`** (`npm run sync:live` regenerates it from `demo/`) — a
   deploy-anywhere copy: the **version-pinned CDN** import map and stylesheet
-  (jsdelivr `@<version>` for the package, `gsap@3.15.0`, `lenis@1.3.26` —
-  the exact URLs the prompts teach), relative internal links, a generated
+  (jsdelivr `@<version>` for the package — the `/three` subpath included —
+  plus `three@0.186.1`, `gsap@3.15.0`, `lenis@1.3.26`: the exact URLs the
+  prompts teach), a byte-copied `assets/` folder, relative internal links, a
+  generated
   `prompts.json`, and agent crawler files (`robots.txt`, `sitemap.xml`,
   `llms.txt` with absolute URLs from `SITE_URL`), so the dock and docs run on
   any static host with no Node server (`/api/prompts` first, `prompts.json`
@@ -1209,7 +1347,7 @@ and slotting the effect into a subcategory.
 **Unit smoke** (`scripts/smoke.mjs`) runs the built bundle in **jsdom** and
 asserts:
 
-1. all 45 exports are present;
+1. all 47 exports are present;
 2. plugins (`ScrollTrigger`, `SplitText`, `Draggable`, `CustomEase`,
    `Flip`, `ScrollSmoother`) and the 4 custom eases are registered;
 3. every effect no-ops safely on missing targets;
@@ -1254,7 +1392,7 @@ anim-kit/
 │  │  └─ types.ts          TargetLike / Destroy / CommonOptions
 │  ├─ effects/             one file per effect (24 files, 28 effect functions)
 │  ├─ styles/anim-kit.css  companion stylesheet
-│  └─ index.ts             barrel — 45 exports
+│  └─ index.ts             barrel — 47 exports
 ├─ demo/                   visual demo (import map, no bundler)
 ├─ scripts/
 │  ├─ serve.mjs            static server + /api/prompts (:4321)

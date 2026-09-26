@@ -102,7 +102,11 @@ function effectArticle(p) {
   art.append(sum);
 
   art.append(label("Import"));
-  art.append(codeBlock(`import { ${p.imports.join(", ")} } from "@cosmictraveler002/anim-kit";`));
+  art.append(
+    codeBlock(
+      `import { ${p.imports.join(", ")} } from "${p.importsFrom ?? "@cosmictraveler002/anim-kit"}";`,
+    ),
+  );
 
   if (p.markup) {
     art.append(label("Markup"));
@@ -201,6 +205,8 @@ function fillStatic(data) {
     `  {`,
     `    "imports": {`,
     `      "@cosmictraveler002/anim-kit": "${pkg}/dist/index.js",`,
+    `      "@cosmictraveler002/anim-kit/three": "${pkg}/dist/three/index.js",`,
+    `      "three": "https://cdn.jsdelivr.net/npm/three@${data.threeVersion}/build/three.module.js",`,
     `      "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/index.js",`,
     `      "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollTrigger.js",`,
     `      "gsap/SplitText": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/SplitText.js",`,

@@ -41,6 +41,8 @@ const { dom, window } = setupDom(
        <div data-flip-from><span data-flip-word>alpha</span><span data-flip-word>beta</span></div>
        <div data-flip-to></div>
        <nav data-nav><p>brand</p></nav>
+       <p data-reel>Reel this line</p>
+       <div data-rail-viewport><div data-rail><i>x</i><i>y</i></div></div>
      </div>
    </body></html>`,
   { url: "http://localhost:4321/demo/" },
@@ -58,9 +60,9 @@ const expected = [
   "horizontalScroll", "stackedCards", "stackedCardsPinned", "scatterText", "heroShrink",
   "mediaSettle", "navHide", "logoReveal",
   // loops
-  "marquee", "rollText", "dragStrip",
+  "marquee", "rollText", "dragStrip", "dragRail",
   // text extras
-  "scrambleText", "flipWords",
+  "scrambleText", "reelText", "flipWords",
   // micro
   "liquidButton", "underlineLink", "cursorFollower", "magnetic", "counter", "audioBars",
   "themeReveal", "menuOverlay", "preloader",
@@ -115,7 +117,8 @@ const asDestroy = (ret) => (typeof ret === "function" ? ret : ret?.destroy);
 const factories = [
   "lineReveal", "maskReveal", "revealRule", "unfoldReveal", "clipWipe", "parallax",
   "horizontalScroll", "stackedCards", "scatterText", "heroShrink", "mediaSettle",
-  "navHide", "logoReveal", "marquee", "rollText", "dragStrip", "scrambleText",
+  "navHide", "logoReveal", "marquee", "rollText", "dragStrip", "dragRail",
+  "scrambleText", "reelText",
   "liquidButton", "underlineLink",
   "cursorFollower", "counter", "audioBars", "magnetic", "flipWords",
 ];
@@ -167,6 +170,8 @@ const createDestroy = [
   ["flipWords", ["[data-flip-from]", { to: "[data-flip-to]" }]],
   ["navHide", ["[data-nav]"]],
   ["dragStrip", ["[data-drag]"]],
+  ["dragRail", ["[data-rail]"]],
+  ["reelText", ["[data-reel]"]],
   ["audioBars", ["[data-eq]", { interval: 50 }]],
   ["horizontalScroll", ["#hs-host .track"]],
   ["scatterText", ["#scatter-host"]],
@@ -284,6 +289,52 @@ assert.equal(rollEl.dataset.akRoll, undefined, "rollText must clear its stamp");
 assert.equal(rollEl.children.length, 3, "rollText must restore the original rows");
 assert.equal(rollEl.querySelector("[data-ak-roll-clone]"), null, "rollText must remove the clone");
 console.log("ok  rollText wraps rows + clone, unwraps cleanly");
+
+/* ---------------- reelText: masks in, original markup back ---------------- */
+const reelEl = document.querySelector("[data-reel]");
+const reelBefore = reelEl.innerHTML;
+const reelDestroy = lib.reelText(reelEl, { mode: "immediate" });
+assert.equal(reelEl.dataset.akReel, "true", "reelText must stamp its target");
+assert.ok(reelEl.querySelectorAll(".ak-reel__ch").length > 0, "reelText must wrap spinning chars");
+assert.ok(reelEl.querySelector(".ak-reel__strip"), "reelText must build roll strips");
+reelDestroy();
+assert.equal(reelEl.dataset.akReel, undefined, "reelText must clear its stamp");
+assert.equal(reelEl.innerHTML, reelBefore, "reelText must restore the original markup");
+
+/* ---------------- dragRail: stamp in, styles restored ---------------- */
+const railTrack = document.querySelector("[data-rail]");
+const railDestroy = lib.dragRail(railTrack);
+assert.equal(railTrack.dataset.akRail, "true", "dragRail must stamp its track");
+assert.equal(railTrack.style.touchAction, "pan-y", "dragRail must claim horizontal gestures");
+railDestroy();
+assert.equal(railTrack.dataset.akRail, undefined, "dragRail must clear its stamp");
+assert.equal(railTrack.style.touchAction ?? "", "", "dragRail must restore touch-action");
+console.log("ok  reelText masks + dragRail wiring, both unwound cleanly");
+
+/* ---------------- ./three subpath: WebGL entry (optional peer) ------------- */
+const threeLib = await import("../dist/three/index.js");
+assert.equal(typeof threeLib.webglMedia, "function", "the /three entry must export webglMedia");
+assert.ok(!("webglMedia" in lib), "webglMedia must NOT leak into the core barrel (three stays optional)");
+const glMissing = asDestroy(threeLib.webglMedia("[data-nope]"));
+assert.equal(typeof glMissing, "function", "webglMedia must no-op on missing targets");
+glMissing();
+// jsdom has no WebGLRenderingContext → the effect must exit before any
+// canvas/context probe (the probe itself logs a jsdom error), leaving the
+// plain <img> visible and the host unstamped.
+const glHost = mountHost("gl-host", `<figure data-gl><img src="photo.jpg" alt="A card" /></figure>`);
+const glFigure = glHost.querySelector("[data-gl]");
+const glDestroy = threeLib.webglMedia(glFigure);
+assert.equal(typeof glDestroy, "function", "webglMedia must return a destroy fn without WebGL");
+assert.equal(
+  glFigure.querySelector("canvas"),
+  null,
+  "webglMedia must not mount a canvas when WebGL is unavailable",
+);
+assert.equal(glHost.querySelector("img").style.opacity, "", "webglMedia must leave the plain <img> visible");
+assert.equal(glFigure.dataset.akGl, undefined, "webglMedia must not stamp a host it never mounted");
+glDestroy();
+glHost.remove();
+console.log("ok  /three entry exports webglMedia, no-ops silently without WebGL");
 
 /* ---------------- utils ---------------- */
 assert.deepEqual(lib.toArray("[data-xyz-nope]"), [], "toArray on missing selector");

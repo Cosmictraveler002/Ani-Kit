@@ -24,10 +24,12 @@
  * Infinite / loops:
  *   marquee()        dual-row constant-speed marquee
  *   dragStrip()      infinite draggable carousel with rotation
+ *   dragRail()       bounded drag rail — inertia, tanh rubber-band, wheel
  *   rollText()       rolling word rotator (seamless row loop)
  *
  * Text extras:
  *   scrambleText()   decode / cipher reveal per character
+ *   reelText()       per-character odometer roll (masked reel strips)
  *   flipWords()      words that glide between two layouts (FLIP)
  *
  * Micro-interactions:
@@ -96,8 +98,14 @@ export type { MarqueeOptions } from "./effects/marquee.js";
 export { rollText } from "./effects/roll-text.js";
 export type { RollTextOptions } from "./effects/roll-text.js";
 
+export { reelText } from "./effects/reel-text.js";
+export type { ReelTextOptions } from "./effects/reel-text.js";
+
 export { dragStrip } from "./effects/drag-strip.js";
 export type { DragStripOptions } from "./effects/drag-strip.js";
+
+export { dragRail } from "./effects/drag-rail.js";
+export type { DragRailOptions } from "./effects/drag-rail.js";
 
 /* ---- text extras ---- */
 export { scrambleText } from "./effects/scramble-text.js";

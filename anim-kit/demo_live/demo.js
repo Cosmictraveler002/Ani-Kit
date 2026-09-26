@@ -15,6 +15,7 @@ import {
   audioBars,
   marquee,
   rollText,
+  reelText,
   scrambleText,
   horizontalScroll,
   parallax,
@@ -24,6 +25,7 @@ import {
   stackedCardsPinned,
   scatterText,
   dragStrip,
+  dragRail,
   flipWords,
   liquidButton,
   underlineLink,
@@ -35,6 +37,7 @@ import {
   themeReveal,
   compose,
 } from "@cosmictraveler002/anim-kit";
+import { webglMedia } from "@cosmictraveler002/anim-kit/three";
 
 const cleanups = [];
 
@@ -118,6 +121,15 @@ cleanups.push(lineReveal("[data-chars-head]", { mode: "scroll", split: "chars", 
 
 // The column→row FLIP: scroll progress drives the transfer both ways.
 cleanups.push(flipWords("[data-flip-from]", { to: "[data-flip-to]", scrub: 0.6 }));
+
+/* ---------------------------------------------------------------- */
+/* Reel text + drag rail + WebGL cards                               */
+/* ---------------------------------------------------------------- */
+cleanups.push(reelText("[data-reel]", { mode: "scroll", frames: 4 }));
+cleanups.push(dragRail("[data-rail]", { tilt: 0.05, throwScale: 14 }));
+document.querySelectorAll("[data-gl]").forEach((el) => {
+  cleanups.push(webglMedia(el, { corner: 18, dent: 70, chroma: 2 }));
+});
 
 /* ---------------------------------------------------------------- */
 /* Loops                                                              */
