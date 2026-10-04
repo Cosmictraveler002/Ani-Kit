@@ -614,6 +614,67 @@
       color: #6d7683;
       font-size: 0.82rem;
     }
+
+    /* inkWipe — page-transition swap box */
+    .wipe-swap {
+      display: inline-block;
+      min-width: 130px;
+      padding: 12px 20px;
+      border: 1px solid currentColor;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-align: center;
+    }
+    .wipe-swap--b {
+      background: #111;
+      color: #fff;
+      border-color: #111;
+    }
+
+    /* tearReveal — scrubbed torn sheet over light artwork (multiply tint) */
+    .tear-stage {
+      position: relative;
+      margin-top: 28px;
+      min-height: 58vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: clamp(28px, 6vw, 72px);
+      background:
+        radial-gradient(circle at 20% 30%, #9ec5ff 0 16%, transparent 17%),
+        radial-gradient(circle at 82% 64%, #ffd8a0 0 20%, transparent 21%),
+        radial-gradient(circle at 55% 92%, #b9e8c9 0 12%, transparent 13%),
+        linear-gradient(160deg, #f7f3ea, #ece3d0);
+      color: #14140f;
+    }
+    .tear-stage h3 {
+      margin: 0 0 10px;
+      font-size: clamp(30px, 4.5vw, 56px);
+      letter-spacing: -0.02em;
+    }
+    .tear-stage p {
+      margin: 0;
+      max-width: 520px;
+      font: 14px/1.6 system-ui;
+      color: #4a4636;
+    }
+
+    /* ditherReveal — speckled punch-through photo */
+    .dither-shot {
+      position: relative;
+      margin: 28px 0 0;
+      max-width: 760px;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      background: #14140f;
+    }
+    .dither-shot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
     </style>
   </head>
   <body>
@@ -713,6 +774,14 @@
             </button>
 
             <a class="ak-underline" href="#ui">Underline sweep</a>
+          </div>
+
+          <p class="label" data-effect="inkWipe" style="margin-top: 40px">
+            inkWipe — brush page transition: cover → swap → unveil, one continuous stroke
+          </p>
+          <div class="btn-row" style="margin-top: 12px">
+            <button class="eq-btn" type="button" data-wipe-run>Run page transition</button>
+            <strong class="wipe-swap" data-wipe-swap>Page A</strong>
           </div>
         </div>
       </section>
@@ -1120,6 +1189,27 @@
               <figcaption class="gl-cap">no WebGL — the plain &lt;img&gt; stays, nothing logs</figcaption>
             </figure>
           </div>
+        </div>
+      </section>
+
+      <!-- TEAR + DITHER (three.js) -->
+      <section>
+        <div class="block">
+          <p class="label" data-effect="tearReveal">
+            tearReveal — torn-edge sheet sweep: fbm shards + barrel bow, scrubbed by your scroll (WebGL)
+          </p>
+          <div class="tear-stage" data-tear>
+            <h3>Half-torn is a place</h3>
+            <p>Scroll — the boundary follows you, forwards and back. Detached shards ride
+               ahead of the front, a barrel warp bows the edge into an arriving curve.</p>
+          </div>
+
+          <p class="label" data-effect="ditherReveal" style="margin-top: 48px">
+            ditherReveal — the photo punches through its plate in a speckled ring (WebGL)
+          </p>
+          <figure class="dither-shot" data-dither>
+            <img alt="" src="assets/card-08.webp" />
+          </figure>
         </div>
       </section>
 

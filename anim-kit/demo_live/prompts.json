@@ -1,5 +1,5 @@
 {
-  "count": 33,
+  "count": 36,
   "version": "1.5.0",
   "threeVersion": "0.186.1",
   "categories": [
@@ -120,6 +120,14 @@
             "webglMedia",
             "glRail"
           ]
+        },
+        {
+          "id": "scenes",
+          "name": "Scenes & overlays",
+          "effects": [
+            "tearReveal",
+            "ditherReveal"
+          ]
         }
       ]
     },
@@ -219,6 +227,13 @@
           "name": "Theme wipes",
           "effects": [
             "themeReveal"
+          ]
+        },
+        {
+          "id": "pagetransitions",
+          "name": "Page transitions",
+          "effects": [
+            "inkWipe"
           ]
         }
       ]
@@ -383,6 +398,94 @@
         "`destroy()` clears the timers and kills the tweens."
       ],
       "text": "Implement the \"Preloader (0→100 counter intro)\" effect in my project using the **anim-kit** library.\n\nThe intro overlay: a number counts 0→100 while an SVG glyph fills with an inset() clip-path, then the glyph blows up and the backdrop fades away.\n\nanim-kit is a framework-agnostic ESM animation library (TypeScript source, compiled to `dist/` JS + `.d.ts`) built on GSAP (ScrollTrigger, SplitText, Draggable, CustomEase, Flip) and Lenis. It works with plain HTML and with React/Vue/Next/Svelte — effects are DOM-selector based, no components involved. Every effect follows one contract:\n\n    effect(target, options) => destroy\n\nIt is published on npm **and** loadable straight from a version-pinned CDN — step 2 below is a complete, copy-paste `index.html` that runs as-is with no build step.\n\n> **Category:** Intros & transitions → Preloaders\n\n## 1. Markup\n\n```html\n<div id=\"preloader\">\n  <div data-backdrop></div>\n  <div class=\"glyph-wrap\">\n    <svg data-glyph viewBox=\"0 0 76 343\"><!-- glyph paths --></svg>\n  </div>\n  <div data-counter>0</div>\n</div>\n```\n\n## 2. Procedure — run it from our CDN (no build step)\n\nEvery URL is **version-pinned** — npm versions are immutable, so\n`@cosmictraveler002/anim-kit@1.5.0` always resolves to this exact\nbuild, forever.\n\n**Step 1 — save this as `index.html`.** A complete working file: the markup\nfrom §1 plus initialisation, nothing else required:\n\n```html\n<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <title>Preloader (0→100 counter intro)</title>\n    <!-- companion stylesheet: masks, tokens, resting states -->\n    <link\n      rel=\"stylesheet\"\n      href=\"https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/styles/anim-kit.css\"\n    />\n    <style>\n      body { font-family: system-ui, sans-serif; margin: 0; padding: 12vh 8vw; }\n    </style>\n  </head>\n  <body>\n    <div id=\"preloader\">\n      <div data-backdrop></div>\n      <div class=\"glyph-wrap\">\n        <svg data-glyph viewBox=\"0 0 76 343\"><!-- glyph paths --></svg>\n      </div>\n      <div data-counter>0</div>\n    </div>\n\n    <script type=\"module\">\n      // One URL — gsap (with the plugins anim-kit uses) and lenis are inlined.\n      import { preloader } from \"https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/anim-kit.standalone.js\";\n\n      // Selectors that match nothing no-op safely — this never throws.\n      const destroy = preloader(\"[data-preloader]\", {\n        duration: 4,          // seconds for the count\n        step: 5,              // increment per tick\n        interval: 200,        // ms between ticks\n        sessionGuard: true,   // skip when already shown this session\n        onComplete: () => ScrollTrigger.refresh(),\n      });\n\n      // Options-object form works too:\n      // preloader({ root: \"#preloader\", sessionGuard: false });\n\n      // Keep the destroy function (see §5) and call it when the effect should\n      // stop: route change, content swap, HMR reload.\n    </script>\n  </body>\n</html>\n```\n\n**Step 2 — open it.** Double-click the file, or serve it statically\n(`npx serve`, `python -m http.server`). No bundler, no `npm install`, no\nconfig — the CDN delivers the same ESM files as the npm tarball.\n\n**Step 3 — swap the loader only if you need a different strategy** (all\npinned to `@1.5.0`):\n\n- **unpkg instead of jsDelivr** — byte-identical standalone file:\n  `https://unpkg.com/@cosmictraveler002/anim-kit@1.5.0/dist/anim-kit.standalone.js`\n\n- **jsDelivr `+esm`** — the CDN bundles the package with its dependencies:\n\n  ```html\n  <script type=\"module\">\n    import { preloader } from \"https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/+esm\";\n  </script>\n  ```\n\n- **per-file ESM + import map** — unbundled files, one shared gsap between\n  anim-kit and the rest of your page. Import maps match specifiers\n  literally, so list GSAP subpaths one by one (a trailing-slash map\n  produces extension-less URLs CDNs don't serve):\n\n  ```html\n  <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/styles/anim-kit.css\" />\n  <script type=\"importmap\">\n    {\n      \"imports\": {\n        \"@cosmictraveler002/anim-kit\": \"https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/index.js\",\n        \"gsap\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/index.js\",\n        \"gsap/ScrollTrigger\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollTrigger.js\",\n        \"gsap/SplitText\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/SplitText.js\",\n        \"gsap/Draggable\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/Draggable.js\",\n        \"gsap/CustomEase\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/CustomEase.js\",\n        \"gsap/Flip\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/Flip.js\",\n        \"gsap/ScrollSmoother\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollSmoother.js\",\n        \"lenis\": \"https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.mjs\"\n      }\n    }\n  </script>\n  <script type=\"module\">\n    import { preloader } from \"@cosmictraveler002/anim-kit\";\n  </script>\n  ```\n\n- **already using a bundler (Vite / Next / Webpack / Astro)?** Skip the CDN,\n  install the package and import it — same code, same files:\n\n  ```js\n  import { preloader } from \"@cosmictraveler002/anim-kit\";\n  import \"@cosmictraveler002/anim-kit/styles\"; // companion stylesheet (classes, masks, tokens)\n  ```\n\n**The building blocks you just loaded:**\n\n- `gsap` + `ScrollTrigger` drive every tween, scrub and trigger;\n  `SplitText` powers the masked text splits; `Draggable` powers the drag\n  carousels; `Flip` powers the layout transfers; `CustomEase` registers\n  the studio eases exported as `EASES`.\n- `lenis` powers `smoothScroll()` — create it **first** so ScrollTrigger\n  syncs with its scroller.\n- The stylesheet ships resting states, mask classes and the pure-CSS pieces\n  (`.ak-liquid`, `.ak-underline`, `.ak-marquee`, `.ak-roll`); the motion\n  itself is 100% JS.\n- It is plain ESM with `.d.ts` files — TypeScript consumers get types straight\n  from the same URLs, and deep imports work as CDN URLs too, e.g.\n  `https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/styles/anim-kit.css`\n  for `@cosmictraveler002/anim-kit/styles`.\n\n## 3. Initialise\n\nRun this after the DOM is ready (and after fonts/images if it measures layout):\n\n```js\nconst destroy = preloader(\"[data-preloader]\", {\n  duration: 4,          // seconds for the count\n  step: 5,              // increment per tick\n  interval: 200,        // ms between ticks\n  sessionGuard: true,   // skip when already shown this session\n  onComplete: () => ScrollTrigger.refresh(),\n});\n\n// Options-object form works too:\n// preloader({ root: \"#preloader\", sessionGuard: false });\n```\n\n## 4. Options\n\n| Option | Default | Description |\n| --- | --- | --- |\n| `root` | — (1st arg) | Overlay element — the target argument, or `root` in the options-object form. |\n| `glyph` | first `<svg>` inside root | Element that fills up. |\n| `counter` | `[data-counter]` in root | Element receiving the 0→100 number. |\n| `backdrop` | `[data-backdrop]` in root | Solid backdrop behind the glyph. |\n| `duration` | `4` | Total counter duration, seconds. |\n| `step` | `5` | Counter increment per tick. |\n| `interval` | `200` | Interval between ticks, ms. |\n| `sessionGuard` | `true` | Hide when already shown this session. |\n| `storageKey` | `'ak-preloader-shown'` | sessionStorage key for the guard. |\n| `onComplete` | — | Called once the overlay has finished and can be removed. |\n\n## Notes\n\n- Accepts **both** call forms: `preloader(target, options)` and `preloader({ root, ... })`.\n- Reduced motion: the overlay is hidden immediately — never block the page behind a counting intro.\n- The overlay covers the viewport (`position: fixed; inset: 0`) until it finishes, so make sure `onComplete` fires.\n- `destroy()` clears the timers and kills the tweens.\n\n## 5. Teardown\n\nAlways keep the destroy function and call it when the effect is no longer\nneeded (component unmount, route change, HMR reload):\n\n    const destroy = /* result of step 3 */;\n    destroy();\n\n## 6. Behaviour guarantees\n\n- `target` accepts a selector string, an Element, an array or a NodeList.\n  When nothing matches, the effect returns a no-op destroy — never throws.\n- `prefers-reduced-motion: reduce` skips the animation and snaps to a safe\n  resting state. Pass `force: true` in options to animate regardless.\n- `initGSAP()` runs inside every effect; call it yourself only if you need\n  `gsap`/`ScrollTrigger` configured before first paint.\n- npm and the CDN serve the **same** files — the CDN imports from §2 and the\n  npm import are interchangeable, byte for byte.\n- Custom eases live in the `EASES` map (`EASES.curtain`, `EASES.cardStack`,\n  `EASES.reveal`, `EASES.preloadOut`).\n"
+    },
+    {
+      "id": "inkWipe",
+      "title": "Ink wipe — brush-stroke page transition",
+      "summary": "A brush-loaded ink sheet sweeps across the whole page: cover() paints it over, the swap happens at full cover, unveil() lets the new page arrive behind the *same* stroke — one continuous left-to-right travel whose edge is seeded, so it never boils between frames. Bristle spurs and flecks run ahead of the front.",
+      "category": "intro",
+      "categoryLabel": "Intros & transitions",
+      "subcategory": "pagetransitions",
+      "subcategoryLabel": "Page transitions",
+      "imports": [
+        "inkWipe"
+      ],
+      "markup": "<a href=\"/next.html\" data-wipe>Next</a> <!-- links to intercept -->",
+      "usage": "// MPA form — intercepts the links, the next page auto-unveils:\nconst wipe = inkWipe({ links: \"[data-wipe]\" });\n\n// Manual form (SPA route change, view transitions, demos):\nawait wipe.cover();   // resolves at full cover — swap your DOM here\nawait wipe.unveil();  // the new page arrives behind the same stroke\nwipe.destroy();",
+      "options": [
+        [
+          "host",
+          "`document.body`",
+          "Overlay host — the canvas is appended here (target argument also works)."
+        ],
+        [
+          "color",
+          "`\"#0b0b0b\"`",
+          "Ink colour."
+        ],
+        [
+          "coverMs",
+          "`550`",
+          "Cover duration, ms."
+        ],
+        [
+          "unveilMs",
+          "`650`",
+          "Unveil duration, ms."
+        ],
+        [
+          "ease",
+          "`\"power2.inOut\"`",
+          "GSAP ease for both halves."
+        ],
+        [
+          "tilt",
+          "`0.35`",
+          "Edge lean — fraction of viewport height the top edge leads by."
+        ],
+        [
+          "rough",
+          "`44`",
+          "Noise amplitude on the edge, px."
+        ],
+        [
+          "bristle",
+          "`180`",
+          "Longest bristle spur, px."
+        ],
+        [
+          "links",
+          "—",
+          "Selector for links that run the wipe before navigating."
+        ],
+        [
+          "sessionKey",
+          "`'ak-ink-wipe'`",
+          "sessionStorage key for the cross-page handoff."
+        ],
+        [
+          "autoUnveil",
+          "`true`",
+          "Unveil automatically when the session flag says the page loaded covered."
+        ],
+        [
+          "z",
+          "`9998`",
+          "Overlay z-index."
+        ],
+        [
+          "force",
+          "`false`",
+          "Run even under `prefers-reduced-motion`."
+        ]
+      ],
+      "notes": [
+        "Accepts **both** call forms: `inkWipe(options)` and `inkWipe(host, options)`.",
+        "**The MPA handoff is a sessionStorage flag**: a covered navigation stores `sessionKey`; the next page with `autoUnveil` reads it, covers instantly and unveils — no flash between documents. Same-stroke means cover and unveil share one seeded edge, so the brush reads as a single sweep passing *through* the page swap.",
+        "**Reduced motion**: cover/unveil snap instantly to a solid sheet — navigation still never flashes the swap. No 2D context at all (SSR, jsdom): both promises resolve immediately, nothing paints.",
+        "`destroy()` removes the canvas, its listeners and the link interception."
+      ],
+      "text": "Implement the \"Ink wipe — brush-stroke page transition\" effect in my project using the **anim-kit** library.\n\nA brush-loaded ink sheet sweeps across the whole page: cover() paints it over, the swap happens at full cover, unveil() lets the new page arrive behind the *same* stroke — one continuous left-to-right travel whose edge is seeded, so it never boils between frames. Bristle spurs and flecks run ahead of the front.\n\nanim-kit is a framework-agnostic ESM animation library (TypeScript source, compiled to `dist/` JS + `.d.ts`) built on GSAP (ScrollTrigger, SplitText, Draggable, CustomEase, Flip) and Lenis. It works with plain HTML and with React/Vue/Next/Svelte — effects are DOM-selector based, no components involved. Every effect follows one contract:\n\n    effect(target, options) => destroy\n\nIt is published on npm **and** loadable straight from a version-pinned CDN — step 2 below is a complete, copy-paste `index.html` that runs as-is with no build step.\n\n> **Category:** Intros & transitions → Page transitions\n\n## 1. Markup\n\n```html\n<a href=\"/next.html\" data-wipe>Next</a> <!-- links to intercept -->\n```\n\n## 2. Procedure — run it from our CDN (no build step)\n\nEvery URL is **version-pinned** — npm versions are immutable, so\n`@cosmictraveler002/anim-kit@1.5.0` always resolves to this exact\nbuild, forever.\n\n**Step 1 — save this as `index.html`.** A complete working file: the markup\nfrom §1 plus initialisation, nothing else required:\n\n```html\n<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <title>Ink wipe — brush-stroke page transition</title>\n    <!-- companion stylesheet: masks, tokens, resting states -->\n    <link\n      rel=\"stylesheet\"\n      href=\"https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/styles/anim-kit.css\"\n    />\n    <style>\n      body { font-family: system-ui, sans-serif; margin: 0; padding: 12vh 8vw; }\n    </style>\n  </head>\n  <body>\n    <a href=\"/next.html\" data-wipe>Next</a> <!-- links to intercept -->\n\n    <script type=\"module\">\n      // One URL — gsap (with the plugins anim-kit uses) and lenis are inlined.\n      import { inkWipe } from \"https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/anim-kit.standalone.js\";\n\n      // Selectors that match nothing no-op safely — this never throws.\n      // MPA form — intercepts the links, the next page auto-unveils:\n      const wipe = inkWipe({ links: \"[data-wipe]\" });\n\n      // Manual form (SPA route change, view transitions, demos):\n      await wipe.cover();   // resolves at full cover — swap your DOM here\n      await wipe.unveil();  // the new page arrives behind the same stroke\n      wipe.destroy();\n\n      // Keep the destroy function (see §5) and call it when the effect should\n      // stop: route change, content swap, HMR reload.\n    </script>\n  </body>\n</html>\n```\n\n**Step 2 — open it.** Double-click the file, or serve it statically\n(`npx serve`, `python -m http.server`). No bundler, no `npm install`, no\nconfig — the CDN delivers the same ESM files as the npm tarball.\n\n**Step 3 — swap the loader only if you need a different strategy** (all\npinned to `@1.5.0`):\n\n- **unpkg instead of jsDelivr** — byte-identical standalone file:\n  `https://unpkg.com/@cosmictraveler002/anim-kit@1.5.0/dist/anim-kit.standalone.js`\n\n- **jsDelivr `+esm`** — the CDN bundles the package with its dependencies:\n\n  ```html\n  <script type=\"module\">\n    import { inkWipe } from \"https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/+esm\";\n  </script>\n  ```\n\n- **per-file ESM + import map** — unbundled files, one shared gsap between\n  anim-kit and the rest of your page. Import maps match specifiers\n  literally, so list GSAP subpaths one by one (a trailing-slash map\n  produces extension-less URLs CDNs don't serve):\n\n  ```html\n  <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/styles/anim-kit.css\" />\n  <script type=\"importmap\">\n    {\n      \"imports\": {\n        \"@cosmictraveler002/anim-kit\": \"https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/index.js\",\n        \"gsap\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/index.js\",\n        \"gsap/ScrollTrigger\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollTrigger.js\",\n        \"gsap/SplitText\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/SplitText.js\",\n        \"gsap/Draggable\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/Draggable.js\",\n        \"gsap/CustomEase\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/CustomEase.js\",\n        \"gsap/Flip\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/Flip.js\",\n        \"gsap/ScrollSmoother\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollSmoother.js\",\n        \"lenis\": \"https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.mjs\"\n      }\n    }\n  </script>\n  <script type=\"module\">\n    import { inkWipe } from \"@cosmictraveler002/anim-kit\";\n  </script>\n  ```\n\n- **already using a bundler (Vite / Next / Webpack / Astro)?** Skip the CDN,\n  install the package and import it — same code, same files:\n\n  ```js\n  import { inkWipe } from \"@cosmictraveler002/anim-kit\";\n  import \"@cosmictraveler002/anim-kit/styles\"; // companion stylesheet (classes, masks, tokens)\n  ```\n\n**The building blocks you just loaded:**\n\n- `gsap` + `ScrollTrigger` drive every tween, scrub and trigger;\n  `SplitText` powers the masked text splits; `Draggable` powers the drag\n  carousels; `Flip` powers the layout transfers; `CustomEase` registers\n  the studio eases exported as `EASES`.\n- `lenis` powers `smoothScroll()` — create it **first** so ScrollTrigger\n  syncs with its scroller.\n- The stylesheet ships resting states, mask classes and the pure-CSS pieces\n  (`.ak-liquid`, `.ak-underline`, `.ak-marquee`, `.ak-roll`); the motion\n  itself is 100% JS.\n- It is plain ESM with `.d.ts` files — TypeScript consumers get types straight\n  from the same URLs, and deep imports work as CDN URLs too, e.g.\n  `https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/styles/anim-kit.css`\n  for `@cosmictraveler002/anim-kit/styles`.\n\n## 3. Initialise\n\nRun this after the DOM is ready (and after fonts/images if it measures layout):\n\n```js\n// MPA form — intercepts the links, the next page auto-unveils:\nconst wipe = inkWipe({ links: \"[data-wipe]\" });\n\n// Manual form (SPA route change, view transitions, demos):\nawait wipe.cover();   // resolves at full cover — swap your DOM here\nawait wipe.unveil();  // the new page arrives behind the same stroke\nwipe.destroy();\n```\n\n## 4. Options\n\n| Option | Default | Description |\n| --- | --- | --- |\n| `host` | `document.body` | Overlay host — the canvas is appended here (target argument also works). |\n| `color` | `\"#0b0b0b\"` | Ink colour. |\n| `coverMs` | `550` | Cover duration, ms. |\n| `unveilMs` | `650` | Unveil duration, ms. |\n| `ease` | `\"power2.inOut\"` | GSAP ease for both halves. |\n| `tilt` | `0.35` | Edge lean — fraction of viewport height the top edge leads by. |\n| `rough` | `44` | Noise amplitude on the edge, px. |\n| `bristle` | `180` | Longest bristle spur, px. |\n| `links` | — | Selector for links that run the wipe before navigating. |\n| `sessionKey` | `'ak-ink-wipe'` | sessionStorage key for the cross-page handoff. |\n| `autoUnveil` | `true` | Unveil automatically when the session flag says the page loaded covered. |\n| `z` | `9998` | Overlay z-index. |\n| `force` | `false` | Run even under `prefers-reduced-motion`. |\n\n## Notes\n\n- Accepts **both** call forms: `inkWipe(options)` and `inkWipe(host, options)`.\n- **The MPA handoff is a sessionStorage flag**: a covered navigation stores `sessionKey`; the next page with `autoUnveil` reads it, covers instantly and unveils — no flash between documents. Same-stroke means cover and unveil share one seeded edge, so the brush reads as a single sweep passing *through* the page swap.\n- **Reduced motion**: cover/unveil snap instantly to a solid sheet — navigation still never flashes the swap. No 2D context at all (SSR, jsdom): both promises resolve immediately, nothing paints.\n- `destroy()` removes the canvas, its listeners and the link interception.\n\n## 5. Teardown\n\nAlways keep the destroy function and call it when the effect is no longer\nneeded (component unmount, route change, HMR reload):\n\n    const destroy = /* result of step 3 */;\n    destroy();\n\n## 6. Behaviour guarantees\n\n- `target` accepts a selector string, an Element, an array or a NodeList.\n  When nothing matches, the effect returns a no-op destroy — never throws.\n- `prefers-reduced-motion: reduce` skips the animation and snaps to a safe\n  resting state. Pass `force: true` in options to animate regardless.\n- `initGSAP()` runs inside every effect; call it yourself only if you need\n  `gsap`/`ScrollTrigger` configured before first paint.\n- npm and the CDN serve the **same** files — the CDN imports from §2 and the\n  npm import are interchangeable, byte for byte.\n- Custom eases live in the `EASES` map (`EASES.curtain`, `EASES.cardStack`,\n  `EASES.reveal`, `EASES.preloadOut`).\n"
     },
     {
       "id": "navHide",
@@ -2221,6 +2324,211 @@
         "`destroy()` unwinds the physics and the GPU together: listeners, ticker, observers, geometry, materials, textures and the renderer are disposed, the canvas is removed, and image opacities + the stage's inline position are restored."
       ],
       "text": "Implement the \"GL rail — WebGL overlay drag rail\" effect in my project using the **anim-kit** library.\n\nThe bounded drag rail drawn as a WebGL layer: every card re-rendered onto one fixed canvas, its surface bent around an invisible cylinder, over a perspective grid floor — while the DOM keeps layout, labels and hit areas. dragRail's physics underneath (inertia throw, tanh rubber-band, Lenis-safe wheel) with an axis that flips vertical when only the column overflows, so the same init serves a desktop row and a mobile stack.\n\nanim-kit is a framework-agnostic ESM animation library (TypeScript source, compiled to `dist/` JS + `.d.ts`) built on GSAP (ScrollTrigger, SplitText, Draggable, CustomEase, Flip) and Lenis. It works with plain HTML and with React/Vue/Next/Svelte — effects are DOM-selector based, no components involved. Every effect follows one contract:\n\n    effect(target, options) => destroy\n\nIt is published on npm **and** loadable straight from a version-pinned CDN — step 2 below is a complete, copy-paste `index.html` that runs as-is with no build step.\n\n> **Category:** WebGL → Shader media\n\n## 1. Markup\n\n```html\n<div class=\"rail-screen\"> <!-- position: relative; overflow: hidden; dark stage -->\n  <div data-rail> <!-- flex row (column when stacked); width: max-content;\n                       cursor: grab; user-select: none -->\n    <article class=\"rail-card\"> <!-- position: relative; transparent background -->\n      <img src=\"card-01.jpg\" alt=\"\" draggable=\"false\" />\n      <p>Night Atlas ↗</p> <!-- label: DOM, paints above the canvas -->\n    </article>\n    <article class=\"rail-card\">\n      <img src=\"card-02.jpg\" alt=\"\" draggable=\"false\" />\n      <p>Signal Bloom ↗</p>\n    </article>\n  </div>\n</div>\n```\n\n## 2. Procedure — run it from our CDN (no build step)\n\nEvery URL is **version-pinned** — npm versions are immutable, so\n`@cosmictraveler002/anim-kit@1.5.0` and `three@0.186.1`\nalways resolve to these exact builds, forever.\n\n**Step 1 — save this as `index.html`.** A complete working file: the markup\nfrom §1 plus initialisation, nothing else required:\n\n```html\n<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <title>GL rail — WebGL overlay drag rail</title>\n    <!-- companion stylesheet: masks, tokens, resting states -->\n    <link\n      rel=\"stylesheet\"\n      href=\"https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/styles/anim-kit.css\"\n    />\n    <!-- import map: three (optional peer) + the anim-kit WebGL entry, both pinned -->\n    <script type=\"importmap\">\n      {\n        \"imports\": {\n          \"three\": \"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js\",\n          \"@cosmictraveler002/anim-kit/three\": \"https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/three/index.js\",\n          \"@cosmictraveler002/anim-kit\": \"https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/index.js\",\n          \"gsap\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/index.js\",\n          \"gsap/ScrollTrigger\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollTrigger.js\",\n          \"gsap/SplitText\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/SplitText.js\",\n          \"gsap/Draggable\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/Draggable.js\",\n          \"gsap/CustomEase\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/CustomEase.js\",\n          \"gsap/Flip\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/Flip.js\",\n          \"gsap/ScrollSmoother\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollSmoother.js\",\n          \"lenis\": \"https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.mjs\"\n        }\n      }\n    </script>\n    <style>\n      body { font-family: system-ui, sans-serif; margin: 0; padding: 12vh 8vw; }\n      /* the rail stage: the canvas covers it, the DOM keeps the labels */\n      .rail-screen { position: relative; overflow: hidden; height: 64vh;\n                     background: #07080b; border-radius: 28px; cursor: grab; }\n      .rail-track { display: flex; gap: 16px; width: max-content; height: 100%;\n                    align-items: center; padding: 0 32px;\n                    user-select: none; touch-action: pan-y; }\n      .rail-card { position: relative; flex: none; height: 58%;\n                   aspect-ratio: 2048 / 1172; border-radius: 16px;\n                   background: transparent; }\n      .rail-card img { width: 100%; height: 100%; object-fit: cover; display: block;\n                       pointer-events: none; }\n      .rail-card p { position: absolute; inset: auto 0 0; margin: 0;\n                     padding: 14px 18px; color: #fff; font-size: 15px;\n                     background: linear-gradient(to top, rgba(4,5,8,.7), transparent); }\n      @media (max-width: 700px) {\n        .rail-track { flex-direction: column; width: 100%; height: max-content;\n                      padding: 18px 14px; touch-action: pan-x; }\n        .rail-card { height: auto; width: 100%; }\n      }\n    </style>\n  </head>\n  <body>\n    <div class=\"rail-screen\"> <!-- position: relative; overflow: hidden; dark stage -->\n      <div data-rail> <!-- flex row (column when stacked); width: max-content;\n                           cursor: grab; user-select: none -->\n        <article class=\"rail-card\"> <!-- position: relative; transparent background -->\n          <img src=\"card-01.jpg\" alt=\"\" draggable=\"false\" />\n          <p>Night Atlas ↗</p> <!-- label: DOM, paints above the canvas -->\n        </article>\n        <article class=\"rail-card\">\n          <img src=\"card-02.jpg\" alt=\"\" draggable=\"false\" />\n          <p>Signal Bloom ↗</p>\n        </article>\n      </div>\n    </div>\n\n    <script type=\"module\">\n      // three, gsap + lenis come from the import map; this line loads the entry.\n      import { glRail } from \"@cosmictraveler002/anim-kit/three\";\n\n      // Selectors that match nothing no-op safely — this never throws.\n      const destroy = glRail(\"[data-rail]\", {\n        radius: 1200,   // cylinder radius, px — smaller = stronger bend\n        grid: true,     // perspective grid floor under the cards\n        corner: 16,     // SDF corner radius, px\n        axis: \"auto\",   // row/vertical — the layout decides (same rule as dragRail)\n      });\n\n      // Keep the destroy function (see §5) and call it when the effect should\n      // stop: route change, content swap, HMR reload.\n    </script>\n  </body>\n</html>\n```\n\n**Step 2 — open it.** Double-click the file, or serve it statically\n(`npx serve`, `python -m http.server`). No bundler, no `npm install`, no\nconfig — the import map pulls pinned ESM files straight from the CDN, the\nsame bytes the npm tarball ships.\n\n**Step 3 — swap the loader only if you need a different strategy** (all\npinned to `@1.5.0`):\n\n- **unpkg instead of jsDelivr** — same import map, swap the CDN host:\n\n  ```\n  https://unpkg.com/@cosmictraveler002/anim-kit@1.5.0/dist/three/index.js\n  https://unpkg.com/three@0.186.1/build/three.module.js\n  ```\n\n- **already using a bundler (Vite / Next / Webpack / Astro)?** Install both\n  packages and skip the map — node resolves `three` from your lockfile:\n\n  ```sh\n  npm install three @cosmictraveler002/anim-kit\n  ```\n\n  ```js\n  import { glRail } from \"@cosmictraveler002/anim-kit/three\";\n  import \"@cosmictraveler002/anim-kit/styles\"; // companion stylesheet\n  ```\n\n**The building blocks you just loaded:**\n\n- `three` — ONE `WebGLRenderer` for the whole rail on a single fixed alpha\n  canvas under the track: every card's picture recreated from its DOM rect\n  each frame, bent onto the cylinder in the vertex shader (rounded-box SDF\n  corners + in-shader cover-crop in the fragment), over a grid-floor shader\n  that fades into the horizon and drifts with the rail.\n- `gsap` drives the ticker, tweens and anything you compose; `lenis` powers\n  `smoothScroll()`.\n- The DOM keeps the layout (elements, sizing, alt text); the canvas only\n  paints. Without WebGL the GL layer steps aside and the images show.\n- It is plain ESM with `.d.ts` files — TypeScript consumers get types from\n  the same URLs, e.g. `https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/three/index.d.ts`.\n\n## 3. Initialise\n\nRun this after the DOM is ready (and after fonts/images if it measures layout):\n\n```js\nconst destroy = glRail(\"[data-rail]\", {\n  radius: 1200,   // cylinder radius, px — smaller = stronger bend\n  grid: true,     // perspective grid floor under the cards\n  corner: 16,     // SDF corner radius, px\n  axis: \"auto\",   // row/vertical — the layout decides (same rule as dragRail)\n});\n```\n\n## 4. Options\n\n| Option | Default | Description |\n| --- | --- | --- |\n| `viewport` | track's parent | The stage the canvas covers — keep it `overflow: hidden`. |\n| `card` | `:scope > *` | Cards re-rendered on the canvas — each needs an `<img>`. |\n| `axis` | `\"auto\"` | `\"x\"`, `\"y\"`, or `\"auto\"` — picks the motion *and* the bend axis from the layout (only the column overflows → vertical). |\n| `radius` | `1200` | Cylinder radius the cards bend around, px — smaller = stronger bend. |\n| `corner` | `16` | Corner radius, px (rounded-box SDF in the fragment shader). |\n| `grid` | `true` | Perspective grid floor under the cards (drifts slightly with the rail). |\n| `dpr` | `2` | Device-pixel-ratio cap. |\n| `lerp` | `0.1` | Follow speed toward the intent, per 60fps frame (0..1). |\n| `edge` | `140` | Rubber-band resistance distance past the ends, px. |\n| `throwScale` | `14` | Momentum multiplier on release. |\n| `wheel` | `true` | Wheel/trackpad drives the rail (consumed while it can still move). |\n| `onTick` | — | `(pos, velocity) => {}` every rendered frame (pos along the active axis). |\n| `force` | `false` | Run even under `prefers-reduced-motion`. |\n\n## Notes\n\n- **Physics is dragRail.** The same single-writer intent/pos ticker, tanh rubber-band, throw momentum and Lenis-safe wheel — `glRail` only adds the GPU layer on top (plus the axis rule shared with `dragRail`, so a desktop row and a mobile stack need no re-init).\n- **The DOM stays the source of truth.** Cards keep owning layout, labels, hit areas and alt text; each frame the effect reads their viewport rects and the shader re-creates the pixels beneath them. Labels never drift off their card because the card *is* the rect the label sits in — only the picture curves.\n- **The bend is a uniform, not CPU work.** The vertex shader maps each vertex onto the cylinder (`a = o / R`, `x = R·sin a`, `z = −R·(1−cos a)`) re-centred on the card's own middle: the centre stays glued to the DOM position while the edges foreshorten, and the rotation the cards need arrives free from the curve.\n- **Card backgrounds must stay transparent** — the single alpha canvas paints *under* the track (the track's transform creates a stacking context above it), so DOM labels sit over the GL media for free. The effect hides only each `<img>` — and only once its texture has actually loaded.\n- **Silent no-op ladder**: missing target → no-op; no `WebGLRenderingContext` (SSR, jsdom, WebGL disabled) → the **flat dragRail rail** still runs (motion works, plain `<img>`s show), *before* any context probe; renderer refused → flat rail; texture 404 → that one card keeps its image; reduced motion → nothing mounts. Nothing ever logs.\n- `destroy()` unwinds the physics and the GPU together: listeners, ticker, observers, geometry, materials, textures and the renderer are disposed, the canvas is removed, and image opacities + the stage's inline position are restored.\n\n## 5. Teardown\n\nAlways keep the destroy function and call it when the effect is no longer\nneeded (component unmount, route change, HMR reload):\n\n    const destroy = /* result of step 3 */;\n    destroy();\n\n## 6. Behaviour guarantees\n\n- `target` accepts a selector string, an Element, an array or a NodeList.\n  When nothing matches, the effect returns a no-op destroy — never throws.\n- `prefers-reduced-motion: reduce` skips the animation and snaps to a safe\n  resting state. Pass `force: true` in options to animate regardless.\n- `initGSAP()` runs inside every effect; call it yourself only if you need\n  `gsap`/`ScrollTrigger` configured before first paint.\n- npm and the CDN serve the **same** files — the CDN imports from §2 and the\n  npm import are interchangeable, byte for byte.\n- Custom eases live in the `EASES` map (`EASES.curtain`, `EASES.cardStack`,\n  `EASES.reveal`, `EASES.preloadOut`).\n\n- `three` is an **optional peer dependency**: the core package never\n  imports it — only `@cosmictraveler002/anim-kit/three` does, so installing\n  anim-kit alone keeps your tree gsap+lenis. Add `three` when you use WebGL\n  effects (the §2 import map already serves a pinned build — no install needed\n  for the CDN path).\n"
+    },
+    {
+      "id": "tearReveal",
+      "title": "Tear reveal — torn-edge sheet sweep",
+      "summary": "A noise-displaced boundary sweeps a section in or out: the fbm joins the field before thresholding, so patches tear away ahead of the front and ride across as separate shards, while a barrel warp bows the edge into an arriving curve instead of a straight line wobbling in place. The sheet paints flat colour or a two-stop gradient and can multiply-tint the artwork under it.",
+      "category": "webgl",
+      "categoryLabel": "WebGL",
+      "subcategory": "scenes",
+      "subcategoryLabel": "Scenes & overlays",
+      "imports": [
+        "tearReveal"
+      ],
+      "importsFrom": "@cosmictraveler002/anim-kit/three",
+      "markup": "<section data-tear> <!-- position: relative; overflow: hidden -->\n  …content the sheet sweeps over…\n</section>",
+      "usage": "const destroy = tearReveal(\"[data-tear]\", {\n  color: [\"#ff1f1f\", \"#ff5252\"], // [foot, top] gradient stops (or one colour)\n  blend: \"multiply\",             // tint the section instead of covering it\n  direction: \"up\",               // up | down | left | right\n  mode: \"scroll\",                // play on enter — or \"immediate\"\n  duration: 1,                   // seconds for the timed run\n});\n\n// scrub: 0.4  -> progress follows the scroll; stopping half way leaves a\n//                half-torn screen (a real place to be)\n// fixed: true -> the canvas covers the viewport for a page-sized sweep\ndestroy();",
+      "options": [
+        [
+          "color",
+          "`\"#111111\"`",
+          "Sheet colour — one colour or `[foot, top]` gradient stops."
+        ],
+        [
+          "blend",
+          "`\"none\"`",
+          "CSS `mix-blend-mode` for the canvas — `multiply` tints what is under it."
+        ],
+        [
+          "direction",
+          "`\"up\"`",
+          "Which way the boundary travels: `up` `down` `left` `right`."
+        ],
+        [
+          "dispAmp",
+          "`0.175`",
+          "How far the noise drags the boundary."
+        ],
+        [
+          "dispScale",
+          "`12.2`",
+          "Tear size — high is shrapnel, low is a wave."
+        ],
+        [
+          "dispDetail",
+          "`5`",
+          "Noise octaves — 1 is a smooth wobble, 5 is debris."
+        ],
+        [
+          "dispDrift",
+          "`0`",
+          "How fast the noise pattern crawls (0 holds it still)."
+        ],
+        [
+          "soft",
+          "`0.001`",
+          "Threshold half-width — small keeps shards crisp."
+        ],
+        [
+          "lens",
+          "`-0.275`",
+          "Barrel warp — negative bows the middle of the boundary up, 0 is flat."
+        ],
+        [
+          "duration",
+          "`1`",
+          "Timed-run duration, seconds (ignored when `scrub` is set)."
+        ],
+        [
+          "ease",
+          "`\"power2.inOut\"`",
+          "GSAP ease for the timed run."
+        ],
+        [
+          "mode",
+          "`\"scroll\"`",
+          "`\"scroll\"` plays on enter, `\"immediate\"` plays at once."
+        ],
+        [
+          "scrub",
+          "—",
+          "number = scrub smoothing seconds, `true` = immediate — binds progress to scroll."
+        ],
+        [
+          "start",
+          "`\"top 85%\"`",
+          "ScrollTrigger start position."
+        ],
+        [
+          "end",
+          "`\"top 25%\"`",
+          "ScrollTrigger end position (scrub mode)."
+        ],
+        [
+          "replay",
+          "`false`",
+          "Re-run when leaving / re-entering the viewport."
+        ],
+        [
+          "fixed",
+          "`false`",
+          "Mount the canvas over the viewport instead of the target box."
+        ],
+        [
+          "z",
+          "`1`",
+          "Canvas z-index inside its stacking context."
+        ],
+        [
+          "dpr",
+          "`2`",
+          "Device-pixel-ratio cap."
+        ],
+        [
+          "force",
+          "`false`",
+          "Run even under `prefers-reduced-motion`."
+        ]
+      ],
+      "notes": [
+        "**Optional peer.** Imports from `@cosmictraveler002/anim-kit/three` — `three` is never a core dependency. Bundler: `npm i three`; CDN: the §2 import map serves the pinned build.",
+        "**Modes mirror clipWipe**: `scroll` / `immediate` timed runs, or `scrub` for a boundary that tracks scroll position — scrubbing back re-tears the screen the way it came.",
+        "Both ends of the travel are **sealed**: the displaced boundary reaches the far side with its deepest tear at exactly zero, so the last half-covered pixels never read as speckle or leftover haze.",
+        "**Silent no-op ladder**: missing target → no-op; no `WebGLRenderingContext` (SSR, jsdom, WebGL disabled) → no-op *before* any context probe; renderer refused → no-op; reduced motion → nothing mounts. Nothing ever logs.",
+        "`destroy()` kills the tween + ScrollTrigger, removes the canvas and restores the host styles it changed."
+      ],
+      "text": "Implement the \"Tear reveal — torn-edge sheet sweep\" effect in my project using the **anim-kit** library.\n\nA noise-displaced boundary sweeps a section in or out: the fbm joins the field before thresholding, so patches tear away ahead of the front and ride across as separate shards, while a barrel warp bows the edge into an arriving curve instead of a straight line wobbling in place. The sheet paints flat colour or a two-stop gradient and can multiply-tint the artwork under it.\n\nanim-kit is a framework-agnostic ESM animation library (TypeScript source, compiled to `dist/` JS + `.d.ts`) built on GSAP (ScrollTrigger, SplitText, Draggable, CustomEase, Flip) and Lenis. It works with plain HTML and with React/Vue/Next/Svelte — effects are DOM-selector based, no components involved. Every effect follows one contract:\n\n    effect(target, options) => destroy\n\nIt is published on npm **and** loadable straight from a version-pinned CDN — step 2 below is a complete, copy-paste `index.html` that runs as-is with no build step.\n\n> **Category:** WebGL → Scenes & overlays\n\n## 1. Markup\n\n```html\n<section data-tear> <!-- position: relative; overflow: hidden -->\n  …content the sheet sweeps over…\n</section>\n```\n\n## 2. Procedure — run it from our CDN (no build step)\n\nEvery URL is **version-pinned** — npm versions are immutable, so\n`@cosmictraveler002/anim-kit@1.5.0` and `three@0.186.1`\nalways resolve to these exact builds, forever.\n\n**Step 1 — save this as `index.html`.** A complete working file: the markup\nfrom §1 plus initialisation, nothing else required:\n\n```html\n<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <title>Tear reveal — torn-edge sheet sweep</title>\n    <!-- companion stylesheet: masks, tokens, resting states -->\n    <link\n      rel=\"stylesheet\"\n      href=\"https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/styles/anim-kit.css\"\n    />\n    <!-- import map: three (optional peer) + the anim-kit WebGL entry, both pinned -->\n    <script type=\"importmap\">\n      {\n        \"imports\": {\n          \"three\": \"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js\",\n          \"@cosmictraveler002/anim-kit/three\": \"https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/three/index.js\",\n          \"@cosmictraveler002/anim-kit\": \"https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/index.js\",\n          \"gsap\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/index.js\",\n          \"gsap/ScrollTrigger\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollTrigger.js\",\n          \"gsap/SplitText\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/SplitText.js\",\n          \"gsap/Draggable\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/Draggable.js\",\n          \"gsap/CustomEase\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/CustomEase.js\",\n          \"gsap/Flip\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/Flip.js\",\n          \"gsap/ScrollSmoother\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollSmoother.js\",\n          \"lenis\": \"https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.mjs\"\n        }\n      }\n    </script>\n    <style>\n      body { font-family: system-ui, sans-serif; margin: 0; padding: 12vh 8vw; }\n      /* the WebGL wrapper: the canvas covers it, the <img> lays it out */\n      [data-gl] { position: relative; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 16px; }\n      [data-gl] img { width: 100%; height: 100%; object-fit: cover; display: block; }\n    </style>\n  </head>\n  <body>\n    <section data-tear> <!-- position: relative; overflow: hidden -->\n      …content the sheet sweeps over…\n    </section>\n\n    <script type=\"module\">\n      // three, gsap + lenis come from the import map; this line loads the entry.\n      import { tearReveal } from \"@cosmictraveler002/anim-kit/three\";\n\n      // Selectors that match nothing no-op safely — this never throws.\n      const destroy = tearReveal(\"[data-tear]\", {\n        color: [\"#ff1f1f\", \"#ff5252\"], // [foot, top] gradient stops (or one colour)\n        blend: \"multiply\",             // tint the section instead of covering it\n        direction: \"up\",               // up | down | left | right\n        mode: \"scroll\",                // play on enter — or \"immediate\"\n        duration: 1,                   // seconds for the timed run\n      });\n\n      // scrub: 0.4  -> progress follows the scroll; stopping half way leaves a\n      //                half-torn screen (a real place to be)\n      // fixed: true -> the canvas covers the viewport for a page-sized sweep\n      destroy();\n\n      // Keep the destroy function (see §5) and call it when the effect should\n      // stop: route change, content swap, HMR reload.\n    </script>\n  </body>\n</html>\n```\n\n**Step 2 — open it.** Double-click the file, or serve it statically\n(`npx serve`, `python -m http.server`). No bundler, no `npm install`, no\nconfig — the import map pulls pinned ESM files straight from the CDN, the\nsame bytes the npm tarball ships.\n\n**Step 3 — swap the loader only if you need a different strategy** (all\npinned to `@1.5.0`):\n\n- **unpkg instead of jsDelivr** — same import map, swap the CDN host:\n\n  ```\n  https://unpkg.com/@cosmictraveler002/anim-kit@1.5.0/dist/three/index.js\n  https://unpkg.com/three@0.186.1/build/three.module.js\n  ```\n\n- **already using a bundler (Vite / Next / Webpack / Astro)?** Install both\n  packages and skip the map — node resolves `three` from your lockfile:\n\n  ```sh\n  npm install three @cosmictraveler002/anim-kit\n  ```\n\n  ```js\n  import { tearReveal } from \"@cosmictraveler002/anim-kit/three\";\n  import \"@cosmictraveler002/anim-kit/styles\"; // companion stylesheet\n  ```\n\n**The building blocks you just loaded:**\n\n- `three` — one `WebGLRenderer` per card, an orthographic camera in pixel\n  space and a single `ShaderMaterial`: rounded-box SDF corners, the hover\n  dent (sample squeeze + dome shading), chroma split and the reveal wipe all\n  run in one fragment shader.\n- `gsap` drives the ticker, tweens and anything you compose; `lenis` powers\n  `smoothScroll()`.\n- The DOM keeps the layout (elements, sizing, alt text); the canvas only\n  paints. Without WebGL the GL layer steps aside and the images show.\n- It is plain ESM with `.d.ts` files — TypeScript consumers get types from\n  the same URLs, e.g. `https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/three/index.d.ts`.\n\n## 3. Initialise\n\nRun this after the DOM is ready (and after fonts/images if it measures layout):\n\n```js\nconst destroy = tearReveal(\"[data-tear]\", {\n  color: [\"#ff1f1f\", \"#ff5252\"], // [foot, top] gradient stops (or one colour)\n  blend: \"multiply\",             // tint the section instead of covering it\n  direction: \"up\",               // up | down | left | right\n  mode: \"scroll\",                // play on enter — or \"immediate\"\n  duration: 1,                   // seconds for the timed run\n});\n\n// scrub: 0.4  -> progress follows the scroll; stopping half way leaves a\n//                half-torn screen (a real place to be)\n// fixed: true -> the canvas covers the viewport for a page-sized sweep\ndestroy();\n```\n\n## 4. Options\n\n| Option | Default | Description |\n| --- | --- | --- |\n| `color` | `\"#111111\"` | Sheet colour — one colour or `[foot, top]` gradient stops. |\n| `blend` | `\"none\"` | CSS `mix-blend-mode` for the canvas — `multiply` tints what is under it. |\n| `direction` | `\"up\"` | Which way the boundary travels: `up` `down` `left` `right`. |\n| `dispAmp` | `0.175` | How far the noise drags the boundary. |\n| `dispScale` | `12.2` | Tear size — high is shrapnel, low is a wave. |\n| `dispDetail` | `5` | Noise octaves — 1 is a smooth wobble, 5 is debris. |\n| `dispDrift` | `0` | How fast the noise pattern crawls (0 holds it still). |\n| `soft` | `0.001` | Threshold half-width — small keeps shards crisp. |\n| `lens` | `-0.275` | Barrel warp — negative bows the middle of the boundary up, 0 is flat. |\n| `duration` | `1` | Timed-run duration, seconds (ignored when `scrub` is set). |\n| `ease` | `\"power2.inOut\"` | GSAP ease for the timed run. |\n| `mode` | `\"scroll\"` | `\"scroll\"` plays on enter, `\"immediate\"` plays at once. |\n| `scrub` | — | number = scrub smoothing seconds, `true` = immediate — binds progress to scroll. |\n| `start` | `\"top 85%\"` | ScrollTrigger start position. |\n| `end` | `\"top 25%\"` | ScrollTrigger end position (scrub mode). |\n| `replay` | `false` | Re-run when leaving / re-entering the viewport. |\n| `fixed` | `false` | Mount the canvas over the viewport instead of the target box. |\n| `z` | `1` | Canvas z-index inside its stacking context. |\n| `dpr` | `2` | Device-pixel-ratio cap. |\n| `force` | `false` | Run even under `prefers-reduced-motion`. |\n\n## Notes\n\n- **Optional peer.** Imports from `@cosmictraveler002/anim-kit/three` — `three` is never a core dependency. Bundler: `npm i three`; CDN: the §2 import map serves the pinned build.\n- **Modes mirror clipWipe**: `scroll` / `immediate` timed runs, or `scrub` for a boundary that tracks scroll position — scrubbing back re-tears the screen the way it came.\n- Both ends of the travel are **sealed**: the displaced boundary reaches the far side with its deepest tear at exactly zero, so the last half-covered pixels never read as speckle or leftover haze.\n- **Silent no-op ladder**: missing target → no-op; no `WebGLRenderingContext` (SSR, jsdom, WebGL disabled) → no-op *before* any context probe; renderer refused → no-op; reduced motion → nothing mounts. Nothing ever logs.\n- `destroy()` kills the tween + ScrollTrigger, removes the canvas and restores the host styles it changed.\n\n## 5. Teardown\n\nAlways keep the destroy function and call it when the effect is no longer\nneeded (component unmount, route change, HMR reload):\n\n    const destroy = /* result of step 3 */;\n    destroy();\n\n## 6. Behaviour guarantees\n\n- `target` accepts a selector string, an Element, an array or a NodeList.\n  When nothing matches, the effect returns a no-op destroy — never throws.\n- `prefers-reduced-motion: reduce` skips the animation and snaps to a safe\n  resting state. Pass `force: true` in options to animate regardless.\n- `initGSAP()` runs inside every effect; call it yourself only if you need\n  `gsap`/`ScrollTrigger` configured before first paint.\n- npm and the CDN serve the **same** files — the CDN imports from §2 and the\n  npm import are interchangeable, byte for byte.\n- Custom eases live in the `EASES` map (`EASES.curtain`, `EASES.cardStack`,\n  `EASES.reveal`, `EASES.preloadOut`).\n\n- `three` is an **optional peer dependency**: the core package never\n  imports it — only `@cosmictraveler002/anim-kit/three` does, so installing\n  anim-kit alone keeps your tree gsap+lenis. Add `three` when you use WebGL\n  effects (the §2 import map already serves a pinned build — no install needed\n  for the CDN path).\n"
+    },
+    {
+      "id": "ditherReveal",
+      "title": "Dither reveal — speckled punch-through photo",
+      "summary": "A photo punches through its placeholder in a hard-edged, fbm-speckled ring expanding from the centre outward — no soft dissolve, no crossfade: every pixel on the boundary flips between hole and not-hole. The noise spread ramps to zero at both ends of the travel, so progress 0 is exactly empty and progress 1 exactly solid.",
+      "category": "webgl",
+      "categoryLabel": "WebGL",
+      "subcategory": "scenes",
+      "subcategoryLabel": "Scenes & overlays",
+      "imports": [
+        "ditherReveal"
+      ],
+      "importsFrom": "@cosmictraveler002/anim-kit/three",
+      "markup": "<figure data-reveal> <!-- position: relative; overflow: hidden; background: plate -->\n  <img src=\"photo.jpg\" alt=\"\" />\n</figure>",
+      "usage": "const destroy = ditherReveal(\"[data-reveal]\", {\n  plate: \"#14140f\", // flat placeholder shown where the mask has not opened\n  duration: 1.15,   // seconds\n  maskScale: 50,    // fbm frequency across the element — lump scale of the edge\n  hard: true,       // the signature speckle (false = soft dissolve)\n  play: \"visible\",  // fire when the wrapper scrolls into view\n});\ndestroy();",
+      "options": [
+        [
+          "src",
+          "first `<img>`",
+          "Image source override when the wrapper has no image."
+        ],
+        [
+          "duration",
+          "`1.15`",
+          "Reveal duration, seconds."
+        ],
+        [
+          "ease",
+          "`\"power4.out\"`",
+          "GSAP ease for the reveal."
+        ],
+        [
+          "plate",
+          "—",
+          "Flat placeholder colour under the not-yet-revealed area (omit to show the wrapper's own background)."
+        ],
+        [
+          "maskScale",
+          "`50`",
+          "fbm frequency across the element — the lump scale of the edge."
+        ],
+        [
+          "spread",
+          "`0.35`",
+          "How far (normalised radius) the noise can push the boundary ahead of / behind the clean circle."
+        ],
+        [
+          "detail",
+          "`4`",
+          "fbm octaves — 1 is a soft blob, 6 is gritty."
+        ],
+        [
+          "hard",
+          "`true`",
+          "Hard-edged speckle (the signature) vs a soft dissolve."
+        ],
+        [
+          "play",
+          "`\"visible\"`",
+          "`\"visible\"` fires on first viewport entry, `\"load\"` when the texture decodes (falls back to `load` without IntersectionObserver)."
+        ],
+        [
+          "dpr",
+          "`2`",
+          "Device-pixel-ratio cap."
+        ],
+        [
+          "force",
+          "`false`",
+          "Run even under `prefers-reduced-motion`."
+        ]
+      ],
+      "notes": [
+        "**Optional peer.** Imports from `@cosmictraveler002/anim-kit/three` — `three` is never a core dependency. Bundler: `npm i three`; CDN: the §2 import map serves the pinned build.",
+        "**The `<img>` keeps layout and alt text**: the canvas covers the wrapper and only takes over its pixels once the texture has decoded — with a plate the placeholder covers from load, without one the image only steps aside when the reveal actually starts. A texture 404 leaves the plain `<img>` untouched.",
+        "**Cover crop in-shader** (`object-fit: cover` maths), so any source aspect fills any card aspect without letterboxing.",
+        "**Silent no-op ladder**: missing target → no-op; no `WebGLRenderingContext` (SSR, jsdom, WebGL disabled) → no-op *before* any context probe; renderer refused → no-op; reduced motion → the canvas never mounts and the static image is the resting state. Nothing ever logs.",
+        "`destroy()` kills the tween + observers, disposes geometry/material/texture/renderer, removes the canvas and restores the image opacity and wrapper position."
+      ],
+      "text": "Implement the \"Dither reveal — speckled punch-through photo\" effect in my project using the **anim-kit** library.\n\nA photo punches through its placeholder in a hard-edged, fbm-speckled ring expanding from the centre outward — no soft dissolve, no crossfade: every pixel on the boundary flips between hole and not-hole. The noise spread ramps to zero at both ends of the travel, so progress 0 is exactly empty and progress 1 exactly solid.\n\nanim-kit is a framework-agnostic ESM animation library (TypeScript source, compiled to `dist/` JS + `.d.ts`) built on GSAP (ScrollTrigger, SplitText, Draggable, CustomEase, Flip) and Lenis. It works with plain HTML and with React/Vue/Next/Svelte — effects are DOM-selector based, no components involved. Every effect follows one contract:\n\n    effect(target, options) => destroy\n\nIt is published on npm **and** loadable straight from a version-pinned CDN — step 2 below is a complete, copy-paste `index.html` that runs as-is with no build step.\n\n> **Category:** WebGL → Scenes & overlays\n\n## 1. Markup\n\n```html\n<figure data-reveal> <!-- position: relative; overflow: hidden; background: plate -->\n  <img src=\"photo.jpg\" alt=\"\" />\n</figure>\n```\n\n## 2. Procedure — run it from our CDN (no build step)\n\nEvery URL is **version-pinned** — npm versions are immutable, so\n`@cosmictraveler002/anim-kit@1.5.0` and `three@0.186.1`\nalways resolve to these exact builds, forever.\n\n**Step 1 — save this as `index.html`.** A complete working file: the markup\nfrom §1 plus initialisation, nothing else required:\n\n```html\n<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <title>Dither reveal — speckled punch-through photo</title>\n    <!-- companion stylesheet: masks, tokens, resting states -->\n    <link\n      rel=\"stylesheet\"\n      href=\"https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/styles/anim-kit.css\"\n    />\n    <!-- import map: three (optional peer) + the anim-kit WebGL entry, both pinned -->\n    <script type=\"importmap\">\n      {\n        \"imports\": {\n          \"three\": \"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js\",\n          \"@cosmictraveler002/anim-kit/three\": \"https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/three/index.js\",\n          \"@cosmictraveler002/anim-kit\": \"https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/index.js\",\n          \"gsap\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/index.js\",\n          \"gsap/ScrollTrigger\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollTrigger.js\",\n          \"gsap/SplitText\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/SplitText.js\",\n          \"gsap/Draggable\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/Draggable.js\",\n          \"gsap/CustomEase\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/CustomEase.js\",\n          \"gsap/Flip\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/Flip.js\",\n          \"gsap/ScrollSmoother\": \"https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollSmoother.js\",\n          \"lenis\": \"https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.mjs\"\n        }\n      }\n    </script>\n    <style>\n      body { font-family: system-ui, sans-serif; margin: 0; padding: 12vh 8vw; }\n      /* the WebGL wrapper: the canvas covers it, the <img> lays it out */\n      [data-gl] { position: relative; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 16px; }\n      [data-gl] img { width: 100%; height: 100%; object-fit: cover; display: block; }\n    </style>\n  </head>\n  <body>\n    <figure data-reveal> <!-- position: relative; overflow: hidden; background: plate -->\n      <img src=\"photo.jpg\" alt=\"\" />\n    </figure>\n\n    <script type=\"module\">\n      // three, gsap + lenis come from the import map; this line loads the entry.\n      import { ditherReveal } from \"@cosmictraveler002/anim-kit/three\";\n\n      // Selectors that match nothing no-op safely — this never throws.\n      const destroy = ditherReveal(\"[data-reveal]\", {\n        plate: \"#14140f\", // flat placeholder shown where the mask has not opened\n        duration: 1.15,   // seconds\n        maskScale: 50,    // fbm frequency across the element — lump scale of the edge\n        hard: true,       // the signature speckle (false = soft dissolve)\n        play: \"visible\",  // fire when the wrapper scrolls into view\n      });\n      destroy();\n\n      // Keep the destroy function (see §5) and call it when the effect should\n      // stop: route change, content swap, HMR reload.\n    </script>\n  </body>\n</html>\n```\n\n**Step 2 — open it.** Double-click the file, or serve it statically\n(`npx serve`, `python -m http.server`). No bundler, no `npm install`, no\nconfig — the import map pulls pinned ESM files straight from the CDN, the\nsame bytes the npm tarball ships.\n\n**Step 3 — swap the loader only if you need a different strategy** (all\npinned to `@1.5.0`):\n\n- **unpkg instead of jsDelivr** — same import map, swap the CDN host:\n\n  ```\n  https://unpkg.com/@cosmictraveler002/anim-kit@1.5.0/dist/three/index.js\n  https://unpkg.com/three@0.186.1/build/three.module.js\n  ```\n\n- **already using a bundler (Vite / Next / Webpack / Astro)?** Install both\n  packages and skip the map — node resolves `three` from your lockfile:\n\n  ```sh\n  npm install three @cosmictraveler002/anim-kit\n  ```\n\n  ```js\n  import { ditherReveal } from \"@cosmictraveler002/anim-kit/three\";\n  import \"@cosmictraveler002/anim-kit/styles\"; // companion stylesheet\n  ```\n\n**The building blocks you just loaded:**\n\n- `three` — one `WebGLRenderer` per card, an orthographic camera in pixel\n  space and a single `ShaderMaterial`: rounded-box SDF corners, the hover\n  dent (sample squeeze + dome shading), chroma split and the reveal wipe all\n  run in one fragment shader.\n- `gsap` drives the ticker, tweens and anything you compose; `lenis` powers\n  `smoothScroll()`.\n- The DOM keeps the layout (elements, sizing, alt text); the canvas only\n  paints. Without WebGL the GL layer steps aside and the images show.\n- It is plain ESM with `.d.ts` files — TypeScript consumers get types from\n  the same URLs, e.g. `https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/three/index.d.ts`.\n\n## 3. Initialise\n\nRun this after the DOM is ready (and after fonts/images if it measures layout):\n\n```js\nconst destroy = ditherReveal(\"[data-reveal]\", {\n  plate: \"#14140f\", // flat placeholder shown where the mask has not opened\n  duration: 1.15,   // seconds\n  maskScale: 50,    // fbm frequency across the element — lump scale of the edge\n  hard: true,       // the signature speckle (false = soft dissolve)\n  play: \"visible\",  // fire when the wrapper scrolls into view\n});\ndestroy();\n```\n\n## 4. Options\n\n| Option | Default | Description |\n| --- | --- | --- |\n| `src` | first `<img>` | Image source override when the wrapper has no image. |\n| `duration` | `1.15` | Reveal duration, seconds. |\n| `ease` | `\"power4.out\"` | GSAP ease for the reveal. |\n| `plate` | — | Flat placeholder colour under the not-yet-revealed area (omit to show the wrapper's own background). |\n| `maskScale` | `50` | fbm frequency across the element — the lump scale of the edge. |\n| `spread` | `0.35` | How far (normalised radius) the noise can push the boundary ahead of / behind the clean circle. |\n| `detail` | `4` | fbm octaves — 1 is a soft blob, 6 is gritty. |\n| `hard` | `true` | Hard-edged speckle (the signature) vs a soft dissolve. |\n| `play` | `\"visible\"` | `\"visible\"` fires on first viewport entry, `\"load\"` when the texture decodes (falls back to `load` without IntersectionObserver). |\n| `dpr` | `2` | Device-pixel-ratio cap. |\n| `force` | `false` | Run even under `prefers-reduced-motion`. |\n\n## Notes\n\n- **Optional peer.** Imports from `@cosmictraveler002/anim-kit/three` — `three` is never a core dependency. Bundler: `npm i three`; CDN: the §2 import map serves the pinned build.\n- **The `<img>` keeps layout and alt text**: the canvas covers the wrapper and only takes over its pixels once the texture has decoded — with a plate the placeholder covers from load, without one the image only steps aside when the reveal actually starts. A texture 404 leaves the plain `<img>` untouched.\n- **Cover crop in-shader** (`object-fit: cover` maths), so any source aspect fills any card aspect without letterboxing.\n- **Silent no-op ladder**: missing target → no-op; no `WebGLRenderingContext` (SSR, jsdom, WebGL disabled) → no-op *before* any context probe; renderer refused → no-op; reduced motion → the canvas never mounts and the static image is the resting state. Nothing ever logs.\n- `destroy()` kills the tween + observers, disposes geometry/material/texture/renderer, removes the canvas and restores the image opacity and wrapper position.\n\n## 5. Teardown\n\nAlways keep the destroy function and call it when the effect is no longer\nneeded (component unmount, route change, HMR reload):\n\n    const destroy = /* result of step 3 */;\n    destroy();\n\n## 6. Behaviour guarantees\n\n- `target` accepts a selector string, an Element, an array or a NodeList.\n  When nothing matches, the effect returns a no-op destroy — never throws.\n- `prefers-reduced-motion: reduce` skips the animation and snaps to a safe\n  resting state. Pass `force: true` in options to animate regardless.\n- `initGSAP()` runs inside every effect; call it yourself only if you need\n  `gsap`/`ScrollTrigger` configured before first paint.\n- npm and the CDN serve the **same** files — the CDN imports from §2 and the\n  npm import are interchangeable, byte for byte.\n- Custom eases live in the `EASES` map (`EASES.curtain`, `EASES.cardStack`,\n  `EASES.reveal`, `EASES.preloadOut`).\n\n- `three` is an **optional peer dependency**: the core package never\n  imports it — only `@cosmictraveler002/anim-kit/three` does, so installing\n  anim-kit alone keeps your tree gsap+lenis. Add `three` when you use WebGL\n  effects (the §2 import map already serves a pinned build — no install needed\n  for the CDN path).\n"
     }
   ]
 }

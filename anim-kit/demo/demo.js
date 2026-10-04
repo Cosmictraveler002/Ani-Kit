@@ -34,9 +34,10 @@ import {
   logoReveal,
   menuOverlay,
   themeReveal,
+  inkWipe,
   compose,
 } from "@cosmictraveler002/anim-kit";
-import { webglMedia, glRail } from "@cosmictraveler002/anim-kit/three";
+import { webglMedia, glRail, tearReveal, ditherReveal } from "@cosmictraveler002/anim-kit/three";
 
 const cleanups = [];
 
@@ -88,6 +89,25 @@ document.querySelectorAll(".menu-link a").forEach((a) => {
 });
 
 /* ---------------------------------------------------------------- */
+/* Ink wipe — brush page transition                                   */
+/* ---------------------------------------------------------------- */
+const wipe = inkWipe();
+let wipeAlt = false;
+let wipeBusy = false;
+document.querySelector("[data-wipe-run]")?.addEventListener("click", async () => {
+  const swap = document.querySelector("[data-wipe-swap]");
+  if (!swap || wipeBusy) return;
+  wipeBusy = true;
+  await wipe.cover(); // resolves at full cover — swap here in a real app
+  wipeAlt = !wipeAlt;
+  swap.textContent = wipeAlt ? "Page B" : "Page A";
+  swap.classList.toggle("wipe-swap--b", wipeAlt);
+  await wipe.unveil();
+  wipeBusy = false;
+});
+cleanups.push(wipe.destroy);
+
+/* ---------------------------------------------------------------- */
 /* Text                                                               */
 /* ---------------------------------------------------------------- */
 // Above the fold: plays immediately, like their `animateOnScroll:false`.
@@ -129,6 +149,23 @@ cleanups.push(reelText("[data-reel]", { mode: "scroll", frames: 4 }));
 cleanups.push(glRail("[data-rail]", { radius: 1200, grid: true, throwScale: 14, wheel: true }));
 document.querySelectorAll("[data-gl]").forEach((el) => {
   cleanups.push(webglMedia(el, { corner: 18, dent: 70, chroma: 2 }));
+});
+
+/* Tear + dither — the GPU scenes & overlays pair. */
+document.querySelectorAll("[data-tear]").forEach((el) => {
+  cleanups.push(
+    tearReveal(el, {
+      color: ["#ff8a1e", "#ff5252"],
+      blend: "multiply", // tints the artwork instead of covering it
+      scrub: 0.4, // boundary follows the scroll, both ways
+      start: "top 90%",
+      end: "top 30%",
+      duration: 1.6,
+    }),
+  );
+});
+document.querySelectorAll("[data-dither]").forEach((el) => {
+  cleanups.push(ditherReveal(el, { plate: "#14140f", duration: 1.3 }));
 });
 
 /* ---------------------------------------------------------------- */

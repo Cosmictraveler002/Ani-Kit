@@ -30,6 +30,7 @@ destroy();
   - [Core](#core)
   - [Text animations](#text-animations)
   - [Scroll & media](#scroll--media)
+  - [WebGL](#webgl)
   - [Loops & marquees](#loops--marquees)
   - [Buttons & links](#buttons--links)
   - [Navigation & overlays](#navigation--overlays)
@@ -78,7 +79,7 @@ inside the published tarball):
 
 | Specifier | Resolves to | Use for |
 |---|---|---|
-| `@cosmictraveler002/anim-kit` | `dist/index.js` + `dist/index.d.ts` | the full barrel — 47 exports |
+| `@cosmictraveler002/anim-kit` | `dist/index.js` + `dist/index.d.ts` | the full barrel — 48 exports |
 | `@cosmictraveler002/anim-kit/effects/<name>` | `dist/effects/<name>.js` + `.d.ts` | one effect in isolation (`marquee`, `lineReveal`, …) |
 | `@cosmictraveler002/anim-kit/three` | `dist/three/index.js` + `.d.ts` | WebGL effects — needs the optional `three` peer (never a core dep) |
 | `@cosmictraveler002/anim-kit/standalone` | `dist/anim-kit.standalone.js` (types → `index.d.ts`) | the self-contained bundle — same API |
@@ -330,6 +331,7 @@ prompt dock, and backs the `category` / `subcategory` fields on
 | Scroll & media | Heroes & media | `heroShrink`, `mediaSettle` |
 | Scroll & media | Enter reveals | `revealRule`, `unfoldReveal`, `clipWipe` |
 | WebGL | Shader media | `webglMedia`, `glRail` |
+| WebGL | Scenes & overlays | `tearReveal`, `ditherReveal` |
 | Loops & marquees | Marquees | `marquee` |
 | Loops & marquees | Draggables & rails | `dragStrip`, `dragRail` |
 | Loops & marquees | Equalizers | `audioBars` |
@@ -340,6 +342,7 @@ prompt dock, and backs the `category` / `subcategory` fields on
 | Navigation & overlays | Cursors | `cursorFollower` |
 | Intros & transitions | Preloaders | `preloader` |
 | Intros & transitions | Theme wipes | `themeReveal` |
+| Intros & transitions | Page transitions | `inkWipe` |
 | Logos & SVG | Path reveals | `logoReveal` |
 
 **Growing the library:** a subcategory is the slot sibling effects land in —
@@ -920,6 +923,100 @@ user-select: none`.
 
 ---
 
+#### `tearReveal(target, options?) => destroy`
+
+A torn-edge sheet that sweeps a section in (or out): a noise-displaced
+boundary travels across the overlay — the fbm joins the field *before*
+thresholding, so patches tear away ahead of the front and ride across as
+separate shards — while a barrel warp bows the edge into an arriving curve
+instead of a straight line wobbling in place.
+
+```ts
+tearReveal("[data-tear]", {
+  color: ["#ff8a1e", "#ff5252"], // [foot, top] gradient stops (or one colour)
+  blend: "multiply",             // tint the section instead of covering it
+  direction: "up",               // up | down | left | right
+  mode: "scroll",                // play on enter — or "immediate"
+  duration: 1,                   // seconds for the timed run
+});
+// …or bind it to scroll instead:
+tearReveal("[data-tall]", { scrub: 0.4, start: "top 90%", end: "top 30%" });
+tearReveal(document.body, { fixed: true }); // page-sized sweep over the viewport
+```
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `color` | `"#111111"` | one colour or `[foot, top]` gradient stops |
+| `blend` | `"none"` | CSS `mix-blend-mode` — `multiply` tints what is under the sheet |
+| `direction` | `"up"` | `up` / `down` / `left` / `right` |
+| `dispAmp` / `dispScale` / `dispDetail` / `dispDrift` | `0.175` / `12.2` / `5` / `0` | tear shape — how far, how big, how gritty, how fast it crawls |
+| `soft` | `0.001` | threshold half-width — small keeps shards crisp |
+| `lens` | `-0.275` | barrel warp — negative bows the middle of the boundary up |
+| `duration` / `ease` | `1` / `"power2.inOut"` | timed run (`mode: "scroll"` or `"immediate"`) |
+| `scrub` | — | smoothing seconds (or `true`) — progress follows the scroll, both ways |
+| `start` / `end` | `"top 85%"` / `"top 25%"` | ScrollTrigger positions |
+| `replay` | `false` | re-run on every viewport entry |
+| `fixed` / `z` / `dpr` | `false` / `1` / `2` | viewport-sized canvas, stacking, pixel-ratio cap |
+
+Both ends of the travel are **sealed**: the displaced boundary reaches the
+far side with its deepest tear at exactly zero, so the last half-covered
+pixels never read as speckle or leftover haze.
+
+**Silent no-op ladder.** Missing target → no-op; no `WebGLRenderingContext`
+(SSR, jsdom, WebGL disabled) → no-op *before* any context probe; renderer
+refused → no-op; reduced motion → nothing mounts. Nothing ever logs.
+`destroy()` kills the tween + ScrollTrigger, removes the canvas and restores
+the host's styles.
+
+**DOM.** `position: relative; overflow: hidden` on the target — or skip the
+target box entirely with `fixed: true` for a page-sized sweep.
+
+---
+
+#### `ditherReveal(target, options?) => destroy`
+
+A photo punches through its placeholder in a hard-edged, fbm-speckled ring
+expanding from the centre outward — no soft dissolve, no crossfade: every
+pixel on the boundary flips between hole and not-hole. The noise spread
+ramps to zero at both ends of the travel, so progress 0 is exactly empty
+and progress 1 exactly solid.
+
+```ts
+ditherReveal("[data-reveal]", {
+  plate: "#14140f", // flat placeholder where the mask has not opened yet
+  duration: 1.15,   // seconds, ease "power4.out"
+  maskScale: 50,    // fbm frequency across the element — lump scale of the edge
+  hard: true,       // the signature speckle (false = a soft dissolve)
+  play: "visible",  // fire on first viewport entry ("load" = when the texture decodes)
+});
+```
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `src` | first `<img>` | image source override when the wrapper has no image |
+| `duration` / `ease` | `1.15` / `"power4.out"` | the reveal clock |
+| `plate` | — | flat placeholder colour (omit → the wrapper's own background shows through) |
+| `maskScale` / `spread` / `detail` | `50` / `0.35` / `4` | edge shape — frequency, reach, fbm octaves |
+| `hard` | `true` | hard speckle vs soft dissolve |
+| `play` | `"visible"` | `"visible"` fires on first viewport entry, `"load"` on texture decode |
+| `dpr` | `2` | device-pixel-ratio cap |
+
+The `<img>` keeps layout and alt text: the canvas covers the wrapper and
+only takes over its pixels once the texture has decoded — with a plate the
+placeholder covers from load, without one the image only steps aside when
+the reveal actually starts. The cover-crop runs in-shader (`object-fit:
+cover` maths), so any source aspect fills any card aspect.
+
+**Silent no-op ladder.** Missing target → no-op; no `WebGLRenderingContext`
+(SSR, jsdom, WebGL disabled) → no-op *before* any context probe; renderer
+refused → no-op; texture 404 → the plain `<img>` stays untouched; reduced
+motion → the canvas never mounts and the static image is the resting state.
+Nothing ever logs. `destroy()` kills the tween + observers, disposes
+geometry/material/texture/renderer, removes the canvas and restores the
+image opacity and wrapper position.
+
+---
+
 ### Loops & marquees
 
 Continuous motion — marquees, draggable rails, equaliser bars.
@@ -1245,6 +1342,46 @@ theme.set("dark"); theme.toggle(); theme.current(); theme.destroy();
 
 ---
 
+#### `inkWipe(options?) => handle`
+
+A brush-loaded ink sheet sweeps across the whole page: `cover()` paints it
+over, the swap happens at full cover, `unveil()` lets the new page arrive
+behind the *same* stroke — one continuous left→right travel whose edge is
+seeded, so it never boils between frames. Bristle spurs and flecks run
+ahead of the front.
+
+```ts
+const wipe = inkWipe({ links: "[data-wipe]" }); // intercepts links; next page auto-unveils
+
+await wipe.cover();   // resolves at full cover — swap your DOM here
+await wipe.unveil();  // the new page arrives behind the same stroke
+wipe.destroy();
+
+// Options-object form or target-first form both work:
+inkWipe({ host: "#overlay", color: "#111" });
+inkWipe(document.body, { coverMs: 700 });
+```
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `host` | `document.body` | overlay host the canvas is appended to (target arg also works) |
+| `color` | `"#0b0b0b"` | ink colour |
+| `coverMs` / `unveilMs` | `550` / `650` | sweep durations |
+| `ease` | `"power2.inOut"` | GSAP ease for both halves |
+| `tilt` / `rough` / `bristle` | `0.35` / `44` / `180` | edge lean (× height), noise amplitude px, longest spur px |
+| `links` | — | selectors intercepted — a click runs the wipe before navigating |
+| `sessionKey` / `autoUnveil` | `"ak-ink-wipe"` / `true` | cross-page handoff flag + the page-load unveil |
+| `z` | `9998` | overlay z-index |
+
+**The MPA handoff** is a sessionStorage flag: a covered navigation stores
+`sessionKey`, the next page reads it, covers instantly and unveils — no
+flash between documents. Reduced motion snaps both halves instantly to a
+solid sheet, so navigation still never flashes the swap; without a 2D
+context (SSR, jsdom) both promises resolve immediately and nothing paints.
+`destroy()` removes the canvas, its listeners and the link interception.
+
+---
+
 ### Logos & SVG
 
 Vector reveals for brand marks.
@@ -1428,7 +1565,7 @@ and slotting the effect into a subcategory.
 **Unit smoke** (`scripts/smoke.mjs`) runs the built bundle in **jsdom** and
 asserts:
 
-1. all 47 exports are present;
+1. all 48 exports are present;
 2. plugins (`ScrollTrigger`, `SplitText`, `Draggable`, `CustomEase`,
    `Flip`, `ScrollSmoother`) and the 4 custom eases are registered;
 3. every effect no-ops safely on missing targets;
@@ -1473,7 +1610,7 @@ anim-kit/
 │  │  └─ types.ts          TargetLike / Destroy / CommonOptions
 │  ├─ effects/             one file per effect (24 files, 28 effect functions)
 │  ├─ styles/anim-kit.css  companion stylesheet
-│  └─ index.ts             barrel — 47 exports
+│  └─ index.ts             barrel — 48 exports
 ├─ demo/                   visual demo (import map, no bundler)
 ├─ scripts/
 │  ├─ serve.mjs            static server + /api/prompts (:4321)

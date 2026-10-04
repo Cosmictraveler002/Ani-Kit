@@ -29,10 +29,10 @@
 ├── anim-kit/                 the npm package — all source, tests, demo and docs
 │   ├── src/
 │   │   ├── core/             6 modules: gsap setup, split, smooth-scroll, guard, util, types
-│   │   ├── effects/          26 files / 30 effect functions — one concern per file
+│   │   ├── effects/          27 files / 31 effect functions — one concern per file
 │   │   ├── three/            WebGL entry (./three subpath) — optional three.js peer
 │   │   ├── styles/           anim-kit.css (ships untouched as plain CSS)
-│   │   └── index.ts          public barrel — the 47-export contract
+│   │   └── index.ts          public barrel — the 48-export contract
 │   ├── demo/                 demo page + developer docs + colour/font library (import map, no bundler)
 │   ├── scripts/              prompts + taxonomy, demo server, build helper, smoke tests
 │   ├── dist/                 build output (gitignored)
@@ -60,7 +60,7 @@ npm run demo          # server on :4321 — demo page + /api/prompts (build firs
 | Change                                            | Where                                                                                                                                                                                                    |
 | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Add or modify an effect                           | `anim-kit/src/effects/<name>.ts` → export from `anim-kit/src/index.ts` → add to `expected` in `anim-kit/scripts/smoke.mjs` → add a prompt in `anim-kit/scripts/prompts.mjs` → wire into `anim-kit/demo/` |
-| Public API surface (47 exports)                   | `anim-kit/src/index.ts` — must stay in sync with the `expected` list in `scripts/smoke.mjs`                                                                                                              |
+| Public API surface (48 exports)                   | `anim-kit/src/index.ts` — must stay in sync with the `expected` list in `scripts/smoke.mjs`                                                                                                              |
 | GSAP setup, custom eases, internal `killTweens()` | `anim-kit/src/core/gsap.ts`                                                                                                                                                                              |
 | Effect taxonomy (categories → subcategories)      | `TAXONOMY` in `anim-kit/scripts/prompts.mjs`                                                                                                                                                             |
 | Copy-prompt text served by the demo               | `renderPrompt()` in `anim-kit/scripts/prompts.mjs`                                                                                                                                                       |
@@ -81,7 +81,7 @@ npm run demo          # server on :4321 — demo page + /api/prompts (build firs
 3. **Two-level taxonomy only** — category → subcategory → effect, every effect
    in exactly one slot, no tags. The `TAXONOMY` tree is the single source of
    truth for the API payload, demo dock grouping, README tree and tests.
-4. **47-export contract** — `src/index.ts` and the `expected` list in
+4. **48-export contract** — `src/index.ts` and the `expected` list in
    `scripts/smoke.mjs` must match exactly.
 5. **CSS ships untouched** — plain `.css` on its own subpath
    (`anim-kit/styles`), never run through the JS compiler.
@@ -103,10 +103,11 @@ npm run demo          # server on :4321 — demo page + /api/prompts (build firs
 ## Recent structural fixes — bug classes and how to fix the next one
 
 Two "doesn't work" reports from browser verification of the demo, a check
-that stopped a third class before it shipped, and a fourth class caught when
-a hand-copied deployment froze on its loader. Each is paid for with a
-regression test or a CI guard; treat them as the template for similar
-reports.
+that stopped a third class before it shipped, a fourth class caught when a
+hand-copied deployment froze on its loader, and a fifth found when a scrub
+read its end state while the section was still below the fold. Each is paid
+for with a regression test or a CI guard; treat them as the template for
+similar reports.
 
 ### A. Position math must match the positioning mode (`cursorFollower`)
 
@@ -189,6 +190,36 @@ so the class can only appear in copies made outside that guard.
 `… does not provide an export named` is version skew, not an effect bug.
 Then load the page headless and assert the loader clears within a few
 seconds.
+
+### E. Pins must measure first or everything below them lies (refresh order)
+
+**What happened.** A scrubbed `tearReveal` below the demo's pinned sections
+rendered fully covered at *every* scroll position while
+`getBoundingClientRect` placed its section 10k px further down.
+`ScrollTrigger.refresh()` reverts **every** pin spacer first, then
+re-measures triggers in **creation** order. The pinners (`horizontalScroll`,
+`stackedCardsPinned`, `scatterText`) are created *after* the reveals that
+live below them in the document, so those reveals measured a document
+without the pins' spacers: start/end cached 3053–9385 px early — exactly the
+spacers' heights. Symptoms: enter reveals below a pin fire before you reach
+them (they read as dead effects, class B's cousin), and a scrub sits at
+progress 1 with its section still below the fold.
+
+**Rule.** Any effect that creates a pinned ScrollTrigger must pass
+`refreshPriority: 1` in the pin's vars. That flips GSAP's `_sort` flag, so
+every refresh re-sorts pins (and their spacers) ahead of everything else —
+refresh order becomes document order.
+
+**The fix.** `refreshPriority: 1` inside the pin vars in
+`horizontal-scroll.ts`, `scatter-text.ts` and `stacked-cards.ts`. Calling
+`ScrollTrigger.refresh()` again does **not** help — the sort only runs when
+the flag is set.
+
+**How to verify.** Headless: import `gsap/ScrollTrigger` in-page and compare
+every trigger's `Math.round(inst.start)` against the rect-derived value
+(`rect.top + scrollY − pct·vh` parsed from `inst.vars.start`); a delta equal
+to a pin spacer's height means the fix regressed. Unit: `scripts/smoke.mjs`
+asserts every trigger with `vars.pin` carries `vars.refreshPriority === 1`.
 
 ### Process notes
 

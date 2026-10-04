@@ -12,3 +12,7 @@ export { webglMedia } from "./webgl-media.js";
 export type { WebglMediaOptions } from "./webgl-media.js";
 export { glRail } from "./gl-rail.js";
 export type { GlRailOptions } from "./gl-rail.js";
+export { tearReveal } from "./tear-reveal.js";
+export type { TearRevealOptions, TearRevealDirection } from "./tear-reveal.js";
+export { ditherReveal } from "./dither-reveal.js";
+export type { DitherRevealOptions } from "./dither-reveal.js";

@@ -65,7 +65,7 @@ const expected = [
   "scrambleText", "reelText", "flipWords",
   // micro
   "liquidButton", "underlineLink", "cursorFollower", "magnetic", "counter", "audioBars",
-  "themeReveal", "menuOverlay", "preloader",
+  "themeReveal", "menuOverlay", "preloader", "inkWipe",
 ];
 
 const missing = expected.filter((k) => !(k in lib));
@@ -121,6 +121,7 @@ const factories = [
   "scrambleText", "reelText",
   "liquidButton", "underlineLink",
   "cursorFollower", "counter", "audioBars", "magnetic", "flipWords",
+  "inkWipe",
 ];
 for (const name of factories) {
   const destroy = asDestroy(lib[name]("[data-nope]"));
@@ -186,6 +187,50 @@ for (const [name, args] of createDestroy) {
 console.log(`ok  ${createDestroy.length} effects mount and unmount`);
 hsHost.remove();
 scatterHost.remove();
+
+/* ---------------- pinners claim refreshPriority ----------------------------- */
+// ScrollTrigger.refresh() reverts EVERY pin spacer first, then re-measures in
+// creation order — a pinner created after effects that live below it leaves
+// them measuring a document ~9k px short: reveals fire before you reach them,
+// a scrub reads progress 1 with the boundary still below the fold. Every
+// pinning effect must claim refreshPriority so refresh sorts pins (and their
+// spacers) ahead of the triggers that depend on them.
+{
+  const pinHs = mountHost(
+    "pin-hs",
+    `<section><div class="track"><div class="panel"><i>1</i></div><div class="panel"><i>2</i></div></div></section>`,
+  );
+  const pinScatter = mountHost("pin-scatter", `<p>So, are you ready to Stand out?</p>`);
+  const pinStack = mountHost(
+    "pin-stack",
+    `<div class="wrap"><div class="viewport"><i class="ak-card">a</i><i class="ak-card">b</i></div></div>`,
+  );
+  const before = new Set(lib.ScrollTrigger.getAll());
+  const disposers = [
+    asDestroy(lib.horizontalScroll("#pin-hs .track")),
+    asDestroy(lib.scatterText("#pin-scatter")),
+    asDestroy(lib.stackedCardsPinned("#pin-stack .wrap", { viewport: "#pin-stack .viewport" })),
+  ];
+  const pinned = lib.ScrollTrigger.getAll().filter((t) => !before.has(t) && t.vars.pin);
+  assert.ok(pinned.length >= 2, `pinners must register pin triggers (saw ${pinned.length})`);
+  for (const t of pinned) {
+    assert.equal(
+      t.vars.refreshPriority,
+      1,
+      "every pinning trigger must claim refreshPriority:1 (refresh order must become document order)",
+    );
+  }
+  for (const d of disposers) d();
+  assert.equal(
+    lib.ScrollTrigger.getAll().some((t) => !before.has(t)),
+    false,
+    "pinners must leave no ScrollTriggers behind",
+  );
+  pinHs.remove();
+  pinScatter.remove();
+  pinStack.remove();
+}
+console.log("ok  pinners claim refreshPriority so refresh measures in document order");
 
 /* ---------------- flipWords: reparents at init, homes on destroy --------- */
 const flipDestroy = lib.flipWords("[data-flip-from]", { to: "[data-flip-to]" });
@@ -422,7 +467,37 @@ grDestroy();
 assert.equal(grTrack.dataset.akRail, undefined, "glRail must unwind the physics on destroy");
 assert.equal(grStage.dataset.akGlRail, undefined, "glRail must leave no stamp behind");
 grHost.remove();
-console.log("ok  /three entry exports webglMedia + glRail, both no-op silently without WebGL");
+
+// tearReveal + ditherReveal: same ladder — no WebGL → nothing ever mounts.
+assert.equal(typeof threeLib.tearReveal, "function", "the /three entry must export tearReveal");
+assert.ok(!("tearReveal" in lib), "tearReveal must NOT leak into the core barrel (three stays optional)");
+const tearMissing = asDestroy(threeLib.tearReveal("[data-nope]"));
+assert.equal(typeof tearMissing, "function", "tearReveal must no-op on missing targets");
+tearMissing();
+const tearHost = mountHost("tear-host", `<section data-tear-x><h3>x</h3></section>`);
+const tearEl = tearHost.querySelector("[data-tear-x]");
+const tearDestroy = threeLib.tearReveal(tearEl, { blend: "multiply", scrub: 0.4 });
+assert.equal(tearHost.querySelector("canvas"), null, "tearReveal must not mount a canvas without WebGL");
+tearDestroy();
+tearHost.remove();
+
+assert.equal(typeof threeLib.ditherReveal, "function", "the /three entry must export ditherReveal");
+assert.ok(!("ditherReveal" in lib), "ditherReveal must NOT leak into the core barrel (three stays optional)");
+const ditherMissing = asDestroy(threeLib.ditherReveal("[data-nope]"));
+assert.equal(typeof ditherMissing, "function", "ditherReveal must no-op on missing targets");
+ditherMissing();
+const ditherHost = mountHost("dither-host", `<figure data-dither-x><img src="x.png" alt="" /></figure>`);
+const ditherEl = ditherHost.querySelector("[data-dither-x]");
+const ditherDestroy = threeLib.ditherReveal(ditherEl, { plate: "#111" });
+assert.equal(ditherHost.querySelector("canvas"), null, "ditherReveal must not mount a canvas without WebGL");
+assert.equal(
+  ditherEl.querySelector("img").style.opacity ?? "",
+  "",
+  "ditherReveal must not hide the <img> it never took over",
+);
+ditherDestroy();
+ditherHost.remove();
+console.log("ok  /three entry exports webglMedia + glRail + tearReveal + ditherReveal, all silent without WebGL");
 
 /* ---------------- utils ---------------- */
 assert.deepEqual(lib.toArray("[data-xyz-nope]"), [], "toArray on missing selector");

@@ -42,6 +42,7 @@
  *   themeReveal()    View Transitions circular wipe
  *   menuOverlay()    clip-path curtain menu
  *   preloader()      0→100 counter intro
+ *   inkWipe()        brush-stroke page transition (cover → swap → unveil)
  */
 
 /* ---- core ---- */
@@ -135,3 +136,5 @@ export type { MenuOverlayOptions, MenuOverlayHandle } from "./effects/menu-overl
 
 export { preloader } from "./effects/preloader.js";
 export type { PreloaderOptions } from "./effects/preloader.js";
+export { inkWipe } from "./effects/ink-wipe.js";
+export type { InkWipeOptions, InkWipeHandle } from "./effects/ink-wipe.js";

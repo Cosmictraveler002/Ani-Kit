@@ -68,6 +68,9 @@ export function horizontalScroll(
       scrollTrigger: {
         trigger: section,
         pin: true,
+        // Refresh pins first (creation order ≠ document order): our spacer must
+        // exist before triggers below us measure, or they start ~9k px early.
+        refreshPriority: 1,
         scrub,
         end: () => "+=" + travel(),
         invalidateOnRefresh: true,

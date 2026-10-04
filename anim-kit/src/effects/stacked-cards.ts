@@ -115,6 +115,9 @@ export function stackedCardsPinned(
       end: "bottom bottom",
       pin: viewport,
       pinSpacing: false,
+      // Refresh pins first (creation order ≠ document order) so pin+scrub pairs
+      // agree on positions no matter where in the script this effect is created.
+      refreshPriority: 1,
       anticipatePin: 1,
       invalidateOnRefresh: true,
     });

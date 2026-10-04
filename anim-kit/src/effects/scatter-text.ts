@@ -78,6 +78,9 @@ export function scatterText(
         scrollTrigger: {
           trigger: wrap,
           pin: pinTarget,
+          // Refresh pins first (creation order ≠ document order): our spacer must
+          // exist before triggers below us measure, or they start ~6k px early.
+          refreshPriority: 1,
           scrub,
           end: () => "+=" + travel(),
           invalidateOnRefresh: true,

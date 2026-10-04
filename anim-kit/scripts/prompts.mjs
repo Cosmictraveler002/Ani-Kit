@@ -371,6 +371,7 @@ export const TAXONOMY = [
     blurb: "GPU media — shader cards drawn with three.js, straight over your images.",
     subcategories: [
       { id: "shadermedia", name: "Shader media", effects: ["webglMedia", "glRail"] },
+      { id: "scenes", name: "Scenes & overlays", effects: ["tearReveal", "ditherReveal"] },
     ],
   },
   {
@@ -409,6 +410,7 @@ export const TAXONOMY = [
     subcategories: [
       { id: "preloaders", name: "Preloaders", effects: ["preloader"] },
       { id: "theme", name: "Theme wipes", effects: ["themeReveal"] },
+      { id: "pagetransitions", name: "Page transitions", effects: ["inkWipe"] },
     ],
   },
   {
@@ -560,6 +562,42 @@ console.log(scroller.active);`,
       "Reduced motion: the overlay is hidden immediately — never block the page behind a counting intro.",
       "The overlay covers the viewport (`position: fixed; inset: 0`) until it finishes, so make sure `onComplete` fires.",
       "`destroy()` clears the timers and kills the tweens.",
+    ],
+  },
+  {
+    id: "inkWipe",
+    title: "Ink wipe — brush-stroke page transition",
+    summary:
+      "A brush-loaded ink sheet sweeps across the whole page: cover() paints it over, the swap happens at full cover, unveil() lets the new page arrive behind the *same* stroke — one continuous left-to-right travel whose edge is seeded, so it never boils between frames. Bristle spurs and flecks run ahead of the front.",
+    imports: ["inkWipe"],
+    markup: `<a href="/next.html" data-wipe>Next</a> <!-- links to intercept -->`,
+    usage: `// MPA form — intercepts the links, the next page auto-unveils:
+const wipe = inkWipe({ links: "[data-wipe]" });
+
+// Manual form (SPA route change, view transitions, demos):
+await wipe.cover();   // resolves at full cover — swap your DOM here
+await wipe.unveil();  // the new page arrives behind the same stroke
+wipe.destroy();`,
+    options: [
+      ["host", "`document.body`", "Overlay host — the canvas is appended here (target argument also works)."],
+      ["color", "`\"#0b0b0b\"`", "Ink colour."],
+      ["coverMs", "`550`", "Cover duration, ms."],
+      ["unveilMs", "`650`", "Unveil duration, ms."],
+      ["ease", "`\"power2.inOut\"`", "GSAP ease for both halves."],
+      ["tilt", "`0.35`", "Edge lean — fraction of viewport height the top edge leads by."],
+      ["rough", "`44`", "Noise amplitude on the edge, px."],
+      ["bristle", "`180`", "Longest bristle spur, px."],
+      ["links", "—", "Selector for links that run the wipe before navigating."],
+      ["sessionKey", "`'ak-ink-wipe'`", "sessionStorage key for the cross-page handoff."],
+      ["autoUnveil", "`true`", "Unveil automatically when the session flag says the page loaded covered."],
+      ["z", "`9998`", "Overlay z-index."],
+      ["force", "`false`", "Run even under `prefers-reduced-motion`."],
+    ],
+    notes: [
+      "Accepts **both** call forms: `inkWipe(options)` and `inkWipe(host, options)`.",
+      "**The MPA handoff is a sessionStorage flag**: a covered navigation stores `sessionKey`; the next page with `autoUnveil` reads it, covers instantly and unveils — no flash between documents. Same-stroke means cover and unveil share one seeded edge, so the brush reads as a single sweep passing *through* the page swap.",
+      "**Reduced motion**: cover/unveil snap instantly to a solid sheet — navigation still never flashes the swap. No 2D context at all (SSR, jsdom): both promises resolve immediately, nothing paints.",
+      "`destroy()` removes the canvas, its listeners and the link interception.",
     ],
   },
   {
@@ -1599,6 +1637,97 @@ const destroy = reelText("[data-reel]", {
   corners + in-shader cover-crop in the fragment), over a grid-floor shader
   that fades into the horizon and drifts with the rail.`,
     },
+  },
+  {
+    id: "tearReveal",
+    title: "Tear reveal — torn-edge sheet sweep",
+    summary:
+      "A noise-displaced boundary sweeps a section in or out: the fbm joins the field before thresholding, so patches tear away ahead of the front and ride across as separate shards, while a barrel warp bows the edge into an arriving curve instead of a straight line wobbling in place. The sheet paints flat colour or a two-stop gradient and can multiply-tint the artwork under it.",
+    imports: ["tearReveal"],
+    importsFrom: "@cosmictraveler002/anim-kit/three",
+    markup: `<section data-tear> <!-- position: relative; overflow: hidden -->
+  …content the sheet sweeps over…
+</section>`,
+    usage: `const destroy = tearReveal("[data-tear]", {
+  color: ["#ff1f1f", "#ff5252"], // [foot, top] gradient stops (or one colour)
+  blend: "multiply",             // tint the section instead of covering it
+  direction: "up",               // up | down | left | right
+  mode: "scroll",                // play on enter — or "immediate"
+  duration: 1,                   // seconds for the timed run
+});
+
+// scrub: 0.4  -> progress follows the scroll; stopping half way leaves a
+//                half-torn screen (a real place to be)
+// fixed: true -> the canvas covers the viewport for a page-sized sweep
+destroy();`,
+    options: [
+      ["color", "`\"#111111\"`", "Sheet colour — one colour or `[foot, top]` gradient stops."],
+      ["blend", "`\"none\"`", "CSS `mix-blend-mode` for the canvas — `multiply` tints what is under it."],
+      ["direction", "`\"up\"`", "Which way the boundary travels: `up` `down` `left` `right`."],
+      ["dispAmp", "`0.175`", "How far the noise drags the boundary."],
+      ["dispScale", "`12.2`", "Tear size — high is shrapnel, low is a wave."],
+      ["dispDetail", "`5`", "Noise octaves — 1 is a smooth wobble, 5 is debris."],
+      ["dispDrift", "`0`", "How fast the noise pattern crawls (0 holds it still)."],
+      ["soft", "`0.001`", "Threshold half-width — small keeps shards crisp."],
+      ["lens", "`-0.275`", "Barrel warp — negative bows the middle of the boundary up, 0 is flat."],
+      ["duration", "`1`", "Timed-run duration, seconds (ignored when `scrub` is set)."],
+      ["ease", "`\"power2.inOut\"`", "GSAP ease for the timed run."],
+      ["mode", "`\"scroll\"`", "`\"scroll\"` plays on enter, `\"immediate\"` plays at once."],
+      ["scrub", "—", "number = scrub smoothing seconds, `true` = immediate — binds progress to scroll."],
+      ["start", "`\"top 85%\"`", "ScrollTrigger start position."],
+      ["end", "`\"top 25%\"`", "ScrollTrigger end position (scrub mode)."],
+      ["replay", "`false`", "Re-run when leaving / re-entering the viewport."],
+      ["fixed", "`false`", "Mount the canvas over the viewport instead of the target box."],
+      ["z", "`1`", "Canvas z-index inside its stacking context."],
+      ["dpr", "`2`", "Device-pixel-ratio cap."],
+      ["force", "`false`", "Run even under `prefers-reduced-motion`."],
+    ],
+    notes: [
+      "**Optional peer.** Imports from `@cosmictraveler002/anim-kit/three` — `three` is never a core dependency. Bundler: `npm i three`; CDN: the §2 import map serves the pinned build.",
+      "**Modes mirror clipWipe**: `scroll` / `immediate` timed runs, or `scrub` for a boundary that tracks scroll position — scrubbing back re-tears the screen the way it came.",
+      "Both ends of the travel are **sealed**: the displaced boundary reaches the far side with its deepest tear at exactly zero, so the last half-covered pixels never read as speckle or leftover haze.",
+      "**Silent no-op ladder**: missing target → no-op; no `WebGLRenderingContext` (SSR, jsdom, WebGL disabled) → no-op *before* any context probe; renderer refused → no-op; reduced motion → nothing mounts. Nothing ever logs.",
+      "`destroy()` kills the tween + ScrollTrigger, removes the canvas and restores the host styles it changed.",
+    ],
+  },
+  {
+    id: "ditherReveal",
+    title: "Dither reveal — speckled punch-through photo",
+    summary:
+      "A photo punches through its placeholder in a hard-edged, fbm-speckled ring expanding from the centre outward — no soft dissolve, no crossfade: every pixel on the boundary flips between hole and not-hole. The noise spread ramps to zero at both ends of the travel, so progress 0 is exactly empty and progress 1 exactly solid.",
+    imports: ["ditherReveal"],
+    importsFrom: "@cosmictraveler002/anim-kit/three",
+    markup: `<figure data-reveal> <!-- position: relative; overflow: hidden; background: plate -->
+  <img src="photo.jpg" alt="" />
+</figure>`,
+    usage: `const destroy = ditherReveal("[data-reveal]", {
+  plate: "#14140f", // flat placeholder shown where the mask has not opened
+  duration: 1.15,   // seconds
+  maskScale: 50,    // fbm frequency across the element — lump scale of the edge
+  hard: true,       // the signature speckle (false = soft dissolve)
+  play: "visible",  // fire when the wrapper scrolls into view
+});
+destroy();`,
+    options: [
+      ["src", "first `<img>`", "Image source override when the wrapper has no image."],
+      ["duration", "`1.15`", "Reveal duration, seconds."],
+      ["ease", "`\"power4.out\"`", "GSAP ease for the reveal."],
+      ["plate", "—", "Flat placeholder colour under the not-yet-revealed area (omit to show the wrapper's own background)."],
+      ["maskScale", "`50`", "fbm frequency across the element — the lump scale of the edge."],
+      ["spread", "`0.35`", "How far (normalised radius) the noise can push the boundary ahead of / behind the clean circle."],
+      ["detail", "`4`", "fbm octaves — 1 is a soft blob, 6 is gritty."],
+      ["hard", "`true`", "Hard-edged speckle (the signature) vs a soft dissolve."],
+      ["play", "`\"visible\"`", "`\"visible\"` fires on first viewport entry, `\"load\"` when the texture decodes (falls back to `load` without IntersectionObserver)."],
+      ["dpr", "`2`", "Device-pixel-ratio cap."],
+      ["force", "`false`", "Run even under `prefers-reduced-motion`."],
+    ],
+    notes: [
+      "**Optional peer.** Imports from `@cosmictraveler002/anim-kit/three` — `three` is never a core dependency. Bundler: `npm i three`; CDN: the §2 import map serves the pinned build.",
+      "**The `<img>` keeps layout and alt text**: the canvas covers the wrapper and only takes over its pixels once the texture has decoded — with a plate the placeholder covers from load, without one the image only steps aside when the reveal actually starts. A texture 404 leaves the plain `<img>` untouched.",
+      "**Cover crop in-shader** (`object-fit: cover` maths), so any source aspect fills any card aspect without letterboxing.",
+      "**Silent no-op ladder**: missing target → no-op; no `WebGLRenderingContext` (SSR, jsdom, WebGL disabled) → no-op *before* any context probe; renderer refused → no-op; reduced motion → the canvas never mounts and the static image is the resting state. Nothing ever logs.",
+      "`destroy()` kills the tween + observers, disposes geometry/material/texture/renderer, removes the canvas and restores the image opacity and wrapper position.",
+    ],
   },];
 
 /** id → rendered prompt text. */
