@@ -368,10 +368,11 @@ export const TAXONOMY = [
   {
     id: "webgl",
     name: "WebGL",
-    blurb: "GPU media — shader cards drawn with three.js, straight over your images.",
+    blurb: "GPU media — shader cards, kinetic type and reveal scenes drawn with three.js, straight over your content.",
     subcategories: [
-      { id: "shadermedia", name: "Shader media", effects: ["webglMedia", "glRail"] },
+      { id: "shadermedia", name: "Shader media", effects: ["webglMedia", "glRail", "coverflowWheel"] },
       { id: "scenes", name: "Scenes & overlays", effects: ["tearReveal", "ditherReveal"] },
+      { id: "type", name: "Kinetic type", effects: ["wordmarkWave"] },
     ],
   },
   {
@@ -1727,6 +1728,107 @@ destroy();`,
       "**Cover crop in-shader** (`object-fit: cover` maths), so any source aspect fills any card aspect without letterboxing.",
       "**Silent no-op ladder**: missing target → no-op; no `WebGLRenderingContext` (SSR, jsdom, WebGL disabled) → no-op *before* any context probe; renderer refused → no-op; reduced motion → the canvas never mounts and the static image is the resting state. Nothing ever logs.",
       "`destroy()` kills the tween + observers, disposes geometry/material/texture/renderer, removes the canvas and restores the image opacity and wrapper position.",
+    ],
+  },
+  {
+    id: "wordmarkWave",
+    title: "Wordmark wave — liquid type with chromatic fringes",
+    summary:
+      "Your own headline rendered to a texture and simulated as a spring lattice: the pointer shears the letters like thick liquid, red and cyan split out of the colour while the surface deforms, and every vertex springs back to exact rest. The text, font and colour are the target's own — nothing to export, nothing to align.",
+    imports: ["wordmarkWave"],
+    importsFrom: "@cosmictraveler002/anim-kit/three",
+    markup: `<h2 id="mark">ANIMKIT</h2> <!-- display type, one line — its own text becomes the texture -->`,
+    usage: `const destroy = wordmarkWave("#mark", {
+  drag: 1,      // pointer-velocity term — how hard the letters smear
+  push: 0,      // radial push — vertices flee the cursor while it sits still
+  chroma: true, // red/cyan split while deforming
+  outline: 0,   // stroke width, px (0 = solid fill)
+});
+destroy();`,
+    procedure: {
+      style: `      /* the wordmark: the canvas covers it, the text underneath is the texture */
+      #mark { display: block; width: 100%; margin: 0; text-align: center; white-space: nowrap;
+        font: 400 clamp(96px, 24vw, 380px)/0.84 Impact, "Haettenschweiler", "Arial Narrow", sans-serif; }`,
+      pieces: `- \`three\` — one \`WebGLRenderer\` draws a ~5 k-vertex grid textured with the
+  target's own text; the spring simulation uploads per-vertex displacement each
+  frame and the fragment shader blends three additive chroma passes (0.9 / 1.0 /
+  1.1) for the red/cyan fringes.`,
+    },
+    options: [
+      ["text", "target's text", "Text to draw — defaults to the target's own (trimmed) text."],
+      ["font", "computed font", "CSS font shorthand for the drawn wordmark."],
+      ["color", "computed colour", "Base colour — the host's own colour is hidden while mounted."],
+      ["opacity", "`1`", "Overall opacity of the canvas."],
+      ["outline", "`0`", "Stroke width, px — `0` is a filled wordmark."],
+      ["tracking", "`0`", "Extra letter spacing, px."],
+      ["drag", "`1`", "Pointer-velocity (\"drag\") term of the simulation."],
+      ["push", "`0`", "Radial push — vertices flee the cursor while it sits still."],
+      ["chroma", "`true`", "Red/cyan chromatic split while deforming."],
+      ["segments", "`0`", "Horizontal grid columns — auto (≈10 px cells) when omitted."],
+      ["dpr", "`2`", "Device-pixel-ratio cap."],
+      ["z", "`1`", "Canvas stacking order."],
+      ["force", "`false`", "Run even under `prefers-reduced-motion`."],
+    ],
+    notes: [
+      "**Optional peer.** Imports from `@cosmictraveler002/anim-kit/three` — `three` is never a core dependency. Bundler: `npm i three`; CDN: the §2 import map serves the pinned build.",
+      "**The host text is the texture**: one canvas draws the target's own letters and the host's colour goes transparent behind it — `destroy()` restores the colour it hid, so the real heading is the resting state.",
+      "**Fixed 60 Hz simulation** — the spring lattice runs on an accumulator (max 4 steps per frame, a gap over 0.2 s counts as one step) so a backgrounded tab resumes where it left instead of exploding.",
+      "**Off-screen it sleeps**: the ticker idles while the host is out of view and wakes on re-entry; a host resize re-fits the canvas without touching the sim.",
+      "**Silent no-op ladder**: missing target → no-op; no `WebGLRenderingContext` (SSR, jsdom, WebGL disabled) → no-op *before* any context probe; renderer refused → no-op; reduced motion → nothing mounts, the real text simply stays. Nothing ever logs.",
+      "`destroy()` stops the ticker + observers, disposes geometry/materials/renderer, removes the canvas and restores the host colour.",
+    ],
+  },
+  {
+    id: "coverflowWheel",
+    title: "Coverflow wheel — arc-bent card carousel",
+    summary:
+      "Media cards ride a flattened vertical wheel: each card bends along the arc instead of staying a rigid plane, fronts face you bright while the backs show mirrored, dimmed and half-lit, and the strip dissolves into the floor below instead of ending on a hard edge. Drag to scrub the wheel, let go and it snaps to the nearest card — then keeps idling forward one slot at a time.",
+    imports: ["coverflowWheel"],
+    importsFrom: "@cosmictraveler002/anim-kit/three",
+    markup: `<div id="deck"> <!-- position: relative; overflow: hidden -->
+  <img alt="" src="card-01.jpg" />
+  <img alt="" src="card-02.jpg" />
+  <img alt="" src="card-03.jpg" />
+  <!-- …two or more cards; each <img> keeps its own alt text… -->
+</div>`,
+    usage: `const wheel = coverflowWheel("#deck", {
+  index: 0,       // first card on show (wraps)
+  autoplay: true, // keep advancing on its own while idle
+  idle: 5,        // seconds of stillness before the wheel moves on
+  duration: 1.15, // goTo() tween, seconds — next()/prev() use 0.5
+  margin: 0.1,    // gap between cards, as a fraction of one slot
+});
+
+wheel.goTo(3); // jump to a card — wraps
+wheel.next();  // one card on, arrow speed (0.5 s)
+wheel.destroy();`,
+    procedure: {
+      style: `      /* the wheel: a box the canvas covers; the imgs lay it out until mount */
+      #deck { position: relative; height: 60vh; overflow: hidden;
+        background: linear-gradient(180deg, #1b2740 0%, #0d0d12 100%); }
+      #deck img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }`,
+      pieces: `- \`three\` — ONE \`WebGLRenderer\` for the whole wheel: a shared \`PlaneGeometry\`
+  per card bent along the arc in the vertex shader, cover-cropped canvas
+  textures from the host's own \`<img>\`s, and card backs that mirror, dim and
+  bottom-fade the front texture in-shader — no second texture, no extra pass.`,
+    },
+    options: [
+      ["index", "`0`", "First card on show (wraps)."],
+      ["autoplay", "`true`", "Keep advancing on its own while idle (with a 1/8-slot lead-in creep)."],
+      ["idle", "`5`", "Seconds of stillness before the wheel moves on."],
+      ["duration", "`1.15`", "`goTo()` tween, seconds — `next()`/`prev()` use 0.5."],
+      ["margin", "`0.1`", "Gap between cards, as a fraction of one slot (0 = cards touching)."],
+      ["dpr", "`2`", "Device-pixel-ratio cap for the canvas."],
+      ["force", "`false`", "Run even under `prefers-reduced-motion`."],
+    ],
+    notes: [
+      "**Optional peer.** Imports from `@cosmictraveler002/anim-kit/three` — `three` is never a core dependency. Bundler: `npm i three`; CDN: the §2 import map serves the pinned build.",
+      "**It returns a handle, not a destroy fn**: `goTo(i, duration?)` shows a card (wraps), `next()`/`prev()` step at arrow speed, `destroy()` tears down — and on a no-op handle every one of those calls is still safe.",
+      "**Cards are the host's own `<img>`s** — cover-cropped into textures at mount; a failed decode drops that card (fewer than two survivors → inert). The images stay in the DOM, hidden, and `destroy()` brings them back along with every style + `data-ak-coverflow` it set.",
+      "**Drag never gets stolen**: pointer capture keeps the gesture over the deck wherever the pointer is, native image-dragging is blocked so a card can't swallow the stream, and a release within 5 % of a slot commits to the neighbouring card — smaller drags spring back.",
+      "**Backs are free** — the wheel's far half is the front texture mirrored, one mip blurrier, at half light, fading out into the strip below NDC −0.8.",
+      "**Silent no-op ladder**: missing target / reduced motion → an inert handle; no `WebGLRenderingContext` / renderer refused / fewer than two images → inert. Nothing ever logs.",
+      "`destroy()` kills the tween + ticker, disconnects the observers, removes the canvas and restores the images, host styles and dataset.",
     ],
   },];
 

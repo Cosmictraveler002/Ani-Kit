@@ -16,3 +16,7 @@ export { tearReveal } from "./tear-reveal.js";
 export type { TearRevealOptions, TearRevealDirection } from "./tear-reveal.js";
 export { ditherReveal } from "./dither-reveal.js";
 export type { DitherRevealOptions } from "./dither-reveal.js";
+export { wordmarkWave } from "./wordmark-wave.js";
+export type { WordmarkWaveOptions } from "./wordmark-wave.js";
+export { coverflowWheel } from "./coverflow-wheel.js";
+export type { CoverflowWheelOptions, CoverflowWheelHandle } from "./coverflow-wheel.js";

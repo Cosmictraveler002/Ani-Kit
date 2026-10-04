@@ -675,6 +675,40 @@
       object-fit: cover;
       display: block;
     }
+
+    /* coverflowWheel — cards on a flattened wheel (three.js) */
+    .cover-deck {
+      position: relative;
+      height: min(60vh, 560px);
+      margin-top: 28px;
+      overflow: hidden;
+      background: linear-gradient(180deg, #1b2740 0%, #0d0d12 100%);
+    }
+    .cover-deck img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* wordmarkWave — the closing band simulates as liquid type (three.js) */
+    .wave-band {
+      background: linear-gradient(180deg, #0a2fb4 0%, #1668ff 70%, #2f7cff 100%);
+      color: #fff;
+      padding: clamp(40px, 7vw, 96px) 0 clamp(24px, 4vw, 48px);
+      overflow: hidden;
+    }
+    .wave-mark {
+      display: block;
+      width: 100%;
+      margin: clamp(24px, 4vw, 56px) 0 0;
+      white-space: nowrap;
+      text-align: center;
+      font: 400 clamp(96px, 24vw, 380px)/0.84 Impact, "Haettenschweiler", "Arial Narrow", sans-serif;
+      letter-spacing: 0.01em;
+    }
     </style>
   </head>
   <body>
@@ -1211,6 +1245,34 @@
             <img alt="" src="assets/card-08.webp" />
           </figure>
         </div>
+      </section>
+
+      <!-- COVERFLOW + WORDMARK (three.js) -->
+      <section>
+        <div class="block">
+          <p class="label" data-effect="coverflowWheel">
+            coverflowWheel — arc-bent card wheel: drag to scrub, release snaps to the nearest card,
+            idle keeps it turning (WebGL)
+          </p>
+          <div class="cover-deck" data-cover>
+            <img alt="" src="assets/card-01.jpg" draggable="false" />
+            <img alt="" src="assets/card-02.webp" draggable="false" />
+            <img alt="" src="assets/card-03.jpg" draggable="false" />
+            <img alt="" src="assets/card-04.webp" draggable="false" />
+            <img alt="" src="assets/card-05.webp" draggable="false" />
+            <img alt="" src="assets/card-06.jpg" draggable="false" />
+          </div>
+        </div>
+      </section>
+
+      <section class="wave-band">
+        <div class="block">
+          <p class="label" data-effect="wordmarkWave">
+            wordmarkWave — the headline itself simulates as liquid type, chromatic fringes while it
+            deforms (WebGL)
+          </p>
+        </div>
+        <h2 class="wave-mark" data-wave>ANIMKIT</h2>
       </section>
 
       <footer>anim-kit · effects by <a href="https://kalakritico.in" target="_blank">kalakritico.in</a></footer>

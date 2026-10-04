@@ -37,7 +37,7 @@ import {
   inkWipe,
   compose,
 } from "@cosmictraveler002/anim-kit";
-import { webglMedia, glRail, tearReveal, ditherReveal } from "@cosmictraveler002/anim-kit/three";
+import { webglMedia, glRail, tearReveal, ditherReveal, wordmarkWave, coverflowWheel } from "@cosmictraveler002/anim-kit/three";
 
 const cleanups = [];
 
@@ -166,6 +166,15 @@ document.querySelectorAll("[data-tear]").forEach((el) => {
 });
 document.querySelectorAll("[data-dither]").forEach((el) => {
   cleanups.push(ditherReveal(el, { plate: "#14140f", duration: 1.3 }));
+});
+
+/* Wordmark + coverflow — kinetic type and the arc wheel. */
+document.querySelectorAll("[data-wave]").forEach((el) => {
+  cleanups.push(wordmarkWave(el, { push: 0.3 }));
+});
+document.querySelectorAll("[data-cover]").forEach((el) => {
+  const wheel = coverflowWheel(el, {});
+  cleanups.push(() => wheel.destroy());
 });
 
 /* ---------------------------------------------------------------- */

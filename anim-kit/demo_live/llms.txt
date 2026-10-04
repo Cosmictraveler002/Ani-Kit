@@ -17,7 +17,7 @@ JS-rendered shell whose content comes from that same file.
 
 ## Data
 
-- [prompts.json](https://anikit.vercel.app/prompts.json): full machine-readable catalogue (36 prompts, 9 categories)
+- [prompts.json](https://anikit.vercel.app/prompts.json): full machine-readable catalogue (38 prompts, 9 categories)
 - [library.json](https://anikit.vercel.app/library.json): colour & font library (7 systems, each with a CSS palette, a Google Fonts URL and a copy-ready :root block)
 
 ## Library

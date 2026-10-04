@@ -330,8 +330,9 @@ prompt dock, and backs the `category` / `subcategory` fields on
 | Scroll & media | Parallax & depth | `parallax` |
 | Scroll & media | Heroes & media | `heroShrink`, `mediaSettle` |
 | Scroll & media | Enter reveals | `revealRule`, `unfoldReveal`, `clipWipe` |
-| WebGL | Shader media | `webglMedia`, `glRail` |
+| WebGL | Shader media | `webglMedia`, `glRail`, `coverflowWheel` |
 | WebGL | Scenes & overlays | `tearReveal`, `ditherReveal` |
+| WebGL | Kinetic type | `wordmarkWave` |
 | Loops & marquees | Marquees | `marquee` |
 | Loops & marquees | Draggables & rails | `dragStrip`, `dragRail` |
 | Loops & marquees | Equalizers | `audioBars` |
@@ -809,7 +810,8 @@ the entrance.
 
 ### WebGL
 
-GPU media — three.js re-renders your images as shader cards. This is the only
+GPU media — three.js re-renders your content as shader cards, kinetic type
+and reveal scenes. This is the only
 category behind the `@cosmictraveler002/anim-kit/three` subpath: `three` is an
 **optional peer** (see [Subpath exports](#subpath-exports)), so the core
 barrel and the standalone bundle stay three-free.
@@ -923,6 +925,51 @@ user-select: none`.
 
 ---
 
+#### `coverflowWheel(target, options?) => handle`
+
+Media cards on a flattened vertical wheel: each card bends along the arc in
+the vertex shader instead of staying a rigid plane, fronts face you bright
+while the backs show mirrored, one mip blurrier and half-lit, and the strip
+dissolves into the floor below instead of ending on a hard edge. Drag to
+scrub — a release within 5 % of a slot commits to the neighbouring card,
+smaller drags spring back — and while idle the wheel creeps a slot's lead-in
+and then advances on its own.
+
+```ts
+import { coverflowWheel } from "@cosmictraveler002/anim-kit/three";
+
+const wheel = coverflowWheel("#deck", { idle: 5 });
+wheel.goTo(3); // jump to a card (wraps)
+wheel.next(); // one card on, 0.5 s
+wheel.destroy();
+```
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `index` | `0` | first card on show (wraps) |
+| `autoplay` / `idle` | `true` / `5` | idle advance — seconds of stillness (with a 1/8-slot lead-in creep) |
+| `duration` | `1.15` | `goTo()` tween, seconds (`next()` / `prev()` use 0.5) |
+| `margin` | `0.1` | gap between cards, as a fraction of one slot |
+| `dpr` | `2` | device-pixel-ratio cap |
+
+Cards are the host's own `<img>`s — cover-cropped into textures at mount (a
+failed decode drops that card; fewer than two survivors → inert) and restored
+from their inline opacity on teardown. Pointer capture keeps the drag over the
+deck wherever the pointer is and native image-dragging is blocked so a card
+never swallows the stream; the host claims `cursor: grab` + `touch-action:
+pan-y` and a `data-ak-coverflow` stamp, all restored by `destroy()`. Card
+backs reuse the front texture (mirrored, half light, bottom-faded in-shader) —
+no second texture, no extra pass.
+
+**Silent no-op ladder.** Missing target → inert handle; no
+`WebGLRenderingContext` (SSR, jsdom, WebGL disabled) → inert *before* any
+context probe; renderer refused → inert; reduced motion → inert, nothing
+mounts. Every call on an inert handle is a safe no-op — nothing ever logs.
+`destroy()` kills the tween + ticker, disconnects the observers, removes the
+canvas and restores the images, host styles and dataset.
+
+---
+
 #### `tearReveal(target, options?) => destroy`
 
 A torn-edge sheet that sweeps a section in (or out): a noise-displaced
@@ -1014,6 +1061,44 @@ motion → the canvas never mounts and the static image is the resting state.
 Nothing ever logs. `destroy()` kills the tween + observers, disposes
 geometry/material/texture/renderer, removes the canvas and restores the
 image opacity and wrapper position.
+
+---
+
+#### `wordmarkWave(target, options?) => destroy`
+
+The target's own headline rendered to a texture and simulated as a spring
+lattice: the pointer shears the letters like thick liquid, red and cyan split
+out of the colour while the surface deforms, and every vertex springs back to
+exact rest. Text, font and colour come from the element itself — nothing to
+export, nothing to align.
+
+```ts
+import { wordmarkWave } from "@cosmictraveler002/anim-kit/three";
+
+const destroy = wordmarkWave("#mark", {
+  drag: 1, // pointer-velocity term — how hard the letters smear
+  push: 0, // radial push — vertices flee the cursor while it sits still
+  chroma: true, // red/cyan fringes while deforming
+});
+```
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `text` / `font` / `color` | target's own | override what is drawn (the host's colour is hidden while mounted) |
+| `outline` / `tracking` | `0` / `0` | stroke width, px (0 = filled) and extra letter spacing, px |
+| `drag` / `push` | `1` / `0` | pointer-velocity and radial-push terms of the simulation |
+| `chroma` | `true` | red/cyan chromatic split while deforming |
+| `segments` | `0` | grid columns — auto (≈10 px cells, ~5 k vertices) |
+| `opacity` / `z` / `dpr` | `1` / `1` / `2` | canvas opacity, stacking order, pixel-ratio cap |
+
+The simulation steps at a fixed 60 Hz (max 4 steps per frame; a gap over
+0.2 s counts as one step) so a backgrounded tab resumes where it left instead
+of exploding, and the ticker idles while the host is off-screen. **Silent
+no-op ladder**: missing target → no-op; no `WebGLRenderingContext` (SSR,
+jsdom, WebGL disabled) → no-op *before* any context probe; renderer refused →
+no-op; reduced motion → nothing mounts, the real text simply stays. Nothing
+ever logs. `destroy()` stops the ticker + observers, disposes the renderer,
+removes the canvas and restores the host colour it hid.
 
 ---
 
@@ -1554,7 +1639,7 @@ curl http://localhost:4321/api/prompts/marquee  # one prompt, text/plain
 ```
 
 On the page, every labelled section carries a **copy prompt** chip, and the
-floating **⧉ prompts (36)** button at the bottom right opens the full
+floating **⧉ prompts (38)** button at the bottom right opens the full
 catalogue grouped by [effect category](#effect-categories) — one click copies
 an effect's prompt (the prompt states its category), *copy all* puts the
 entire set on the clipboard. The catalogue lives in `scripts/prompts.mjs`:

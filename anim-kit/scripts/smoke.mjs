@@ -499,6 +499,46 @@ ditherDestroy();
 ditherHost.remove();
 console.log("ok  /three entry exports webglMedia + glRail + tearReveal + ditherReveal, all silent without WebGL");
 
+/* wordmarkWave + coverflowWheel: same ladder — no WebGL → nothing ever mounts. */
+assert.equal(typeof threeLib.wordmarkWave, "function", "the /three entry must export wordmarkWave");
+assert.ok(!("wordmarkWave" in lib), "wordmarkWave must NOT leak into the core barrel (three stays optional)");
+const waveMissing = asDestroy(threeLib.wordmarkWave("[data-nope]"));
+assert.equal(typeof waveMissing, "function", "wordmarkWave must no-op on missing targets");
+waveMissing();
+const waveHost = mountHost("wave-host", `<h2 data-wave-x>ANIMKIT</h2>`);
+const waveEl = waveHost.querySelector("[data-wave-x]");
+const waveDestroy = threeLib.wordmarkWave(waveEl);
+assert.equal(waveHost.querySelector("canvas"), null, "wordmarkWave must not mount a canvas without WebGL");
+assert.equal(
+  waveEl.style.color ?? "",
+  "",
+  "wordmarkWave must not hide text it never took over",
+);
+waveDestroy();
+waveHost.remove();
+
+assert.equal(typeof threeLib.coverflowWheel, "function", "the /three entry must export coverflowWheel");
+assert.ok(!("coverflowWheel" in lib), "coverflowWheel must NOT leak into the core barrel (three stays optional)");
+const coverMissing = asDestroy(threeLib.coverflowWheel("[data-nope]"));
+assert.equal(typeof coverMissing, "function", "coverflowWheel must return an inert handle on missing targets");
+coverMissing();
+const coverHost = mountHost(
+  "cover-host",
+  `<div data-cover-x><img alt="" src="a.png" /><img alt="" src="b.png" /></div>`,
+);
+const coverEl = coverHost.querySelector("[data-cover-x]");
+const coverHandle = threeLib.coverflowWheel(coverEl);
+assert.equal(coverHost.querySelector("canvas"), null, "coverflowWheel must not mount a canvas without WebGL");
+assert.equal(
+  coverEl.querySelector("img").style.opacity ?? "",
+  "",
+  "coverflowWheel must not hide imgs it never took over",
+);
+assert.equal(coverEl.dataset.akCoverflow, undefined, "coverflowWheel must not stamp a host it never mounted");
+coverHandle.destroy();
+coverHost.remove();
+console.log("ok  /three entry exports wordmarkWave + coverflowWheel, all silent without WebGL");
+
 /* ---------------- utils ---------------- */
 assert.deepEqual(lib.toArray("[data-xyz-nope]"), [], "toArray on missing selector");
 assert.equal(lib.one(null), null, "one(null) is null");
