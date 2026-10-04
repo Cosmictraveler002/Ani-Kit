@@ -1554,7 +1554,7 @@ curl http://localhost:4321/api/prompts/marquee  # one prompt, text/plain
 ```
 
 On the page, every labelled section carries a **copy prompt** chip, and the
-floating **⧉ prompts (29)** button at the bottom right opens the full
+floating **⧉ prompts (36)** button at the bottom right opens the full
 catalogue grouped by [effect category](#effect-categories) — one click copies
 an effect's prompt (the prompt states its category), *copy all* puts the
 entire set on the clipboard. The catalogue lives in `scripts/prompts.mjs`:
@@ -1569,13 +1569,15 @@ asserts:
 2. plugins (`ScrollTrigger`, `SplitText`, `Draggable`, `CustomEase`,
    `Flip`, `ScrollSmoother`) and the 4 custom eases are registered;
 3. every effect no-ops safely on missing targets;
-4. 24 effects mount on real markup and unmount cleanly;
-5. `preloader` ticks in both the positional and options-object call forms;
-6. `lineReveal` actually splits into masked lines (and per-character masks
+4. 27 effects mount on real markup and unmount cleanly;
+5. pinning effects claim `refreshPriority: 1`, so ScrollTrigger refresh
+   measures in document order (root README bug class E);
+6. `preloader` ticks in both the positional and options-object call forms;
+7. `lineReveal` actually splits into masked lines (and per-character masks
    with `split: "chars"`) and restores markup on destroy;
-7. `scrambleText` restores its text, `rollText` wraps/unwraps its rows, and
+8. `scrambleText` restores its text, `rollText` wraps/unwraps its rows, and
    `counter({ progress: true })` renders a scrubbed readout;
-8. `utils`, `compose` and `guard` behave per contract.
+9. `utils`, `compose` and `guard` behave per contract.
 
 **Demo smoke** (`scripts/demo-smoke.mjs`) loads the real `demo/index.html` and
 executes the real `demo/demo.js` wiring against it, then asserts the effects
@@ -1608,7 +1610,7 @@ anim-kit/
 │  │  ├─ guard.ts          reduced-motion gate
 │  │  ├─ util.ts           toArray/one/onReady/compose/raf
 │  │  └─ types.ts          TargetLike / Destroy / CommonOptions
-│  ├─ effects/             one file per effect (24 files, 28 effect functions)
+│  ├─ effects/             one file per effect (27 files, 31 effect functions)
 │  ├─ styles/anim-kit.css  companion stylesheet
 │  └─ index.ts             barrel — 48 exports
 ├─ demo/                   visual demo (import map, no bundler)
