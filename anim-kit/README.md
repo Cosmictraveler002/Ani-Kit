@@ -98,7 +98,7 @@ resolves declarations through the same map — no `typesVersions` shim needed.
 
 No build step on the consumer's end: `dist/` is served as-is from the npm
 tarball by any npm CDN. Every URL is **version-pinned** — npm versions are
-immutable, so `@cosmictraveler002/anim-kit@1.4.0` always resolves to exactly that build, forever
+immutable, so `@cosmictraveler002/anim-kit@1.5.0` always resolves to exactly that build, forever
 (only a new version creates a new URL; nothing floats unless you ask for a
 range).
 
@@ -109,12 +109,12 @@ plugins anim-kit uses) and `lenis` **inlined** — no import map, one URL, works
 identically on jsDelivr and unpkg:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.4.0/dist/styles/anim-kit.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/styles/anim-kit.css" />
 
 <script type="module">
   import {
     smoothScroll, lineReveal, marquee,
-  } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.4.0/dist/anim-kit.standalone.js";
+  } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/anim-kit.standalone.js";
 
   smoothScroll();
   lineReveal("[data-lines]", { mode: "scroll" });
@@ -122,7 +122,7 @@ identically on jsDelivr and unpkg:
 </script>
 ```
 
-unpkg serves the same file: `https://unpkg.com/@cosmictraveler002/anim-kit@1.4.0/dist/anim-kit.standalone.js`
+unpkg serves the same file: `https://unpkg.com/@cosmictraveler002/anim-kit@1.5.0/dist/anim-kit.standalone.js`
 
 ### Option 2 — jsDelivr `+esm`
 
@@ -131,7 +131,7 @@ per version):
 
 ```html
 <script type="module">
-  import { lineReveal } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.4.0/+esm";
+  import { lineReveal } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/+esm";
 </script>
 ```
 
@@ -143,13 +143,13 @@ locally, with CDN URLs — and the way to share one GSAP between anim-kit and
 the rest of your page:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.4.0/dist/styles/anim-kit.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/styles/anim-kit.css" />
 
 <script type="importmap">
   {
     "imports": {
-      "@cosmictraveler002/anim-kit": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.4.0/dist/index.js",
-      "@cosmictraveler002/anim-kit/three": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.4.0/dist/three/index.js",
+      "@cosmictraveler002/anim-kit": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/index.js",
+      "@cosmictraveler002/anim-kit/three": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.5.0/dist/three/index.js",
       "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
       "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/index.js",
       "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollTrigger.js",
@@ -170,7 +170,7 @@ the rest of your page:
 </script>
 ```
 
-Swap the host for unpkg (`https://unpkg.com/@cosmictraveler002/anim-kit@1.4.0/dist/index.js`, …) —
+Swap the host for unpkg (`https://unpkg.com/@cosmictraveler002/anim-kit@1.5.0/dist/index.js`, …) —
 the file layout is identical. GSAP subpaths are listed one by one because
 import maps match specifiers literally: a trailing-slash prefix map would
 produce extension-less URLs, which CDNs don't serve. The `gsap`/`lenis` pins
@@ -276,8 +276,12 @@ configured before first paint.
 ## Smooth scroll
 
 Lenis is wired to ScrollTrigger the canonical way: Lenis drives the scroll,
-`lenis.on("scroll", ScrollTrigger.update)` keeps triggers in sync, `lenis.raf`
-is ticked from `gsap.ticker`, and `lagSmoothing(0)` is disabled.
+`lenis.on("scroll", ScrollTrigger.update)` keeps triggers in sync, and
+`lenis.raf` is ticked from `gsap.ticker` so scroll and tweens run off one
+clock. GSAP's lag smoothing stays **on**: ticker listeners receive the same
+adjusted clock the tweens use, so a stalled frame (GC pause, buffer tick)
+advances one short step everywhere instead of snapping the scroll and every
+scroll-linked tween to a new time in a single jump.
 
 ```ts
 const scroller = smoothScroll({
@@ -287,6 +291,11 @@ const scroller = smoothScroll({
   orientation: "vertical",
   initialScroll: 0,
   useScrollerProxy: false, // opt-in scrollerProxy for nested scrollers
+  touchMultiplier: 1,  // touch-drag sensitivity (Lenis default 1)
+  wheelMultiplier: 1,  // mouse-wheel sensitivity (Lenis default 1)
+  // Lag smoothing: leave unset for GSAP's built-in 500ms → 33ms compensation,
+  // false to disable it (the old behaviour), or retune for short hitches:
+  lagSmoothing: { threshold: 150 },
 });
 
 scroller.scrollTo("#work", { duration: 1.2 }); // programmatic, smoothed

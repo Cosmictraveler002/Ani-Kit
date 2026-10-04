@@ -198,6 +198,59 @@ assert.equal(flipFrom.children.length, 2, "flipWords must put the words back in 
 assert.equal(flipTo.children.length, 0, "flipWords must empty the destination on destroy");
 console.log("ok  flipWords reparents words into the destination and homes them on destroy");
 
+/* ---------------- smoothScroll: Lenis options + lag smoothing contract ----- */
+// Regression guards: the input multipliers used to be dropped before they
+// reached Lenis, and the bridge force-disabled GSAP's lag smoothing for every
+// caller — one shared hitch could then teleport the scroll and all tweens at
+// once (the ticker hands its listeners the same adjusted clock the tweens
+// run on, so the compensation must stay on unless explicitly opted out).
+{
+  const lagCalls = [];
+  const realLag = lib.gsap.ticker.lagSmoothing;
+  lib.gsap.ticker.lagSmoothing = (...args) => {
+    lagCalls.push(args);
+    return realLag.apply(lib.gsap.ticker, args);
+  };
+  try {
+    // 1. Defaults: multipliers fall through to Lenis's own (1 / 1), and
+    //    GSAP's lag smoothing is left untouched.
+    const h1 = lib.smoothScroll();
+    assert.equal(h1.active, true, "smoothScroll should activate under jsdom");
+    assert.equal(h1.lenis.options.touchMultiplier, 1, "touchMultiplier should fall through to Lenis's default (1)");
+    assert.equal(h1.lenis.options.wheelMultiplier, 1, "wheelMultiplier should fall through to Lenis's default (1)");
+    assert.deepEqual(lagCalls, [], "smoothScroll must not touch gsap.ticker.lagSmoothing by default");
+
+    // 2. Explicit multipliers reach Lenis verbatim.
+    const h2 = lib.smoothScroll({ touchMultiplier: 3, wheelMultiplier: 0.5 });
+    assert.equal(h2.lenis.options.touchMultiplier, 3, "touchMultiplier must be forwarded to Lenis");
+    assert.equal(h2.lenis.options.wheelMultiplier, 0.5, "wheelMultiplier must be forwarded to Lenis");
+    assert.deepEqual(lagCalls, [], "custom multipliers must not touch lag smoothing either");
+    h2.destroy();
+
+    // 3. lagSmoothing: false reproduces the old opt-out; destroy restores
+    //    GSAP's default so the teardown leaves no global change behind.
+    const h3 = lib.smoothScroll({ lagSmoothing: false });
+    assert.deepEqual(lagCalls, [[0]], "lagSmoothing: false must disable GSAP lag smoothing");
+    h3.destroy();
+    assert.deepEqual(lagCalls.at(-1), [500, 33], "destroy must restore GSAP's default lag smoothing");
+
+    // 4. A retune forwards threshold/adjustedLag (and is undone on destroy).
+    lagCalls.length = 0;
+    const h4 = lib.smoothScroll({ lagSmoothing: { threshold: 150, adjustedLag: 40 } });
+    assert.deepEqual(lagCalls, [[150, 40]], "lagSmoothing: { threshold, adjustedLag } must retune the ticker");
+    h4.destroy();
+    assert.deepEqual(lagCalls.at(-1), [500, 33], "destroy must restore the default after a retune");
+    lagCalls.length = 0;
+
+    // 5. An untouched handle tears down without ever calling the setter.
+    h1.destroy();
+    assert.deepEqual(lagCalls, [], "destroy must not touch lag smoothing unless smoothScroll changed it");
+    console.log("ok  smoothScroll forwards touch/wheel multipliers and owns its lag smoothing");
+  } finally {
+    lib.gsap.ticker.lagSmoothing = realLag;
+  }
+}
+
 /* ---------------- preloader: both call forms must actually mount ---------------- */
 // Regression guard: the positional form used to drop the target, silently
 // no-op and leave the fixed overlay covering the page forever.

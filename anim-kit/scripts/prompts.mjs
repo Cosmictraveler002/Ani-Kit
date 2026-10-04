@@ -56,7 +56,7 @@ const THREE_EPILOGUE = `
 `;
 
 /** Version-pinned CDN release that every prompt's procedure points at. */
-export const CDN_VERSION = "1.4.0";
+export const CDN_VERSION = "1.5.0";
 
 /**
  * Optional peer served by the `./three` subpath — the pin printed in WebGL
@@ -505,11 +505,18 @@ console.log(scroller.active);`,
       ["orientation", "`'vertical'`", "`'vertical'` or `'horizontal'`."],
       ["initialScroll", "`0`", "Initial scroll position in px."],
       ["useScrollerProxy", "`false`", "Proxy documentElement through ScrollTrigger (nested scrollers)."],
+      ["touchMultiplier", "`1`", "Touch-drag sensitivity — Lenis `touchMultiplier`."],
+      ["wheelMultiplier", "`1`", "Mouse-wheel sensitivity — Lenis `wheelMultiplier`."],
+      [
+        "lagSmoothing",
+        "`undefined`",
+        "GSAP lag smoothing: `false` disables it (≤1.4 behaviour), `{ threshold, adjustedLag }` retunes it — unset keeps GSAP's 500/33 compensation, so a hitch can't teleport the scroll.",
+      ],
       ["force", "`false`", "Run even under `prefers-reduced-motion`."],
     ],
     notes: [
       "Call it **before** creating scroll effects so the first refresh sees the right scroller.",
-      "The bridge uses the canonical recipe: `lenis.on('scroll', ScrollTrigger.update)`, `lenis.raf` driven from `gsap.ticker`, `ScrollTrigger.lagSmoothing(0)`.",
+      "The bridge uses the canonical recipe: `lenis.on('scroll', ScrollTrigger.update)` with `lenis.raf` driven from `gsap.ticker`. GSAP's lag smoothing stays on — the ticker and the tweens share one adjusted clock, so a stalled frame steps them together instead of snapping (opt out with `lagSmoothing: false`).",
       "Under reduced motion the handle comes back inert (`active: false`) and native scrolling is untouched.",
     ],
   },
