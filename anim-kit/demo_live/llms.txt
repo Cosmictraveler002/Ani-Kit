@@ -1,4 +1,4 @@
-# anim-kit demo & docs (v1.5.0)
+# anim-kit demo & docs (v1.6.0)
 
 > Modular, framework-agnostic animation library (GSAP + ScrollTrigger +
 > Lenis): every effect as a composable ES module. This site is the live
