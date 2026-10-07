@@ -31,7 +31,8 @@
  *   three's vertical one (near 0.1, far 10); the wheel node sits at
  *   `y −0.1, z −(2r) −0.8, rotateX −0.18, rotateZ 0.12`; back faces
  *   sample one mip of blur at half rgb; cards fade out below NDC −0.8.
- *   `destroy()` kills the tween/ticker/observers/listeners, disposes the
+ *   Every card carries a rim-glow band and soft blurred edges
+ *   (`glow` / `edgeBlur`). `destroy()` kills the tween/ticker/observers/listeners, disposes the
  *   GL objects and restores every style it touched — including the card
  *   opacities.
  *
@@ -57,6 +58,10 @@ export interface CoverflowWheelOptions extends CommonOptions {
   duration?: number;
   /** Gap between cards, as a fraction of one slot (0 = cards touching). @default 0.1 */
   margin?: number;
+  /** Rim-glow intensity around every card, 0–1 (0 = hard flat cards). @default 0.5 */
+  glow?: number;
+  /** Soft blurred + feathered card edges, 0–1 (0 = sharp edges). @default 1 */
+  edgeBlur?: number;
   /** Device-pixel-ratio cap for the canvas. @default 2 */
   dpr?: number;
 }
@@ -97,28 +102,69 @@ void main() {
 }
 `;
 
+/** Rim-glow band width — each side of the plane as a fraction of it. The
+ *  geometry is inflated by 1/(1 − 2·GM), so the inner region stays the exact
+ *  5:3 card (1 × 0.6) while the outer band renders the glow. */
+const GM = 0.07;
+
 const FRAG = /* glsl */ `
 precision highp float;
 
+const float GM = ${GM}; // rim-glow band width, uv units of the whole plane
+
 uniform sampler2D uMap;
+uniform float uGlow;
+uniform float uBlur;
 
 varying vec2 vUv;
 varying float vNdcY;
 
-void main() {
-  /* The wheel's far half shows card BACKS: mirrored, one mip of blur,
-     rgb at half — and every card dissolves into the strip below NDC −0.8
-     instead of ending on a hard edge. */
-  vec2 tc = vUv;
-  tc.x = gl_FrontFacing ? tc.x : 1.0 - tc.x;
-  float isFront = gl_FrontFacing ? 0.0 : 1.0;
+/* 9-tap disc blur — the taps collapse to the centre where the card is sharp. */
+vec4 tapBlur(vec2 uv, float r, float bias) {
+  vec4 s = texture2D(uMap, uv, bias) * 2.0;
+  s += texture2D(uMap, uv + vec2(r, 0.0), bias);
+  s += texture2D(uMap, uv - vec2(r, 0.0), bias);
+  s += texture2D(uMap, uv + vec2(0.0, r), bias);
+  s += texture2D(uMap, uv - vec2(0.0, r), bias);
+  s += texture2D(uMap, uv + vec2(r, r) * 0.7071, bias);
+  s += texture2D(uMap, uv + vec2(-r, r) * 0.7071, bias);
+  s += texture2D(uMap, uv + vec2(r, -r) * 0.7071, bias);
+  s += texture2D(uMap, uv + vec2(-r, -r) * 0.7071, bias);
+  return s * 0.1;
+}
 
-  vec4 sharp = texture2D(uMap, tc);
-  vec4 blur = texture2D(uMap, tc, 1.0);
-  vec4 col = mix(blur, sharp, isFront);
-  col.rgb *= 0.5 + isFront * 0.5;
-  col.a *= clamp(smoothstep(-1.0, -0.8, vNdcY), 0.0, 1.0);
-  gl_FragColor = col;
+void main() {
+  /* The plane carries a rim-glow band around the card image: inner region =
+     content, outer band = glow. Front faces sample the sharp mip at full rgb;
+     back faces are mirrored, one mip blurrier and half-lit — the reference
+     fragment spec (gl_FrontFacing picks the side you actually see). */
+  float front = gl_FrontFacing ? 1.0 : 0.0;
+  vec2 cuv = (vUv - GM) / (1.0 - 2.0 * GM);
+  vec2 tc = cuv;
+  tc.x = front > 0.5 ? tc.x : 1.0 - tc.x;
+
+  /* distance to the card edge — inside drives the soft border, outside the glow */
+  float dIn = min(min(cuv.x, 1.0 - cuv.x), min(cuv.y, 1.0 - cuv.y));
+  vec2 q = abs(vUv - 0.5) - (0.5 - GM);
+  float dOut = min(max(q.x, q.y), 0.0) + length(max(q, 0.0)); // signed box, round outside
+
+  /* every card's edge blurs and feathers away instead of ending on a hard cut */
+  float r = (1.0 - smoothstep(0.0, 0.05, dIn)) * uBlur * 0.012;
+  vec4 col = tapBlur(tc, r, 1.0 - front);
+  col.rgb *= mix(0.5, 1.0, front);
+
+  /* cards dissolve into the strip below NDC −0.8 instead of a hard edge */
+  float fade = clamp(smoothstep(-1.0, -0.8, vNdcY), 0.0, 1.0);
+  col.a *= fade * smoothstep(0.0, 0.018, dIn);
+
+  /* rim glow: brightest hugging the card outline, rounded falloff to the band edge */
+  float band = dOut > 0.0 ? pow(1.0 - clamp(dOut / GM, 0.0, 1.0), 2.2) : 0.0;
+  float glowA = band * uGlow * mix(0.6, 1.0, front) * fade;
+
+  /* glow sits behind the card content — composited as one normal blend */
+  float a = col.a + glowA * (1.0 - col.a);
+  vec3 rgb = (col.rgb * col.a + glowA * (1.0 - col.a)) / max(a, 1e-4);
+  gl_FragColor = vec4(rgb, a);
 }
 `;
 
@@ -156,6 +202,8 @@ export function coverflowWheel(
     idle = 5,
     duration = 1.15,
     margin = 0.1,
+    glow = 0.5,
+    edgeBlur = 1,
     dpr = 2,
   } = options;
 
@@ -190,8 +238,10 @@ export function coverflowWheel(
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(vfovFor(w / h), w / h, 0.1, 10);
 
-  /* 40 verts / 114 indices, aspect 5:3 — the reference card mesh. */
-  const geometry = new THREE.PlaneGeometry(1, 0.6, 19, 1);
+  /* 40 verts / 114 indices — the reference card mesh, inflated by the glow
+     margin: the inner region is still the exact 5:3 card (1 × 0.6), the
+     outer band renders the rim glow. */
+  const geometry = new THREE.PlaneGeometry(1 / (1 - 2 * GM), 0.6 / (1 - 2 * GM), 19, 1);
 
   const node = new THREE.Group(); // pose + drag squeeze
   const sway = new THREE.Group(); // pointer parallax
@@ -203,6 +253,8 @@ export function coverflowWheel(
     uStride: { value: 0 },
     uRadius: { value: 1 },
     uMargin: { value: margin },
+    uGlow: { value: clamp01(glow) },
+    uBlur: { value: clamp01(edgeBlur) },
   };
   const materials: THREE.ShaderMaterial[] = [];
   const textures: THREE.Texture[] = [];
@@ -391,6 +443,8 @@ export function coverflowWheel(
           uStride: shared.uStride,
           uRadius: shared.uRadius,
           uMargin: shared.uMargin,
+          uGlow: shared.uGlow,
+          uBlur: shared.uBlur,
           uSlot: { value: i * (1 / N) },
           uMap: { value: tex },
         },

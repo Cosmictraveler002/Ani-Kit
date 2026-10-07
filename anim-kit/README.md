@@ -929,7 +929,8 @@ user-select: none`.
 
 Media cards on a flattened vertical wheel: each card bends along the arc in
 the vertex shader instead of staying a rigid plane, fronts face you bright
-while the backs show mirrored, one mip blurrier and half-lit, and the strip
+while the backs show mirrored, one mip blurrier and half-lit, every card
+carries a soft rim glow with blurred, feathered edges, and the strip
 dissolves into the floor below instead of ending on a hard edge. Drag to
 scrub — a release within 5 % of a slot commits to the neighbouring card,
 smaller drags spring back — and while idle the wheel creeps a slot's lead-in
@@ -950,6 +951,8 @@ wheel.destroy();
 | `autoplay` / `idle` | `true` / `5` | idle advance — seconds of stillness (with a 1/8-slot lead-in creep) |
 | `duration` | `1.15` | `goTo()` tween, seconds (`next()` / `prev()` use 0.5) |
 | `margin` | `0.1` | gap between cards, as a fraction of one slot |
+| `glow` | `0.5` | rim-glow intensity around every card, 0–1 (0 = hard flat cards) |
+| `edgeBlur` | `1` | soft blurred + feathered card edges, 0–1 (0 = sharp edges) |
 | `dpr` | `2` | device-pixel-ratio cap |
 
 Cards are the host's own `<img>`s — cover-cropped into textures at mount (a
