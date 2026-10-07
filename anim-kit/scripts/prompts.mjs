@@ -56,7 +56,7 @@ const THREE_EPILOGUE = `
 `;
 
 /** Version-pinned CDN release that every prompt's procedure points at. */
-export const CDN_VERSION = "1.6.0";
+export const CDN_VERSION = "1.6.1";
 
 /**
  * Optional peer served by the `./three` subpath — the pin printed in WebGL

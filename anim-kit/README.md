@@ -99,7 +99,7 @@ resolves declarations through the same map — no `typesVersions` shim needed.
 
 No build step on the consumer's end: `dist/` is served as-is from the npm
 tarball by any npm CDN. Every URL is **version-pinned** — npm versions are
-immutable, so `@cosmictraveler002/anim-kit@1.6.0` always resolves to exactly that build, forever
+immutable, so `@cosmictraveler002/anim-kit@1.6.1` always resolves to exactly that build, forever
 (only a new version creates a new URL; nothing floats unless you ask for a
 range).
 
@@ -110,12 +110,12 @@ plugins anim-kit uses) and `lenis` **inlined** — no import map, one URL, works
 identically on jsDelivr and unpkg:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.6.0/dist/styles/anim-kit.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.6.1/dist/styles/anim-kit.css" />
 
 <script type="module">
   import {
     smoothScroll, lineReveal, marquee,
-  } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.6.0/dist/anim-kit.standalone.js";
+  } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.6.1/dist/anim-kit.standalone.js";
 
   smoothScroll();
   lineReveal("[data-lines]", { mode: "scroll" });
@@ -123,7 +123,7 @@ identically on jsDelivr and unpkg:
 </script>
 ```
 
-unpkg serves the same file: `https://unpkg.com/@cosmictraveler002/anim-kit@1.6.0/dist/anim-kit.standalone.js`
+unpkg serves the same file: `https://unpkg.com/@cosmictraveler002/anim-kit@1.6.1/dist/anim-kit.standalone.js`
 
 ### Option 2 — jsDelivr `+esm`
 
@@ -132,7 +132,7 @@ per version):
 
 ```html
 <script type="module">
-  import { lineReveal } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.6.0/+esm";
+  import { lineReveal } from "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.6.1/+esm";
 </script>
 ```
 
@@ -144,13 +144,13 @@ locally, with CDN URLs — and the way to share one GSAP between anim-kit and
 the rest of your page:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.6.0/dist/styles/anim-kit.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.6.1/dist/styles/anim-kit.css" />
 
 <script type="importmap">
   {
     "imports": {
-      "@cosmictraveler002/anim-kit": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.6.0/dist/index.js",
-      "@cosmictraveler002/anim-kit/three": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.6.0/dist/three/index.js",
+      "@cosmictraveler002/anim-kit": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.6.1/dist/index.js",
+      "@cosmictraveler002/anim-kit/three": "https://cdn.jsdelivr.net/npm/@cosmictraveler002/anim-kit@1.6.1/dist/three/index.js",
       "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
       "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/index.js",
       "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/ScrollTrigger.js",
@@ -171,7 +171,7 @@ the rest of your page:
 </script>
 ```
 
-Swap the host for unpkg (`https://unpkg.com/@cosmictraveler002/anim-kit@1.6.0/dist/index.js`, …) —
+Swap the host for unpkg (`https://unpkg.com/@cosmictraveler002/anim-kit@1.6.1/dist/index.js`, …) —
 the file layout is identical. GSAP subpaths are listed one by one because
 import maps match specifiers literally: a trailing-slash prefix map would
 produce extension-less URLs, which CDNs don't serve. The `gsap`/`lenis` pins
