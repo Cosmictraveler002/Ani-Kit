@@ -1,8 +1,8 @@
 /**
  * Coverflow wheel — a deck of `<img>` cards riding a flattened spinning
  * wheel: the front card faces you, its neighbours curve away to both sides,
- * the far half of the wheel shows the blurred, dimmed card *backs*, and the
- * whole strip dissolves into the bottom of the screen.
+ * the far half of the wheel shows the blurred, dimmed card *backs*, and every
+ * card stays fully opaque to its geometric edge — no feather, no frames.
  *
  * - **Cards bend along the arc.** Each card's geometry spans exactly one
  *   slot, so every vertex is placed on the circle from its own angle —
@@ -30,8 +30,9 @@
  * - **Fidelity.** The camera is a *horizontal* 35° FOV converted to
  *   three's vertical one (near 0.1, far 10); the wheel node sits at
  *   `y −0.1, z −(2r) −0.8, rotateX −0.18, rotateZ 0.12`; back faces
- *   sample one mip of blur at half rgb; cards fade out below NDC −0.8.
- *   Every card carries a rim-glow band and soft blurred edges
+ *   sample one mip of blur at half rgb; cards are fully solid — no alpha
+ *   feather, no bottom dissolve.
+ *   Every card carries a rim-glow band and softly blurred edges
  *   (`glow` / `edgeBlur`). `destroy()` kills the tween/ticker/observers/listeners, disposes the
  *   GL objects and restores every style it touched — including the card
  *   opacities.
@@ -60,7 +61,7 @@ export interface CoverflowWheelOptions extends CommonOptions {
   margin?: number;
   /** Rim-glow intensity around every card, 0–1 (0 = hard flat cards). @default 0.32 */
   glow?: number;
-  /** Soft blurred + feathered card edges, 0–1 (0 = sharp edges). @default 1 */
+  /** Soft blur at every card edge, 0–1 (0 = sharp edges). Cards stay fully opaque either way. @default 1 */
   edgeBlur?: number;
   /** Device-pixel-ratio cap for the canvas. @default 2 */
   dpr?: number;
@@ -84,7 +85,6 @@ uniform float uRadius;
 uniform float uMargin;
 
 varying vec2 vUv;
-varying float vNdcY;
 
 void main() {
   /* Geometry spans one stride, so each card bends along the arc instead of
@@ -95,10 +95,8 @@ void main() {
   float angle = circleProgress * 6.28318530718;
   vec3 arc = vec3(cos(angle) * uRadius, p.y, sin(angle) * uRadius * 0.5);
 
-  vec4 clip = projectionMatrix * modelViewMatrix * vec4(arc, 1.0);
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(arc, 1.0);
   vUv = uv;
-  vNdcY = clip.y / clip.w;
-  gl_Position = clip;
 }
 `;
 
@@ -117,7 +115,6 @@ uniform float uGlow;
 uniform float uBlur;
 
 varying vec2 vUv;
-varying float vNdcY;
 
 /* 9-tap disc blur — the taps collapse to the centre where the card is sharp. */
 vec4 tapBlur(vec2 uv, float r, float bias) {
@@ -143,24 +140,21 @@ void main() {
   vec2 tc = cuv;
   tc.x = front > 0.5 ? tc.x : 1.0 - tc.x;
 
-  /* distance to the card edge — inside drives the soft border, outside the glow */
+  /* distance to the card edge — inside drives the edge blur, outside the glow */
   float dIn = min(min(cuv.x, 1.0 - cuv.x), min(cuv.y, 1.0 - cuv.y));
   vec2 q = abs(vUv - 0.5) - (0.5 - GM);
   float dOut = min(max(q.x, q.y), 0.0) + length(max(q, 0.0)); // signed box, round outside
 
-  /* every card's edge gets a gentle blur + a thin feather — just enough to
-     kill the hard cut, not enough to look soft */
+  /* every card's edge gets a gentle blur — but alpha stays at the texture's:
+     photos are solid to their geometric edge, never feathered into a
+     translucent frame over the dark backdrop */
   float r = (1.0 - smoothstep(0.0, 0.035, dIn)) * uBlur * 0.006;
   vec4 col = tapBlur(tc, r, 1.0 - front);
   col.rgb *= mix(0.5, 1.0, front);
 
-  /* cards dissolve into the strip below NDC −0.8 instead of a hard edge */
-  float fade = clamp(smoothstep(-1.0, -0.8, vNdcY), 0.0, 1.0);
-  col.a *= fade * smoothstep(0.0, 0.01, dIn);
-
   /* rim glow: brightest hugging the card outline, tight falloff inside the band */
   float band = dOut > 0.0 ? pow(1.0 - clamp(dOut / GM, 0.0, 1.0), 2.4) : 0.0;
-  float glowA = band * uGlow * mix(0.6, 1.0, front) * fade;
+  float glowA = band * uGlow * mix(0.6, 1.0, front);
 
   /* glow sits behind the card content — composited as one normal blend */
   float a = col.a + glowA * (1.0 - col.a);

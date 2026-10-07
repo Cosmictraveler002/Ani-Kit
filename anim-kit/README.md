@@ -930,8 +930,8 @@ user-select: none`.
 Media cards on a flattened vertical wheel: each card bends along the arc in
 the vertex shader instead of staying a rigid plane, fronts face you bright
 while the backs show mirrored, one mip blurrier and half-lit, every card
-carries a soft rim glow with blurred, feathered edges, and the strip
-dissolves into the floor below instead of ending on a hard edge. Drag to
+carries a soft rim glow and a hair of blur at its edge — but photos stay
+fully solid to their border, no translucent frames. Drag to
 scrub — a release within 5 % of a slot commits to the neighbouring card,
 smaller drags spring back — and while idle the wheel creeps a slot's lead-in
 and then advances on its own.
@@ -952,7 +952,7 @@ wheel.destroy();
 | `duration` | `1.15` | `goTo()` tween, seconds (`next()` / `prev()` use 0.5) |
 | `margin` | `0.1` | gap between cards, as a fraction of one slot |
 | `glow` | `0.32` | rim-glow intensity around every card, 0–1 (0 = hard flat cards) |
-| `edgeBlur` | `1` | soft blurred + feathered card edges, 0–1 (0 = sharp edges) |
+| `edgeBlur` | `1` | soft blur at every card edge, 0–1 (0 = sharp edges); cards stay opaque either way |
 | `dpr` | `2` | device-pixel-ratio cap |
 
 Cards are the host's own `<img>`s — cover-cropped into textures at mount (a
@@ -961,7 +961,7 @@ from their inline opacity on teardown. Pointer capture keeps the drag over the
 deck wherever the pointer is and native image-dragging is blocked so a card
 never swallows the stream; the host claims `cursor: grab` + `touch-action:
 pan-y` and a `data-ak-coverflow` stamp, all restored by `destroy()`. Card
-backs reuse the front texture (mirrored, half light, bottom-faded in-shader) —
+backs reuse the front texture (mirrored, half light in-shader) —
 no second texture, no extra pass.
 
 **Silent no-op ladder.** Missing target → inert handle; no

@@ -1782,7 +1782,7 @@ destroy();`,
     id: "coverflowWheel",
     title: "Coverflow wheel — arc-bent card carousel",
     summary:
-      "Media cards ride a flattened vertical wheel: each card bends along the arc instead of staying a rigid plane, fronts face you bright while the backs show mirrored, dimmed and half-lit, every card carries a soft rim glow with blurred, feathered edges, and the strip dissolves into the floor below instead of ending on a hard edge. Drag to scrub the wheel, let go and it snaps to the nearest card — then keeps idling forward one slot at a time.",
+      "Media cards ride a flattened vertical wheel: each card bends along the arc instead of staying a rigid plane, fronts face you bright while the backs show mirrored, dimmed and half-lit, every card carries a soft rim glow and a hair of blur at its edge — but photos stay fully solid to their border, no translucent frames. Drag to scrub the wheel, let go and it snaps to the nearest card — then keeps idling forward one slot at a time.",
     imports: ["coverflowWheel"],
     importsFrom: "@cosmictraveler002/anim-kit/three",
     markup: `<div id="deck"> <!-- position: relative; overflow: hidden -->
@@ -1798,7 +1798,7 @@ destroy();`,
   duration: 1.15, // goTo() tween, seconds — next()/prev() use 0.5
   margin: 0.1,    // gap between cards, as a fraction of one slot
   glow: 0.32,     // rim-glow intensity around every card, 0–1
-  edgeBlur: 1,    // soft blurred + feathered card edges, 0–1
+  edgeBlur: 1,    // soft blur at every card edge, 0–1 (cards stay opaque)
 });
 
 wheel.goTo(3); // jump to a card — wraps
@@ -1811,8 +1811,8 @@ wheel.destroy();`,
       #deck img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }`,
       pieces: `- \`three\` — ONE \`WebGLRenderer\` for the whole wheel: a shared \`PlaneGeometry\`
   per card bent along the arc in the vertex shader, cover-cropped canvas
-  textures from the host's own \`<img>\`s, and card backs that mirror, dim and
-  bottom-fade the front texture in-shader — no second texture, no extra pass.`,
+  textures from the host's own \`<img>\`s, and card backs that mirror and
+  dim the front texture in-shader — no second texture, no extra pass.`,
     },
     options: [
       ["index", "`0`", "First card on show (wraps)."],
@@ -1821,7 +1821,7 @@ wheel.destroy();`,
       ["duration", "`1.15`", "`goTo()` tween, seconds — `next()`/`prev()` use 0.5."],
       ["margin", "`0.1`", "Gap between cards, as a fraction of one slot (0 = cards touching)."],
       ["glow", "`0.32`", "Rim-glow intensity around every card, 0–1 (0 = hard flat cards)."],
-      ["edgeBlur", "`1`", "Soft blurred + feathered card edges, 0–1 (0 = sharp edges)."],
+      ["edgeBlur", "`1`", "Soft blur at every card edge, 0–1 (0 = sharp edges). Cards stay opaque either way."],
       ["dpr", "`2`", "Device-pixel-ratio cap for the canvas."],
       ["force", "`false`", "Run even under `prefers-reduced-motion`."],
     ],
@@ -1830,8 +1830,8 @@ wheel.destroy();`,
       "**It returns a handle, not a destroy fn**: `goTo(i, duration?)` shows a card (wraps), `next()`/`prev()` step at arrow speed, `destroy()` tears down — and on a no-op handle every one of those calls is still safe.",
       "**Cards are the host's own `<img>`s** — cover-cropped into textures at mount; a failed decode drops that card (fewer than two survivors → inert). The images stay in the DOM, hidden, and `destroy()` brings them back along with every style + `data-ak-coverflow` it set.",
       "**Drag never gets stolen**: pointer capture keeps the gesture over the deck wherever the pointer is, native image-dragging is blocked so a card can't swallow the stream, and a release within 5 % of a slot commits to the neighbouring card — smaller drags spring back.",
-      "**Backs are free** — the wheel's far half is the front texture mirrored, one mip blurrier, at half light, fading out into the strip below NDC −0.8.",
-      "**Rim glow + soft edges** — the plane carries a glow band around the card image (brightest at the outline, rounded falloff) and every border blurs + feathers away instead of ending on a hard cut; `glow: 0` / `edgeBlur: 0` restore flat hard-edged cards.",
+      "**Backs are free** — the wheel's far half is the front texture mirrored, one mip blurrier, at half light.",
+      "**Rim glow + solid cards** — the plane carries a glow band around the card image (brightest at the outline, rounded falloff) and every border blurs a hair — but alpha never drops: photos are fully opaque to their geometric edge, never a translucent frame. `glow: 0` / `edgeBlur: 0` restore flat hard-edged cards.",
       "**Silent no-op ladder**: missing target / reduced motion → an inert handle; no `WebGLRenderingContext` / renderer refused / fewer than two images → inert. Nothing ever logs.",
       "`destroy()` kills the tween + ticker, disconnects the observers, removes the canvas and restores the images, host styles and dataset.",
     ],
