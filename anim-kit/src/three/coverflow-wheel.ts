@@ -58,7 +58,7 @@ export interface CoverflowWheelOptions extends CommonOptions {
   duration?: number;
   /** Gap between cards, as a fraction of one slot (0 = cards touching). @default 0.1 */
   margin?: number;
-  /** Rim-glow intensity around every card, 0–1 (0 = hard flat cards). @default 0.5 */
+  /** Rim-glow intensity around every card, 0–1 (0 = hard flat cards). @default 0.32 */
   glow?: number;
   /** Soft blurred + feathered card edges, 0–1 (0 = sharp edges). @default 1 */
   edgeBlur?: number;
@@ -105,7 +105,7 @@ void main() {
 /** Rim-glow band width — each side of the plane as a fraction of it. The
  *  geometry is inflated by 1/(1 − 2·GM), so the inner region stays the exact
  *  5:3 card (1 × 0.6) while the outer band renders the glow. */
-const GM = 0.07;
+const GM = 0.045;
 
 const FRAG = /* glsl */ `
 precision highp float;
@@ -148,17 +148,18 @@ void main() {
   vec2 q = abs(vUv - 0.5) - (0.5 - GM);
   float dOut = min(max(q.x, q.y), 0.0) + length(max(q, 0.0)); // signed box, round outside
 
-  /* every card's edge blurs and feathers away instead of ending on a hard cut */
-  float r = (1.0 - smoothstep(0.0, 0.05, dIn)) * uBlur * 0.012;
+  /* every card's edge gets a gentle blur + a thin feather — just enough to
+     kill the hard cut, not enough to look soft */
+  float r = (1.0 - smoothstep(0.0, 0.035, dIn)) * uBlur * 0.006;
   vec4 col = tapBlur(tc, r, 1.0 - front);
   col.rgb *= mix(0.5, 1.0, front);
 
   /* cards dissolve into the strip below NDC −0.8 instead of a hard edge */
   float fade = clamp(smoothstep(-1.0, -0.8, vNdcY), 0.0, 1.0);
-  col.a *= fade * smoothstep(0.0, 0.018, dIn);
+  col.a *= fade * smoothstep(0.0, 0.01, dIn);
 
-  /* rim glow: brightest hugging the card outline, rounded falloff to the band edge */
-  float band = dOut > 0.0 ? pow(1.0 - clamp(dOut / GM, 0.0, 1.0), 2.2) : 0.0;
+  /* rim glow: brightest hugging the card outline, tight falloff inside the band */
+  float band = dOut > 0.0 ? pow(1.0 - clamp(dOut / GM, 0.0, 1.0), 2.4) : 0.0;
   float glowA = band * uGlow * mix(0.6, 1.0, front) * fade;
 
   /* glow sits behind the card content — composited as one normal blend */
@@ -202,7 +203,7 @@ export function coverflowWheel(
     idle = 5,
     duration = 1.15,
     margin = 0.1,
-    glow = 0.5,
+    glow = 0.32,
     edgeBlur = 1,
     dpr = 2,
   } = options;

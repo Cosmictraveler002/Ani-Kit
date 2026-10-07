@@ -951,7 +951,7 @@ wheel.destroy();
 | `autoplay` / `idle` | `true` / `5` | idle advance — seconds of stillness (with a 1/8-slot lead-in creep) |
 | `duration` | `1.15` | `goTo()` tween, seconds (`next()` / `prev()` use 0.5) |
 | `margin` | `0.1` | gap between cards, as a fraction of one slot |
-| `glow` | `0.5` | rim-glow intensity around every card, 0–1 (0 = hard flat cards) |
+| `glow` | `0.32` | rim-glow intensity around every card, 0–1 (0 = hard flat cards) |
 | `edgeBlur` | `1` | soft blurred + feathered card edges, 0–1 (0 = sharp edges) |
 | `dpr` | `2` | device-pixel-ratio cap |
 

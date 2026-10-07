@@ -1797,7 +1797,7 @@ destroy();`,
   idle: 5,        // seconds of stillness before the wheel moves on
   duration: 1.15, // goTo() tween, seconds — next()/prev() use 0.5
   margin: 0.1,    // gap between cards, as a fraction of one slot
-  glow: 0.5,      // rim-glow intensity around every card, 0–1
+  glow: 0.32,     // rim-glow intensity around every card, 0–1
   edgeBlur: 1,    // soft blurred + feathered card edges, 0–1
 });
 
@@ -1820,7 +1820,7 @@ wheel.destroy();`,
       ["idle", "`5`", "Seconds of stillness before the wheel moves on."],
       ["duration", "`1.15`", "`goTo()` tween, seconds — `next()`/`prev()` use 0.5."],
       ["margin", "`0.1`", "Gap between cards, as a fraction of one slot (0 = cards touching)."],
-      ["glow", "`0.5`", "Rim-glow intensity around every card, 0–1 (0 = hard flat cards)."],
+      ["glow", "`0.32`", "Rim-glow intensity around every card, 0–1 (0 = hard flat cards)."],
       ["edgeBlur", "`1`", "Soft blurred + feathered card edges, 0–1 (0 = sharp edges)."],
       ["dpr", "`2`", "Device-pixel-ratio cap for the canvas."],
       ["force", "`false`", "Run even under `prefers-reduced-motion`."],
